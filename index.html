@@ -34,7 +34,6 @@
 			<label for="data-select" class="small mt-2">Select data</label>
 
 			<div class="form-group row" id="data-selection-container" style="min-height: 40px;">
-				
 			</div>
 
 			<label for="filter-select" class="small">Filter runs</label>
@@ -89,13 +88,31 @@
 					<label class="form-check-label" for="option-show-datetime">Show datetime plot</label>
 				</div>
 			</div>
+			
+			<div class="row mb-2">
+				<div class="col-auto">
+					<input type="text" class="form-control form-control-sm" id="search-query-input" placeholder="Search query">
+				</div>
+				<div class="col-auto">
+					<button class="btn btn-outline-primary btn-sm" type="button" data-toggle="collapse" data-target="#plot-list-card" id="show-plot-list-button" disabled>Show plot list</button>
+				</div>
+			</div>
 
-			<button type="submit" class="btn btn-outline-primary" id="submit-button" onclick="submitClicked(event)" disabled>Submit</button>
+			<div class="collapse" id="plot-list-card">
+				<div class="card card-body pt-1 pb-1 pr-0 pl-0">
+					<div class="overflow-auto text-nowrap" id="plot-list-container">
+					</div>
+				</div>
+			</div>
+
+			<button type="submit" class="btn btn-outline-primary mt-2" id="submit-button" onclick="submitClicked(event)" disabled>Submit</button>
 		</form>
+
+
 
 		<!-- Plots -->
 		<div class="row mt-3">
-			<div class="col">
+			<div class="col-12 col-md-6 mb-3 mb-md-0">
 				<div class="card d-none" id="plot-card-0">
 					<div class="card-body">
 						<div id="plot-container-0" style="height: 468px"></div>
@@ -113,7 +130,7 @@
 					</div>
 				</div>
 			</div>
-			<div class="col">
+			<div class="col-12 col-md-6">
 				<div class="card d-none" id="plot-card-1">
 					<div class="card-body">
 						<div id="plot-container-1" style="height: 468px"></div>
@@ -134,7 +151,7 @@
 		</div>
 
 		<div class="row mt-3">
-			<div class="col">
+			<div class="col-12 col-md-6 mb-3 mb-md-0">
 				<div class="card d-none" id="plot-card-2">
 					<div class="card-body">
 						<div id="plot-container-2" style="height: 468px"></div>
@@ -152,7 +169,7 @@
 					</div>
 				</div>
 			</div>
-			<div class="col">
+			<div class="col-12 col-md-6">
 				<div class="card d-none" id="plot-card-3">
 					<div class="card-body">
 						<div id="plot-container-3" style="height: 468px"></div>
@@ -172,8 +189,8 @@
 			</div>
 		</div>
 
-		<div class="row mt-3">
-			<div class="col">
+		<!-- <div class="row mt-3">
+			<div class="col-12 col-md-6">
 				<div class="card d-none" id="plot-card-4">
 					<div class="card-body">
 						<div id="plot-container-4" style="height: 468px"></div>
@@ -191,7 +208,7 @@
 					</div>
 				</div>
 			</div>
-			<div class="col">
+			<div class="col-12 col-md-6">
 				<div class="card d-none" id="plot-card-5">
 					<div class="card-body">
 						<div id="plot-container-5" style="height: 468px"></div>
@@ -209,7 +226,7 @@
 					</div>
 				</div>
 			</div>
-		</div>
+		</div> -->
 
 		<nav class="mt-4 d-none" id="pagination-container">
 			<ul class="pagination justify-content-center" id="pagination-ul">

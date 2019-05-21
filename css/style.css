@@ -6,3 +6,7 @@
 .modal-xxl {
     max-width: 90%;
 }
+
+#search-query-input {
+    min-width: 300px;
+}

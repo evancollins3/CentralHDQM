@@ -109,7 +109,11 @@ function getFileListForCurrentSelection()
         var existsAsTopLevel = collections.filter(x => x["name"] == file).length != 0
 
         if(existsAsTopLevel)
-            files.push(file)
+        {
+            var isSearchResult = file.toLowerCase().includes(globalOptions.searchQuery.toLowerCase())
+            if(globalOptions.searchQuery == "" || isSearchResult)
+                files.push(file)
+        }
     })
 
     return files.map(x => "./data/alljsons/" + list.join("/") + "/" + x)

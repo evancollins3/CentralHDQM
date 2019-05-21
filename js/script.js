@@ -16,11 +16,14 @@ function submitClicked(event)
     $("#pagination-container").removeClass("d-none")
     clearLinks()
 
+    $("#show-plot-list-button").removeAttr("disabled")
+
     // Read global options
-    readCheckboxOptionValues()
+    readOptionValues()
 
     directoryPlotFiles = getFileListForCurrentSelection()
     displayPage(1)
+    drawPlotList()
     drawPageSelector()
 }
 
@@ -117,6 +120,27 @@ function pageSelected(event, page)
     // event.preventDefault()
     displayPage(page)
     drawPageSelector()
+}
+
+function drawPlotList()
+{
+    const divStart = `<div class="col-auto mr-2 ml-2 d-inline-block align-top">`
+    const divEnd = `</div></div>`
+    var html = ""
+    var column = ""
+
+    for(var i = 0; i < directoryPlotFiles.length; i++)
+    {
+        column += `<div class="row">${getJustFilename(directoryPlotFiles[i])}</div>`
+        if((i + 1) % 4 == 0 || i == directoryPlotFiles.length - 1)
+        {
+            var pageTitle = `<div class="row small font-italic">Page ${Math.ceil((i + 1) / 4)}</div>`
+            html += divStart + pageTitle + column + divEnd
+            column = ""
+        }
+    }
+
+    $("#plot-list-container").html(html)
 }
 
 function drawPageSelector()

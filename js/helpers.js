@@ -13,8 +13,8 @@ function calculateRMS(yValues)
 
     var rms = Math.sqrt(meanOfSquares - (mean * mean))
 
-    var min_y = mean - (5 * rms)
-    var max_y = mean + (5 * rms)
+    var min_y = mean - (3 * rms)
+    var max_y = mean + (3 * rms)
 
     return [min_y, max_y]
 }

@@ -8,9 +8,10 @@ var globalOptions =
     showXRange: false,
     showIntLumi: false,
     showDatetime: false,
+    searchQuery: "",
 }
 
-function readCheckboxOptionValues()
+function readOptionValues()
 {
     globalOptions.showErrors = $("#option-show-errors").prop("checked")
     globalOptions.showFills = $("#option-show-fills").prop("checked")
@@ -19,6 +20,7 @@ function readCheckboxOptionValues()
     globalOptions.showXRange = $("#option-show-xrange").prop("checked")
     globalOptions.showIntLumi = $("#option-show-int-lumi").prop("checked")
     globalOptions.showDatetime = $("#option-show-datetime").prop("checked")
+    globalOptions.searchQuery = $("#search-query-input").val()
 }
 
 function optionToggled(element)
@@ -54,5 +56,5 @@ function optionToggled(element)
 
 $(document).ready(function()
 {
-    readCheckboxOptionValues()
+    readOptionValues()
 })
