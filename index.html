@@ -1,0 +1,311 @@
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<meta name="description" content="">
+	<title>Historic DQM</title>
+
+	<link href="css/bootstrap/bootstrap.min.css" rel="stylesheet">
+	<link href="css/style.css" rel="stylesheet">
+
+	<link href="https://code.highcharts.com/css/highcharts.css" rel="stylesheet">
+
+	<link rel="shortcut icon" type="image/png" href="static/favicon.ico"/>
+</head>
+
+<body class="bg-light">
+	<nav class="navbar navbar-expand-md navbar-dark bg-dark pt-0 pb-0">
+		<a class="navbar-brand" href="#">
+			<img src="static/logo.jpg" width="60" height="60" alt="CMS logo" class="mr-3">
+			Historic DQM
+		</a>
+
+		<ul class="navbar-nav mr-auto">
+			<li class="nav-item active">
+				<a class="nav-link" href="#" data-toggle="modal" data-target=".instructions-modal">Short instructions</a>
+			</li>
+		</ul>
+	</nav>
+
+	<main role="main" class="container-fluid pb-2">
+
+		<form>
+			<label for="data-select" class="small mt-2">Select data</label>
+
+			<div class="form-group row" id="data-selection-container" style="min-height: 40px;">
+				
+			</div>
+
+			<label for="filter-select" class="small">Filter runs</label>
+			
+			<div class="form-group row">
+				<div class="col-12 col-md-6">
+					<select class="form-control form-control-sm" id="filter-select" onchange="filterSelectionChanged()">
+						<option value="latest">Latest</option>
+						<option value="range">Range</option>
+						<option value="list">List</option>
+						<option value="json">Golden JSON file</option>
+						<option value="rr" disabled>Run Registry url</option>
+					</select>
+				</div>
+
+				<!-- Filter value elements will be added bellow this marker -->
+				<!-- All its neighbors bellow will be removed on every selection -->
+				<div id="filter-value-marker"></div>
+			</div>
+			
+			<div class="form-group">
+				<p class="mb-0">
+					<label for="filter-checkbox" class="small">Options</label>
+				</p>
+
+				<div class="form-check form-check-inline">
+					<input class="form-check-input" type="checkbox" id="option-show-errors" value="option1" onchange="optionToggled(this)">
+					<label class="form-check-label" for="option-show-errors">Show errors</label>
+				</div>
+				<div class="form-check form-check-inline">
+					<input class="form-check-input" type="checkbox" id="option-show-fills" value="option2" onchange="optionToggled(this)" checked>
+					<label class="form-check-label" for="option-show-fills">Show fills</label>
+				</div>
+				<div class="form-check form-check-inline">
+					<input class="form-check-input" type="checkbox" id="option-show-run-duration" value="option3" onchange="optionToggled(this)" checked>
+					<label class="form-check-label" for="option-show-run-duration">Show run duration</label>
+				</div>
+				<div class="form-check form-check-inline">
+					<input class="form-check-input" type="checkbox" id="option-show-regression-lines" value="option4" onchange="optionToggled(this)" checked>
+					<label class="form-check-label" for="option-show-regression-lines">Show regression lines</label>
+				</div>
+				<div class="form-check form-check-inline">
+					<input class="form-check-input" type="checkbox" id="option-show-xrange" value="option5" onchange="optionToggled(this)">
+					<label class="form-check-label" for="option-show-xrange">Show run duration proportional plot</label>
+				</div>
+				<div class="form-check form-check-inline">
+					<input class="form-check-input" type="checkbox" id="option-show-int-lumi" value="option6" onchange="optionToggled(this)">
+					<label class="form-check-label" for="option-show-int-lumi">Show proportional to intergrated luminosity</label>
+				</div>
+				<div class="form-check form-check-inline">
+					<input class="form-check-input" type="checkbox" id="option-show-datetime" value="option7" onchange="optionToggled(this)">
+					<label class="form-check-label" for="option-show-datetime">Show datetime plot</label>
+				</div>
+			</div>
+
+			<button type="submit" class="btn btn-outline-primary" id="submit-button" onclick="submitClicked(event)" disabled>Submit</button>
+		</form>
+
+		<!-- Plots -->
+		<div class="row mt-3">
+			<div class="col">
+				<div class="card d-none" id="plot-card-0">
+					<div class="card-body">
+						<div id="plot-container-0" style="height: 468px"></div>
+
+						<div class="row">
+							<div class="col-0 col-md-4"></div>
+							<div class="col-12 col-md-4 text-center">
+								<button type="button" class="btn btn-sm btn-outline-primary" onclick="changeRangesClicked(0)">Change ranges</button>
+							</div>
+							<div class="col-12 col-md-4 mt-2 mt-md-1 text-center links-container">
+								<span class="links-info"></span> <a class="oms-link" target="_blank"></a> <a class="rr-link" target="_blank"></a>
+							</div>
+						</div>
+
+					</div>
+				</div>
+			</div>
+			<div class="col">
+				<div class="card d-none" id="plot-card-1">
+					<div class="card-body">
+						<div id="plot-container-1" style="height: 468px"></div>
+
+						<div class="row">
+							<div class="col-0 col-md-4"></div>
+							<div class="col-12 col-md-4 text-center">
+								<button type="button" class="btn btn-sm btn-outline-primary" onclick="changeRangesClicked(1)">Change ranges</button>
+							</div>
+							<div class="col-12 col-md-4 mt-2 mt-md-1 text-center links-container">
+								<span class="links-info"></span> <a class="oms-link" target="_blank"></a> <a class="rr-link" target="_blank"></a>
+							</div>
+						</div>
+						
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="row mt-3">
+			<div class="col">
+				<div class="card d-none" id="plot-card-2">
+					<div class="card-body">
+						<div id="plot-container-2" style="height: 468px"></div>
+
+						<div class="row">
+							<div class="col-0 col-md-4"></div>
+							<div class="col-12 col-md-4 text-center">
+								<button type="button" class="btn btn-sm btn-outline-primary" onclick="changeRangesClicked(2)">Change ranges</button>
+							</div>
+							<div class="col-12 col-md-4 mt-2 mt-md-1 text-center links-container">
+								<span class="links-info"></span> <a class="oms-link" target="_blank"></a> <a class="rr-link" target="_blank"></a>
+							</div>
+						</div>
+
+					</div>
+				</div>
+			</div>
+			<div class="col">
+				<div class="card d-none" id="plot-card-3">
+					<div class="card-body">
+						<div id="plot-container-3" style="height: 468px"></div>
+
+						<div class="row">
+							<div class="col-0 col-md-4"></div>
+							<div class="col-12 col-md-4 text-center">
+								<button type="button" class="btn btn-sm btn-outline-primary" onclick="changeRangesClicked(3)">Change ranges</button>
+							</div>
+							<div class="col-12 col-md-4 mt-2 mt-md-1 text-center links-container">
+								<span class="links-info"></span> <a class="oms-link" target="_blank"></a> <a class="rr-link" target="_blank"></a>
+							</div>
+						</div>
+						
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="row mt-3">
+			<div class="col">
+				<div class="card d-none" id="plot-card-4">
+					<div class="card-body">
+						<div id="plot-container-4" style="height: 468px"></div>
+
+						<div class="row">
+							<div class="col-0 col-md-4"></div>
+							<div class="col-12 col-md-4 text-center">
+								<button type="button" class="btn btn-sm btn-outline-primary" onclick="changeRangesClicked(4)">Change ranges</button>
+							</div>
+							<div class="col-12 col-md-4 mt-2 mt-md-1 text-center links-container">
+								<span class="links-info"></span> <a class="oms-link" target="_blank"></a> <a class="rr-link" target="_blank"></a>
+							</div>
+						</div>
+
+					</div>
+				</div>
+			</div>
+			<div class="col">
+				<div class="card d-none" id="plot-card-5">
+					<div class="card-body">
+						<div id="plot-container-5" style="height: 468px"></div>
+
+						<div class="row">
+							<div class="col-0 col-md-4"></div>
+							<div class="col-12 col-md-4 text-center">
+								<button type="button" class="btn btn-sm btn-outline-primary" onclick="changeRangesClicked(5)">Change ranges</button>
+							</div>
+							<div class="col-12 col-md-4 mt-2 mt-md-1 text-center links-container">
+								<span class="links-info"></span> <a class="oms-link" target="_blank"></a> <a class="rr-link" target="_blank"></a>
+							</div>
+						</div>
+						
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<nav class="mt-4 d-none" id="pagination-container">
+			<ul class="pagination justify-content-center" id="pagination-ul">
+			</ul>
+		</nav>
+
+	</main>
+
+	<!-- Instructions modal -->
+	<div class="modal fade instructions-modal" tabindex="-1" role="dialog">
+		<div class="modal-dialog modal-xxl">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">How to use the Historic DQM</h5>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<ul class="instructions-list">
+						<li>In the <b>RunRange(From)</b>, put <b>0</b> if you want to start from the first run of the collection</li>
+						<li>In the <b>RunRange(To)</b>, put <b>0</b> if you want to end with the last run of the collection</li>
+						<li>Otherwise, set a <b>Starting run</b> and a <b>Final run</b> in the appropriate <b>RunRange </b> buttons</li>
+						<li><b>Notification 1:</b> If you select <b>Strips</b> you have the option to choose <b>PEAK</b> or <b>DECO</b> mode</li>
+						<li><b>Notification 2:</b> If you select <b>Tracking</b> or <b>RecoErrors</b> the only option you have is <b>PEAK+DECO</b> mode</li>
+						<li>There is a <b>Charts per page</b> counter left to the <b>Submit</b> button that specifies the number of plots to be drawn per page</li>
+						<li>Initially all the check buttons are ON(Activated)</li>
+						<li>Clicking <b>TWICE</b> in any check button you select or de-select all the plots</li>
+						<li>Clicking <b>ONCE</b> in a button you can select individual plots or groups of plots</li>
+						<li>By clicking in a legend, you can show or hide the points on the specific plot</li>
+						<li>With the left mouse button, you can do dynamic zooming</li>
+						<li>The <b>Reset zoom</b> button on the plot area resets the initial view of the plot</li>
+						<li>There is a square button in the uper right place of each plot where you can left click and localy save an image of the plot</li>
+						<li>The dataset options: <b>StreamExpressCosmicsCommissioning</b> and <b>CosmicsCommissioning</b> work only for Year:2017 and Subsystems: Strips & PixelPhase1 </li>
+						<li>If you uncheck the <b>Filter Runs </b> check box <b> ALL </b> the runs will be displayed</li>
+						<li>From <b>Filter Runs </b> drop down menu you can select <b>Latest </b> to display the lastest number of runs</li>
+						<li>From <b>Filter Runs </b> drop down menu you can select <b>Range  </b> to display a specific run range</li>
+						<li>From <b>Filter Runs </b> drop down menu you can select <b> List  </b> to display a list of runs separated by commas(if between the runs you put a <b> - </b> then you select all the runs in this range)</li>
+						<li>From <b>Filter Runs </b> drop down menu you can select <b>File   </b> to display runs from a predefined file with the same format as mentioned in the option <b> List  </b> above </li>
+						<li>Clicking <b>Scatter</b> will generate a Scatter plot where Y axis is used to represent both the value of the plot and the length of a run</li>
+						<li>Clicking <b>Run-length</b> will generate an XRange plot where every bar has a width proportional to the length of the run it represents</li>
+						<li>By clicking <b>Toggle plot whitelist</b> you can toggle a list where certain plots can be removed from display</li>
+						<li>By clicking <b>CHANGE RANGES</b> you can change both x and y axis ranges of the plot, and see the updated plot immediately</li>
+						<li>By clicking on every data point in the plot you can reveal urls to OMS and Run Registry for a selected run. Links will appear on the bottom right of the plot</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Change ranges modal -->
+	<div class="modal fade change-ranges-modal" tabindex="-1" role="dialog">
+		<div class="modal-dialog modal-xxl">
+			<div class="modal-content">
+				<div class="modal-body">
+					<div id="change-ranges-container" style="height: 650px"></div>
+
+					<div class="row">
+						<div class="col text-right">
+							<span>Run range:</span>
+							<input class="form-control form-control-sm" style="display: inline-block; width: 100px;" id="start-x" placeholder="From"></input>
+							<input class="form-control form-control-sm" style="display: inline-block; width: 100px;" id="end-x" placeholder="To"></input>
+						</div>
+						<div class="col">
+							<span>Y range:</span>
+							<input class="form-control form-control-sm" style="display: inline-block; width: 100px;" id="start-y" placeholder="From"></input>
+							<input class="form-control form-control-sm" style="display: inline-block; width: 100px;" id="end-y" placeholder="To"></input>
+						</div>
+					</div>
+
+					<div class="text-center mt-3">
+						<button type="button" class="btn btn-sm btn-outline-primary" onclick="popupSubmitClicked()">Submit</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script src="js/bootstrap/jquery-3.3.1.min.js"></script>
+	<!-- <script>window.jQuery || document.write('<script src="/docs/4.3/assets/js/vendor/jquery-slim.min.js"><\/script>')</script> -->
+	<script src="js/bootstrap/bootstrap.bundle.min.js"></script>
+
+	<script src="js/highcharts/highcharts.js"></script>
+	<script src="js/highcharts/highcharts-more.js"></script>
+	<script src="js/highcharts/exporting.js"></script>
+	<script src="js/highcharts/xrange.js"></script>
+	<script src="js/highcharts/no-data-to-display.js"></script>
+
+	<script src="js/script.js"></script>
+	<script src="js/dataSelectionManager.js"></script>
+	<script src="js/filterSelectionManager.js"></script>
+	<script src="js/optionsManager.js"></script>
+	<script src="js/helpers.js"></script>
+	<script src="js/timeTrend.js"></script>
+	<script src="js/asyncFileReader.js"></script>
+
+</body>
+
+</html>
