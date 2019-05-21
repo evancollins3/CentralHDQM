@@ -107,9 +107,8 @@ function getFileListForCurrentSelection()
     {
         file = file.split(".")[0]
         var existsAsTopLevel = collections.filter(x => x["name"] == file).length != 0
-        var existsAsComponent = collections.filter(x => x["files"].includes(file)) != 0
 
-        if(existsAsTopLevel || existsAsComponent)
+        if(existsAsTopLevel)
             files.push(file)
     })
 
