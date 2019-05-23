@@ -4,8 +4,14 @@ var collections = []
 var directoryPlotFiles = []
 const plotsPerPage = 4
 var chartsObjects = []
-var popupChartObject = {}
+var popupChartObject = undefined
+var popupChartIndex = 0
 var currentPage = 1
+
+var initialStartX = 0
+var initialEndX = 0
+var initialStartY = 0
+var initialEndY = 0
 
 var drawArguments = []
 
@@ -40,56 +46,24 @@ async function displayPage(page)
     {
         $(`#plot-card-${i}`).removeClass("d-none")
 
-        var filteredData = []
-
-        var seriesTitles = []
-        var xValues = []
-        var yValues = []
-        var yErr = []
-
         var file = directoryPlotFiles[((page - 1) * plotsPerPage) + i]
-
         var collection = getCollectionForFile(file)
+        var data = []
+
         for(var j = 0; j < collection["files"].length; j++)
         {
             var filename = getJustDirname(file) + collection["files"][j] + ".json"
             var response = await fetch(filename)
             var fileData = await response.json()
 
-            // Apply run ranges based on selected filter
-            var array = await getFilteredArray(fileData)
-
-            filteredData[j] = array
-            
-            // Try changing the title only if there are multiple series in the plot
-            if(collection["files"].length == 1)
-                seriesTitles[j] = collection["files"][j]
-            else
-                seriesTitles[j] = getSeriesTitleByFilename(collection["files"][j])
-
-            yValues[j] = array.map(x => x.y)
-            yErr[j] = array.map(x => x.yErr)
+            data[j] = fileData[Object.keys(fileData)[0]]
         }
 
-        xValues = filteredData[0].map(x => x.run)
-
-        var fills = []
-        var durations = []
-        var intLumis = []
-        var times = []
-        var plotName = getJustFilename(collection["name"])
-        var yTitle = filteredData[0][0]['yTitle']
         var renderTo = `plot-container-${i}`
 
-        var omsRuns = omsInfo.filter(x => xValues.includes(x.run))
-        fills = omsRuns.map(x => x.lhcfill)
-        durations = omsRuns.map(x => x.rundur)
-        intLumis = omsRuns.map(x => x.int_lumi)
-        times = omsRuns.map(x => [x.start_time, x.end_time])
-
-        var chartObj = draw(xValues, yValues, yErr, fills, durations, intLumis, times, renderTo, plotName, yTitle, seriesTitles)
+        var chartObj = await draw(collection, data, renderTo)
         chartsObjects.push(chartObj)
-        drawArguments.push([xValues, yValues, yErr, fills, durations, intLumis, times, renderTo, plotName, yTitle, seriesTitles])
+        drawArguments.push([collection, data, renderTo])
     }
 
     for(var i = numberOfPlotsToPresent; i < plotsPerPage; i++)
@@ -139,6 +113,9 @@ function drawPlotList()
             column = ""
         }
     }
+
+    if(directoryPlotFiles.length == 0)
+        html = `<div class="ml-2">No plots found</div>`
 
     $("#plot-list-container").html(html)
 }
@@ -191,67 +168,80 @@ function clearLinks()
     }
 }
 
-function changeRangesClicked(plotIndex)
+async function changeRangesClicked(plotIndex)
 {
-    var xValues = drawArguments[plotIndex][0]
-    var yValues = drawArguments[plotIndex][1]
-    var yErr = drawArguments[plotIndex][2]
-    var fills = drawArguments[plotIndex][3]
-    var durations = drawArguments[plotIndex][4]
-    var intLumis = drawArguments[plotIndex][5]
-    var times = drawArguments[plotIndex][6]
+    popupChartIndex = plotIndex
+
+    var collection = drawArguments[plotIndex][0]
+    var data = drawArguments[plotIndex][1]
     var renderTo = 'change-ranges-container'
-    var plotName = drawArguments[plotIndex][8]
-    var yTitle = drawArguments[plotIndex][9]
-    var seriesTitles = drawArguments[plotIndex][10]
 
-    popupChartObject = draw(xValues, yValues, yErr, fills, durations, intLumis, times, renderTo, plotName, yTitle, seriesTitles)
+    if(popupChartObject != undefined)
+        popupChartObject.destroy()
+    
+    popupChartObject = await draw(collection, data, renderTo)
 
-    $("#start-x").val(xValues[0])
-    $("#end-x").val(xValues[xValues.length - 1])
+    var filteredData = await getFilteredArray(data[0])
 
-    $("#start-y").val(popupChartObject.yAxis[0].min);
-    $("#end-y").val(popupChartObject.yAxis[0].max)
+    initialStartX = filteredData[0].run
+    initialEndX = filteredData[filteredData.length - 1].run
+    initialStartY = popupChartObject.yAxis[0].min
+    initialEndY = popupChartObject.yAxis[0].max
+
+    $("#start-x").val(initialStartX)
+    $("#end-x").val(initialEndX)
+    $("#start-y").val(initialStartY)
+    $("#end-y").val(initialEndY)
 
     $('.change-ranges-modal').modal('show')
 }
 
-function popupSubmitClicked()
+async function popupSubmitClicked()
 {
     var start_x = $("#start-x").val()
     var end_x = $("#end-x").val()
     var start_y = $("#start-y").val()
     var end_y = $("#end-y").val()
-    
-    popupChartObject.yAxis[0].update(
-    {
-        min: start_y,
-        max: end_y
-    })
 
-    var min_x = 0
-    var max_x = 0
-
-    popupChartObject.xAxis[0].categories.forEach((value, index) => 
+    if(start_x != initialStartX || end_x != initialEndX)
     {
-        if(value < start_x)
-            min_x = index + 1
-        if(value <= end_x)
-            max_x = index
-    })
+        // X range changed
+        var collection = drawArguments[popupChartIndex][0]
+        var data = drawArguments[popupChartIndex][1]
+        var renderTo = 'change-ranges-container'
 
-    popupChartObject.xAxis[0].update(
+        if(popupChartObject != undefined)
+            popupChartObject.destroy()
+        
+        popupChartObject = await draw(collection, data, renderTo, list => 
+        {
+            return list.filter(x => x.run >= start_x && x.run <= end_x)
+        })
+    }
+    if(start_y != initialStartY || end_y != initialEndY)
     {
-        min: min_x,
-        max: max_x
-    })
+        // Y range changed
+        popupChartObject.yAxis[0].update(
+        {
+            min: start_y,
+            max: end_y
+        })
+    }
+
+    $("#start-y").val(popupChartObject.yAxis[0].min)
+    $("#end-y").val(popupChartObject.yAxis[0].max)
+
+    initialStartX = start_x
+    initialEndX = end_x
+    initialStartY = start_y
+    initialEndY = end_y
 }
 
 function destroyAllPresentPlots()
 {
     chartsObjects.forEach(x => 
     {
-        try 
+        try
         {
             x.destroy()
         }

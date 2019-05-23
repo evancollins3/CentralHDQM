@@ -1,6 +1,40 @@
 
-function draw(xValues, yValues, yErr, fills, durations, intLumis, times, renderTo, plotName, yTitle, seriesTitles) 
+async function draw(collection, data, renderTo, filterFunction = undefined) 
 {
+    if(filterFunction == undefined)
+    {
+        filterFunction = getFilteredArray
+    }
+
+    var filteredData = []
+    var seriesTitles = []
+    var yValues = []
+    var yErr = []
+
+    for(var i = 0; i < data.length; i++)
+    {
+        if(collection["files"].length == 1)
+            seriesTitles[i] = collection["files"][i]
+        else
+            seriesTitles[i] = getSeriesTitleByFilename(collection["files"][i])
+
+        filteredData[i] = await filterFunction(data[i])
+
+        yValues[i] = filteredData[i].map(x => x.y)
+        yErr[i] = filteredData[i].map(x => x.yErr)
+    }
+
+    var xValues = filteredData[0].map(x => x.run)
+
+    var omsRuns = omsInfo.filter(x => xValues.includes(x.run))
+
+    var fills = omsRuns.map(x => x.lhcfill)
+    var durations = omsRuns.map(x => x.rundur)
+    var intLumis = omsRuns.map(x => x.int_lumi)
+    var times = omsRuns.map(x => [x.start_time, x.end_time])
+    var plotName = getJustFilename(collection["name"])
+    var yTitle = filteredData[0][0]['yTitle']
+
     if(globalOptions.showXRange || globalOptions.showIntLumi)
         return drawXRangePlot(xValues, yValues, yErr, fills, durations, intLumis, renderTo, plotName, yTitle, seriesTitles)
     else if(globalOptions.showDatetime)
@@ -130,7 +164,6 @@ function drawScatterPlot(xValues, yValues, yErr, fills, durations, intLumis, ren
             name: seriesTitles[i],
             type: 'scatter',
             data: data,
-            // color: seriesColors[i],
             borderWidth: 20,
             marker: {
                 radius: 3
@@ -698,7 +731,6 @@ function getXRangeDatetimeFillBands(fills, times)
     {
         if(fills[j] != lastFill)
         {
-            //bands.push({color: "#e6eaf2", from: lastTime, to: times[j - 1][1], id: "fills"})
             bands.push({color: "#e6eaf2", from: lastTime, to: times[j - 1][1], id: "fills"})
             lastFill = fills[j]
             lastTime = times[j][0]
@@ -707,14 +739,6 @@ function getXRangeDatetimeFillBands(fills, times)
     
     // Add last fill
     bands.push({color: "#e6eaf2", from: lastTime, to: times[times.length - 1][1], id: "fills"})
-
-    // Remove every second
-    // bands = bands.filter(function(_, i) {
-    //     return i % 2 === 0;
-    // })
-
-    // console.log(times)
-    // console.log(bands)
 
     return bands
 }

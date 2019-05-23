@@ -50,14 +50,14 @@ async function getFilteredArray(data)
     {
         var value = $("#filter-input-latest").val()
 
-        return data[Object.keys(data)[0]].slice(-value)
+        return data.slice(-value)
     }
     else if(filter == "range")
     {
         var low = $("#filter-input-range-low").val()
         var high = $("#filter-input-range-high").val()
 
-        return data[Object.keys(data)[0]].filter(x => x.run >= low && x.run <= high)
+        return data.filter(x => x.run >= low && x.run <= high)
     }
     else if(filter == "list")
     {
@@ -65,7 +65,7 @@ async function getFilteredArray(data)
         value = value.replace(/\s/g, '')
         var runs = value.split(",").map(x => parseInt(x))
 
-        return data[Object.keys(data)[0]].filter(x => runs.includes(x.run))
+        return data.filter(x => runs.includes(x.run))
     }
     else if(filter == "json")
     {
@@ -79,7 +79,7 @@ async function getFilteredArray(data)
             var goldenJson = JSON.parse(fileContents)
             var runs = Object.keys(goldenJson).map(x => parseInt(x))
             
-            return data[Object.keys(data)[0]].filter(x => runs.includes(x.run))
+            return data.filter(x => runs.includes(x.run))
         }
         catch (e)
         {
