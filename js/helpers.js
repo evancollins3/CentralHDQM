@@ -3,7 +3,11 @@ const seriesColors = ["#7cb5ec", "#434348", "#90ed7d", "#f7a35c", "#8085e9", "#f
 
 function calculateRMS(yValues)
 {
+    // Concatenate all series
     var values = yValues.reduce((all, cur) => all.concat(cur), [])
+    
+    // Filter put all zeros
+    values = values.filter(x => x != 0)
 
     var yValuesSum = values.reduce((total, num) => total + num, 0)
     var mean = yValuesSum / values.length
@@ -13,9 +17,9 @@ function calculateRMS(yValues)
 
     var rms = Math.sqrt(meanOfSquares - (mean * mean))
 
-    var min_y = mean - (3 * rms)
-    var max_y = mean + (3 * rms)
-    
+    var min_y = mean - (5 * rms)
+    var max_y = mean + (5 * rms)
+
     return [min_y, max_y]
 }
 
