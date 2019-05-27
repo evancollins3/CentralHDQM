@@ -37,7 +37,7 @@ function filterSelectionChanged()
     else if(value == "rr")
     {
         $(`<div class="col-12 col-md-6 mt-2 mt-md-0">
-            <input type="text" class="form-control form-control-sm" placeholder="https://cmsrunregistry.web.cern.ch/online/runs/all">
+            <input type="text" class="form-control form-control-sm" id="filter-input-rr" placeholder="https://cmsrunregistry.web.cern.ch/online/runs/all">
         </div>`).insertAfter(marker)
     }
 }
@@ -49,7 +49,6 @@ async function getFilteredArray(data)
     if(filter == "latest")
     {
         var value = $("#filter-input-latest").val()
-
         return data.slice(-value)
     }
     else if(filter == "range")
@@ -69,7 +68,7 @@ async function getFilteredArray(data)
     }
     else if(filter == "json")
     {
-        const file = document.getElementById("filter-input-file").files[0]
+        const file = $("#filter-input-file")[0].files[0]
         if(file == undefined)
             return []
 
@@ -94,7 +93,73 @@ async function getFilteredArray(data)
     }
 }
 
+function getFilterValue()
+{
+    var value = $("#filter-select").val()
+
+    if(value == "latest")
+    {
+        return $("#filter-input-latest").val()
+    }
+    else if(value == "range")
+    {
+        return `${$("#filter-input-range-low").val()},${$("#filter-input-range-high").val()}`
+    }
+    else if(value == "list")
+    {
+        return $("#filter-input-list").val()
+    }
+    else if(value == "json")
+    {
+        // Would be possible to return the contents of a file but for now this is unsupported
+        return ""
+    }
+    else if(value == "rr")
+    {
+        return $("#filter-input-rr").val()
+    }
+}
+
+function setFilterValue(filterValue)
+{
+    var value = $("#filter-select").val()
+
+    if(value == "latest")
+    {
+        $("#filter-input-latest").val(filterValue)
+    }
+    else if(value == "range")
+    {
+        var highLow = filterValue.split(",")
+        $("#filter-input-range-low").val(highLow[0])
+        $("#filter-input-range-high").val(highLow[1])
+    }
+    else if(value == "list")
+    {
+        $("#filter-input-list").val(filterValue)
+    }
+    else if(value == "json")
+    {
+        // For now this is unsupported
+    }
+    else if(value == "rr")
+    {
+        $("#filter-input-rr").val(filterValue)
+    }
+}
+
 $(document).ready(function()
 {
+    // Interpret url variables
+    var filter = getUrlVariable("filter")
+    if(filter != null)
+        $("#filter-select").val(filter)
+    
     filterSelectionChanged()
+
+    var filterValue = getUrlVariable("filterValue")
+    if(filter != null && filterValue != null)
+        setFilterValue(getUrlVariable("filterValue"))
+
+    $("#search-query-input").val(getUrlVariable("search"))
 })

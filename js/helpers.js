@@ -19,6 +19,16 @@ function calculateRMS(yValues)
     return [min_y, max_y]
 }
 
+function safeGetAtIndex(array, index)
+{
+    if(array != undefined)
+        return array[index]
+    else
+    {
+        return undefined
+    }
+}
+
 function getSeriesTitleByFilename(fileName) 
 {
     if(fileName.indexOf("perInOutLayer") !== -1) 

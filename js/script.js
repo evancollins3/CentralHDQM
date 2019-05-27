@@ -15,9 +15,19 @@ var initialEndY = 0
 
 var drawArguments = []
 
-function submitClicked(event)
+async function submitClicked(event)
 {
     event.preventDefault()
+    await submit(1)
+}
+
+async function submit(page)
+{
+    if($("#filter-select").val() == "json")
+    {
+        if($("#filter-input-file")[0].files.length == 0)
+            return
+    }
 
     $("#pagination-container").removeClass("d-none")
     clearLinks()
@@ -28,9 +38,10 @@ function submitClicked(event)
     readOptionValues()
 
     directoryPlotFiles = getFileListForCurrentSelection()
-    displayPage(1)
+    await displayPage(page)
     drawPlotList()
     drawPageSelector()
+    changeUrlToReflectSettings()
 }
 
 async function displayPage(page)
@@ -58,7 +69,7 @@ async function displayPage(page)
 
             data[j] = fileData[Object.keys(fileData)[0]]
         }
-
+        
         var renderTo = `plot-container-${i}`
 
         var chartObj = await draw(collection, data, renderTo)
@@ -91,9 +102,12 @@ function getCollectionForFile(file)
 
 function pageSelected(event, page)
 {
-    // event.preventDefault()
+    event.preventDefault()
+    window.scrollTo(0, 0)
+
     displayPage(page)
     drawPageSelector()
+    addUrlVariable("page", page)
 }
 
 function drawPlotList()
@@ -193,7 +207,9 @@ async function changeRangesClicked(plotIndex)
     $("#start-y").val(initialStartY)
     $("#end-y").val(initialEndY)
 
-    $('.change-ranges-modal').modal('show')
+    $('#change-ranges-modal').modal('show')
+
+    addUrlVariable("modalPlot", plotIndex)
 }
 
 async function popupSubmitClicked()
@@ -237,6 +253,28 @@ async function popupSubmitClicked()
     initialEndY = end_y
 }
 
+function changeUrlToReflectSettings()
+{
+    // Data argument
+    var values = $("#data-selection-container").find("select").map((_, x) => x.value).toArray()
+    addUrlVariable("data", values.join(","))
+
+    // Filter
+    addUrlVariable("filter", $("#filter-select").val())
+    addUrlVariable("filterValue", getFilterValue())
+
+    // Options
+    var optionsBitSum = getBitwiseSum()
+    addUrlVariable("options", optionsBitSum)
+
+    // Search query
+    var searchQuery = $("#search-query-input").val()
+    if(searchQuery == null || searchQuery == "")
+        deleteUrlVariable("search")
+    else
+        addUrlVariable("search", $("#search-query-input").val())
+}
+
 function destroyAllPresentPlots()
 {
     chartsObjects.forEach(x => 
@@ -254,6 +292,11 @@ function destroyAllPresentPlots()
     drawArguments = []
 }
 
+$('#change-ranges-modal').on('hide.bs.modal', function (e)
+{
+    deleteUrlVariable("modalPlot")
+})
+
 $(document).ready(async function()
 {
     const response1 = await fetch("./data/oms_info.json")
@@ -264,6 +307,20 @@ $(document).ready(async function()
 
     // Safe to click submit now
     $("#submit-button").removeAttr("disabled")
+    $("#submit-button-spinner").hide()
+
+    if(hasUrlVariable("data"))
+    {
+        if(hasUrlVariable("page"))
+            currentPage = getUrlVariable("page")
+        
+        await submit(currentPage)
+    }
+
+    if(hasUrlVariable("modalPlot"))
+    {
+        await changeRangesClicked(getUrlVariable("modalPlot"))
+    }
 
     // http://vocms0183.cern.ch/agg/api/v1/runs/meta
     // http://vocms0183.cern.ch/agg/api/v1/runs?fields=recorded_lumi&page[limit]=1000

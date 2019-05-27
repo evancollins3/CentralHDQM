@@ -33,7 +33,7 @@ async function draw(collection, data, renderTo, filterFunction = undefined)
     var intLumis = omsRuns.map(x => x.int_lumi)
     var times = omsRuns.map(x => [x.start_time, x.end_time])
     var plotName = getJustFilename(collection["name"])
-    var yTitle = filteredData[0][0]['yTitle']
+    var yTitle = filteredData[0].length != 0 ? filteredData[0][0]['yTitle'] : ""
 
     if(globalOptions.showXRange || globalOptions.showIntLumi)
         return drawXRangePlot(xValues, yValues, yErr, fills, durations, intLumis, renderTo, plotName, yTitle, seriesTitles)
@@ -549,10 +549,17 @@ function drawXRangeDatetimePlot(xValues, yValues, yErr, fills, durations, intLum
     {
         var tooltip = '<span style="color:{series.color}"></span><b>{point.series.name}'
         tooltip += "</b><br><b>Run No:</b> {point.run}"
-        tooltip += `<br/><b> ${yTitle} : </b>{point.y}<br><b>Fill No:</b> {point.fill}<br><b>Error:</b> {point.err}`
+        tooltip += `<br/><b>${yTitle} : </b>{point.y}<br><b>Fill No:</b> {point.fill}<br><b>Error:</b> {point.err}`
 
-        var raw = []
-        raw = yValues[i].map((y, k) => ({ y: y, fill: fills[k], dur: durations[k], intLumi: intLumis[k], startTime: new Date(times[k][0]), endTime: new Date(times[k][1]) }))
+        var raw = yValues[i].map((y, k) => (
+            { 
+                y: y, 
+                fill: fills[k], 
+                dur: durations[k], 
+                intLumi: intLumis[k], 
+                startTime: new Date(safeGetAtIndex(times[k], 0)), 
+                endTime: new Date(safeGetAtIndex(times[k], 1)),
+            }))
 
         tooltip += "<br><b>Duration:</b> {point.dur}"
         tooltip += "<br><b>Integrated luminosity:</b> {point.intLumi}"
@@ -690,6 +697,9 @@ function getScatterFillBands(xValues, fills)
 
 function getXRangeFillBands(durations, fills)
 {
+    if(fills.length == 0 || durations.length == 0)
+        return []
+
     // Group by fill and sum durations
     var bands = []
     var lastFill = fills[0]
@@ -721,6 +731,9 @@ function getXRangeFillBands(durations, fills)
 
 function getXRangeDatetimeFillBands(fills, times)
 {
+    if(fills.length == 0 || times.length == 0)
+        return []
+    
     times = times.map(x => x.map(x1 => new Date(x1).getTime()))
 
     var bands = []

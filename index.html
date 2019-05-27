@@ -16,14 +16,14 @@
 
 <body class="bg-light">
 	<nav class="navbar navbar-expand-md navbar-dark bg-dark pt-0 pb-0">
-		<a class="navbar-brand" href="#">
+		<a class="navbar-brand" href="">
 			<img src="static/logo.jpg" width="60" height="60" alt="CMS logo" class="mr-3">
 			Historic DQM
 		</a>
 
 		<ul class="navbar-nav mr-auto">
 			<li class="nav-item active">
-				<a class="nav-link" href="#" data-toggle="modal" data-target=".instructions-modal">Short instructions</a>
+				<a class="nav-link" href="" data-toggle="modal" data-target=".instructions-modal">Short instructions</a>
 			</li>
 		</ul>
 	</nav>
@@ -105,10 +105,11 @@
 				</div>
 			</div>
 
-			<button type="submit" class="btn btn-outline-primary mt-2" id="submit-button" onclick="submitClicked(event)" disabled>Submit</button>
+			<button type="submit" class="btn btn-outline-primary mt-2" id="submit-button" onclick="submitClicked(event)" disabled>
+				<span id="submit-button-spinner" class="spinner-border spinner-border-sm" role="status"></span>
+				Submit
+			</button>
 		</form>
-
-
 
 		<!-- Plots -->
 		<div class="row mt-3">
@@ -189,45 +190,6 @@
 			</div>
 		</div>
 
-		<!-- <div class="row mt-3">
-			<div class="col-12 col-md-6">
-				<div class="card d-none" id="plot-card-4">
-					<div class="card-body">
-						<div id="plot-container-4" style="height: 468px"></div>
-
-						<div class="row">
-							<div class="col-0 col-md-4"></div>
-							<div class="col-12 col-md-4 text-center">
-								<button type="button" class="btn btn-sm btn-outline-primary" onclick="changeRangesClicked(4)">Change ranges</button>
-							</div>
-							<div class="col-12 col-md-4 mt-2 mt-md-1 text-center links-container">
-								<span class="links-info"></span> <a class="oms-link" target="_blank"></a> <a class="rr-link" target="_blank"></a>
-							</div>
-						</div>
-
-					</div>
-				</div>
-			</div>
-			<div class="col-12 col-md-6">
-				<div class="card d-none" id="plot-card-5">
-					<div class="card-body">
-						<div id="plot-container-5" style="height: 468px"></div>
-
-						<div class="row">
-							<div class="col-0 col-md-4"></div>
-							<div class="col-12 col-md-4 text-center">
-								<button type="button" class="btn btn-sm btn-outline-primary" onclick="changeRangesClicked(5)">Change ranges</button>
-							</div>
-							<div class="col-12 col-md-4 mt-2 mt-md-1 text-center links-container">
-								<span class="links-info"></span> <a class="oms-link" target="_blank"></a> <a class="rr-link" target="_blank"></a>
-							</div>
-						</div>
-						
-					</div>
-				</div>
-			</div>
-		</div> -->
-
 		<nav class="mt-4 d-none" id="pagination-container">
 			<ul class="pagination justify-content-center" id="pagination-ul">
 			</ul>
@@ -278,7 +240,7 @@
 	</div>
 
 	<!-- Change ranges modal -->
-	<div class="modal fade change-ranges-modal" tabindex="-1" role="dialog">
+	<div class="modal fade change-ranges-modal" id="change-ranges-modal" tabindex="-1" role="dialog">
 		<div class="modal-dialog modal-xxl">
 			<div class="modal-content">
 				<div class="modal-body">
@@ -316,6 +278,7 @@
 	<script src="js/highcharts/no-data-to-display.js"></script>
 
 	<script src="js/script.js"></script>
+	<script src="js/urlManager.js"></script>
 	<script src="js/dataSelectionManager.js"></script>
 	<script src="js/filterSelectionManager.js"></script>
 	<script src="js/optionsManager.js"></script>

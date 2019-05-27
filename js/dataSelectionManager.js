@@ -153,8 +153,18 @@ $(document).ready(async function()
     const response = await fetch("./data/index.json")
     dataIndex = await response.json()
 
-    currentlySelectedTitles[0] = "2018"
-    currentlySelectedTitles[1] = "StreamExpress"
-    currentlySelectedTitles[2] = "PixelPhase1"
+    // Interpret url variables
+    var dataList = getUrlVariable("data")
+    if(dataList != null)
+    {
+        currentlySelectedTitles = dataList.split(",")
+    }
+    else
+    {
+        currentlySelectedTitles[0] = "2018"
+        currentlySelectedTitles[1] = "StreamExpress"
+        currentlySelectedTitles[2] = "PixelPhase1"
+    }
+    
     setupSelects()
 })
