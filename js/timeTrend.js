@@ -118,7 +118,7 @@ function drawScatterPlot(xValues, yValues, yErr, fills, durations, intLumis, ren
                 point: {
                     events: {
                         click: function () {
-                            var parent = jQuery(this.series.chart.container).parents(".card-body").find('.links-container')
+                            var parent = $(this.series.chart.container).parent().parent()
                             updateLinks(parent, this.category)
                         }
                     }
@@ -302,8 +302,8 @@ function drawXRangePlot(xValues, yValues, yErr, fills, durations, intLumis, rend
                 point: {
                     events: {
                         click: function () {
-                            var parent = jQuery(this.series.chart.container).parents(".card-body").find('.links-container')
-                            updateLinks(parent, this.category)
+                            var parent = $(this.series.chart.container).parent().parent()
+                            updateLinks(parent, this.run)
                         }
                     }
                 },
@@ -519,8 +519,8 @@ function drawXRangeDatetimePlot(xValues, yValues, yErr, fills, durations, intLum
                 point: {
                     events: {
                         click: function () {
-                            var parent = jQuery(this.series.chart.container).parents(".card-body").find('.links-container')
-                            updateLinks(parent, this.category)
+                            var parent = $(this.series.chart.container).parent().parent()
+                            updateLinks(parent, this.run)
                         }
                     }
                 },

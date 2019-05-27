@@ -15,7 +15,7 @@ function calculateRMS(yValues)
 
     var min_y = mean - (3 * rms)
     var max_y = mean + (3 * rms)
-
+    
     return [min_y, max_y]
 }
 
