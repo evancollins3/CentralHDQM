@@ -45,7 +45,7 @@ async function draw(collection, data, renderTo, filterFunction = undefined)
 
 function drawScatterPlot(xValues, yValues, yErr, fills, durations, intLumis, renderTo, plotName, yTitle, seriesTitles) 
 {
-    var rms = calculateRMS(yValues[0])
+    var rms = calculateRMS(yValues)
     var min_y = rms[0]
     var max_y = rms[1]
 
@@ -328,7 +328,7 @@ function drawXRangePlot(xValues, yValues, yErr, fills, durations, intLumis, rend
     {
         var tooltip = '<span style="color:{series.color}"></span><b>{point.series.name}'
         tooltip += "</b><br><b>Run No:</b> {point.run}"
-        tooltip += `<br/><b> ${yTitle} : </b>{point.y}<br><b>Fill No:</b> {point.fill}<br><b>Error:</b> {point.err}`
+        tooltip += `<br/><b>${yTitle} : </b>{point.y}<br><b>Fill No:</b> {point.fill}<br><b>Error:</b> {point.err}`
 
         var raw = []
         raw = yValues[i].map((y, k) => ({ y: y, fill: fills[k], dur: durations[k], intLumi: intLumis[k] }))
