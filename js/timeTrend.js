@@ -45,9 +45,12 @@ async function draw(collection, data, renderTo, filterFunction = undefined)
 
 function drawScatterPlot(xValues, yValues, yErr, fills, durations, intLumis, renderTo, plotName, yTitle, seriesTitles) 
 {
-    var rms = calculateRMS(yValues)
-    var min_y = rms[0]
-    var max_y = rms[1]
+    var meanAndRms = calculateMeanAndRMS(yValues)
+    var mean = meanAndRms[0]
+    var rms = meanAndRms[1]
+    var range = getYRange(mean, rms)
+    var min_y = range[0]
+    var max_y = range[1]
 
     var bands = getScatterFillBands(xValues, fills)
 
@@ -65,6 +68,9 @@ function drawScatterPlot(xValues, yValues, yErr, fills, durations, intLumis, ren
         },
         title: {
             text: plotName
+        },
+        subtitle: {
+            text: `Mean: ${mean.toExponential(4)}, RMS: ${rms.toExponential(4)}`
         },
         xAxis: {
             title: {
@@ -233,9 +239,12 @@ function drawScatterPlot(xValues, yValues, yErr, fills, durations, intLumis, ren
 
 function drawXRangePlot(xValues, yValues, yErr, fills, durations, intLumis, renderTo, plotName, yTitle, seriesTitles) 
 {
-    var rms = calculateRMS(yValues)
-    var min_y = rms[0]
-    var max_y = rms[1]
+    var meanAndRms = calculateMeanAndRMS(yValues)
+    var mean = meanAndRms[0]
+    var rms = meanAndRms[1]
+    var range = getYRange(mean, rms)
+    var min_y = range[0]
+    var max_y = range[1]
 
     var bands = getXRangeFillBands(globalOptions.showIntLumi ? intLumis : durations, fills)
     
@@ -253,6 +262,9 @@ function drawXRangePlot(xValues, yValues, yErr, fills, durations, intLumis, rend
         },
         title: {
             text: plotName
+        },
+        subtitle: {
+            text: `Mean: ${mean.toExponential(4)}, RMS: ${rms.toExponential(4)}`
         },
         xAxis: {
             title: {
@@ -452,9 +464,12 @@ function drawXRangePlot(xValues, yValues, yErr, fills, durations, intLumis, rend
 
 function drawXRangeDatetimePlot(xValues, yValues, yErr, fills, durations, intLumis, times, renderTo, plotName, yTitle, seriesTitles)
 {
-    var rms = calculateRMS(yValues)
-    var min_y = rms[0]
-    var max_y = rms[1]
+    var meanAndRms = calculateMeanAndRMS(yValues)
+    var mean = meanAndRms[0]
+    var rms = meanAndRms[1]
+    var range = getYRange(mean, rms)
+    var min_y = range[0]
+    var max_y = range[1]
     
     var options = {
         credits: {
@@ -471,6 +486,9 @@ function drawXRangeDatetimePlot(xValues, yValues, yErr, fills, durations, intLum
         },
         title: {
             text: plotName
+        },
+        subtitle: {
+            text: `Mean: ${mean.toExponential(4)}, RMS: ${rms.toExponential(4)}`
         },
         xAxis: {
             title: {

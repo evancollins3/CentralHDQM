@@ -1,12 +1,12 @@
 
 const seriesColors = ["#7cb5ec", "#434348", "#90ed7d", "#f7a35c", "#8085e9", "#f15c80", "#e4d354", "#2b908f", "#f45b5b", "#91e8e1"]
 
-function calculateRMS(yValues)
+function calculateMeanAndRMS(yValues)
 {
     // Concatenate all series
     var values = yValues.reduce((all, cur) => all.concat(cur), [])
-    
-    // Filter put all zeros
+
+    // Filter out all zeros
     values = values.filter(x => x != 0)
 
     var yValuesSum = values.reduce((total, num) => total + num, 0)
@@ -17,9 +17,14 @@ function calculateRMS(yValues)
 
     var rms = Math.sqrt(meanOfSquares - (mean * mean))
 
+    return [mean, rms]
+}
+
+function getYRange(mean, rms)
+{
     var min_y = mean - (5 * rms)
     var max_y = mean + (5 * rms)
-
+    
     return [min_y, max_y]
 }
 
