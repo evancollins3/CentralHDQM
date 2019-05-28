@@ -273,6 +273,9 @@ function changeUrlToReflectSettings()
         deleteUrlVariable("search")
     else
         addUrlVariable("search", $("#search-query-input").val())
+
+    // Page
+    addUrlVariable("page", currentPage)
 }
 
 function destroyAllPresentPlots()
