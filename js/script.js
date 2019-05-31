@@ -303,18 +303,12 @@ $('#change-ranges-modal').on('hide.bs.modal', function (e)
 $(document).ready(async function()
 {
     const response1 = await fetch("./data/oms_info.json", {
-        mode: 'cors',
-        headers: {
-          'Access-Control-Allow-Origin':'*'
-        }
+        credentials: "same-origin"
     })
     omsInfo = await response1.json()
 
     const response2 = await fetch("./data/collections.json", {
-        mode: 'cors',
-        headers: {
-          'Access-Control-Allow-Origin':'*'
-        }
+        credentials: "same-origin"
     })
     collections = await response2.json()
 
