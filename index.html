@@ -15,30 +15,30 @@
 </head>
 
 <body class="bg-light">
-	<nav class="navbar navbar-expand-md navbar-dark bg-dark pt-0 pb-0">
-		<a class="navbar-brand" href="">
-			<img src="static/logo.jpg" width="60" height="60" alt="CMS logo" class="mr-3">
-			Historic DQM
+	<nav class="navbar navbar-dark bg-dark pt-0 pb-0 pl-1">
+		<a class="navbar-brand" href="/">
+			<img src="static/logo.jpg" width="60" height="60" alt="CMS logo" class="mr-1">
+			HDQM
 		</a>
 
-		<ul class="navbar-nav mr-auto">
-			<li class="nav-item active">
-				<a class="nav-link" href="" data-toggle="modal" data-target=".instructions-modal">Short instructions</a>
-			</li>
-		</ul>
+		<div class="form-group row mt-3" id="data-selection-container" style="width: calc(100% - 430px); min-width: 200px;"></div>
+
+		<div class="form-inline">
+			<div class="col mt-2 mt-md-0">
+				<input type="text" class="form-control form-control-sm" id="search-query-input" placeholder="Search query">
+			</div>
+			<div class="col mt-2 mt-md-0">
+				<button class="btn btn-outline-warning btn-sm" type="button" data-toggle="collapse" data-target="#plot-list-card" id="show-plot-list-button" disabled>Plot list</button>
+			</div>
+		</div>
 	</nav>
 
 	<main role="main" class="container-fluid pb-2">
 
 		<form>
-			<label for="data-select" class="small mt-2">Select data</label>
-
-			<div class="form-group row" id="data-selection-container" style="min-height: 40px;">
-			</div>
-
-			<label for="filter-select" class="small">Filter runs</label>
+			<label for="filter-select" class="small mt-2">Filter runs</label>
 			
-			<div class="form-group row">
+			<div class="form-group row mb-2">
 				<div class="col-12 col-md-6">
 					<select class="form-control form-control-sm" id="filter-select" onchange="filterSelectionChanged()">
 						<option value="latest">Latest</option>
@@ -54,7 +54,7 @@
 				<div id="filter-value-marker"></div>
 			</div>
 			
-			<div class="form-group">
+			<div class="form-group mb-1">
 				<p class="mb-0">
 					<label for="filter-checkbox" class="small">Options</label>
 				</p>
@@ -86,15 +86,6 @@
 				<div class="form-check form-check-inline">
 					<input class="form-check-input" type="checkbox" id="option-show-datetime" value="option7" onchange="optionToggled(this)">
 					<label class="form-check-label" for="option-show-datetime">Show datetime plot</label>
-				</div>
-			</div>
-			
-			<div class="row mb-2">
-				<div class="col-auto">
-					<input type="text" class="form-control form-control-sm" id="search-query-input" placeholder="Search query">
-				</div>
-				<div class="col-auto">
-					<button class="btn btn-outline-primary btn-sm" type="button" data-toggle="collapse" data-target="#plot-list-card" id="show-plot-list-button" disabled>Show plot list</button>
 				</div>
 			</div>
 
@@ -268,7 +259,7 @@
 							<span class="links-info"></span> <a class="oms-link" target="_blank"></a> <a class="rr-link" target="_blank"></a>
 						</div>
 					</div>
-					
+
 				</div>
 			</div>
 		</div>
