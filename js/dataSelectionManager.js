@@ -150,7 +150,9 @@ function traverseTillEnd(current, list)
 
 $(document).ready(async function() 
 {
-    const response = await fetch("./data/index.json")
+    const response = await fetch("./data/index.json", {
+        credentials: "same-origin"
+    })
     dataIndex = await response.json()
 
     // Interpret url variables

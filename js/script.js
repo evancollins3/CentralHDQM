@@ -64,7 +64,9 @@ async function displayPage(page)
         for(var j = 0; j < collection["files"].length; j++)
         {
             var filename = getJustDirname(file) + collection["files"][j] + ".json"
-            var response = await fetch(filename)
+            var response = await fetch(filename, {
+                credentials: "same-origin"
+            })
             var fileData = await response.json()
 
             data[j] = fileData[Object.keys(fileData)[0]]
