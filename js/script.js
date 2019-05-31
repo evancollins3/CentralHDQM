@@ -302,10 +302,20 @@ $('#change-ranges-modal').on('hide.bs.modal', function (e)
 
 $(document).ready(async function()
 {
-    const response1 = await fetch("./data/oms_info.json")
+    const response1 = await fetch("./data/oms_info.json", {
+        mode: 'cors',
+        headers: {
+          'Access-Control-Allow-Origin':'*'
+        }
+    })
     omsInfo = await response1.json()
 
-    const response2 = await fetch("./data/collections.json")
+    const response2 = await fetch("./data/collections.json", {
+        mode: 'cors',
+        headers: {
+          'Access-Control-Allow-Origin':'*'
+        }
+    })
     collections = await response2.json()
 
     // Safe to click submit now
