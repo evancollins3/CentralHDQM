@@ -2,43 +2,42 @@
 function filterSelectionChanged()
 {
     var value = $("#filter-select").val()
-    var marker = $("#filter-value-marker")
-    
-    // Remove previous item
-    marker.nextAll().remove()
+    var container = $("#filter-value-container")
 
     if(value == "latest")
     {
-        $(`<div class="col-12 col-md-6 mt-2 mt-md-0">
+        container.html(`<div class="">
             <input type="number" class="form-control form-control-sm" id="filter-input-latest" value="50" placeholder="Number of latest runs">
-        </div>`).insertAfter(marker)
+        </div>`)
     }
     else if(value == "range")
     {
-        $(`<div class="col-6 col-md-3 mt-2 mt-md-0">
+        container.html(`<div class="row">
+        <div class="col-6">
         <input type="number" class="form-control form-control-sm" id="filter-input-range-low" value="322348" placeholder="From">
         </div>
-        <div class="col-6 col-md-3 mt-2 mt-md-0">
+        <div class="col-6">
             <input type="number" class="form-control form-control-sm" id="filter-input-range-high" value="325310" placeholder="To">
-        </div>`).insertAfter(marker)
+        </div>
+        </div>`)
     }
     else if(value == "list")
     {
-        $(`<div class="col-12 col-md-6 mt-2 mt-md-0">
+        container.html(`<div class="">
             <input type="text" class="form-control form-control-sm" id="filter-input-list" value="325308, 325309, 325310" placeholder="Comma separated list of run numbers">
-        </div>`).insertAfter(marker)
+        </div>`)
     }
     else if(value == "json")
     {
-        $(`<div class="col-12 col-md-6 mt-2 mt-md-0">
+        container.html(`<div class="">
             <input type="file" class="form-control form-control-sm form-control-file" id="filter-input-file" style="padding-top: 2px;">
-        </div>`).insertAfter(marker)
+        </div>`)
     }
     else if(value == "rr")
     {
-        $(`<div class="col-12 col-md-6 mt-2 mt-md-0">
+        container.html(`<div class="">
             <input type="text" class="form-control form-control-sm" id="filter-input-rr" placeholder="https://cmsrunregistry.web.cern.ch/online/runs/all">
-        </div>`).insertAfter(marker)
+        </div>`)
     }
 }
 

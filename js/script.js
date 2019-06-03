@@ -317,6 +317,7 @@ $(document).ready(async function()
     // Safe to click submit now
     $("#submit-button").removeAttr("disabled")
     $("#submit-button-spinner").hide()
+    $("#submit-button-title").show()
 
     if(hasUrlVariable("data"))
     {

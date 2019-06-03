@@ -27,9 +27,6 @@
 			<div class="col mt-2 mt-md-0">
 				<input type="text" class="form-control form-control-sm" id="search-query-input" placeholder="Search query">
 			</div>
-			<div class="col mt-2 mt-md-0">
-				<button class="btn btn-outline-warning btn-sm" type="button" data-toggle="collapse" data-target="#plot-list-card" id="show-plot-list-button" disabled>Plot list</button>
-			</div>
 		</div>
 	</nav>
 
@@ -37,69 +34,89 @@
 
 		<form>
 			<label for="filter-select" class="small mt-2">Filter runs</label>
-			
-			<div class="form-group row mb-2">
-				<div class="col-12 col-md-6">
-					<select class="form-control form-control-sm" id="filter-select" onchange="filterSelectionChanged()">
-						<option value="latest">Latest</option>
-						<option value="range">Range</option>
-						<option value="list">List</option>
-						<option value="json">Golden JSON file</option>
-						<option value="rr" disabled>Run Registry url</option>
-					</select>
+
+			<div class="row">
+				<div class="col-12 col-md-auto" style="width: calc(100% - 420px);">
+					<div class="form-group row mb-2">
+						<div class="col-12 col-md-5">
+							<select class="form-control form-control-sm" id="filter-select" onchange="filterSelectionChanged()">
+								<option value="latest">Latest</option>
+								<option value="range">Range</option>
+								<option value="list">List</option>
+								<option value="json">Golden JSON file</option>
+								<option value="rr" disabled>Run Registry url</option>
+							</select>
+						</div>
+						<div class="col-12 col-md-7 mt-2 mt-md-0" id="filter-value-container"></div>
+					</div>
 				</div>
 
-				<!-- Filter value elements will be added bellow this marker -->
-				<!-- All its neighbors bellow will be removed on every selection -->
-				<div id="filter-value-marker"></div>
+				<div class="col-12 col-md-auto" style="width: 420px;">
+					<div class="col-12 mt-md-0">
+						<div class="row">
+							<div class="col-3">
+								<button type="button" class="btn btn-outline-primary btn-sm col-12" type="button" data-toggle="collapse" data-target="#options-collapse">Options</button>
+							</div>
+							<div class="col-3">
+								<button type="button" class="btn btn-outline-primary btn-sm col-12" type="button" data-toggle="collapse" data-target="#plot-list-card" id="show-plot-list-button" disabled>Plot list</button>
+							</div>
+							<div class="col-3">
+								<button type="button" class="btn btn-outline-primary btn-sm col-12" data-toggle="modal" data-target=".instructions-modal">Info</button>
+							</div>
+							<div class="col-3">
+								<button type="submit" class="btn btn-outline-success btn-sm col-12" id="submit-button" onclick="submitClicked(event)" style="min-height: 31px;" disabled>
+									<span id="submit-button-spinner" class="spinner-border spinner-border-sm" role="status"></span>
+									<span id="submit-button-title" style="display: none;">Submit</span>
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
 			</div>
 			
-			<div class="form-group mb-1">
-				<p class="mb-0">
-					<label for="filter-checkbox" class="small">Options</label>
-				</p>
+			<div class="collapse" id="options-collapse">
+				<div class="form-group mb-0">
+					<p class="mb-0">
+						<label for="filter-checkbox" class="small">Options</label>
+					</p>
 
-				<div class="form-check form-check-inline">
-					<input class="form-check-input" type="checkbox" id="option-show-errors" value="option1" onchange="optionToggled(this)">
-					<label class="form-check-label" for="option-show-errors">Show errors</label>
-				</div>
-				<div class="form-check form-check-inline">
-					<input class="form-check-input" type="checkbox" id="option-show-fills" value="option2" onchange="optionToggled(this)" checked>
-					<label class="form-check-label" for="option-show-fills">Show fills</label>
-				</div>
-				<div class="form-check form-check-inline">
-					<input class="form-check-input" type="checkbox" id="option-show-run-duration" value="option3" onchange="optionToggled(this)" checked>
-					<label class="form-check-label" for="option-show-run-duration">Show run duration</label>
-				</div>
-				<div class="form-check form-check-inline">
-					<input class="form-check-input" type="checkbox" id="option-show-regression-lines" value="option4" onchange="optionToggled(this)" checked>
-					<label class="form-check-label" for="option-show-regression-lines">Show regression lines</label>
-				</div>
-				<div class="form-check form-check-inline">
-					<input class="form-check-input" type="checkbox" id="option-show-xrange" value="option5" onchange="optionToggled(this)">
-					<label class="form-check-label" for="option-show-xrange">Show run duration proportional plot</label>
-				</div>
-				<div class="form-check form-check-inline">
-					<input class="form-check-input" type="checkbox" id="option-show-int-lumi" value="option6" onchange="optionToggled(this)">
-					<label class="form-check-label" for="option-show-int-lumi">Show proportional to intergrated luminosity</label>
-				</div>
-				<div class="form-check form-check-inline">
-					<input class="form-check-input" type="checkbox" id="option-show-datetime" value="option7" onchange="optionToggled(this)">
-					<label class="form-check-label" for="option-show-datetime">Show datetime plot</label>
-				</div>
-			</div>
-
-			<div class="collapse" id="plot-list-card">
-				<div class="card card-body pt-1 pb-1 pr-0 pl-0">
-					<div class="overflow-auto text-nowrap" id="plot-list-container">
+					<div class="form-check form-check-inline">
+						<input class="form-check-input" type="checkbox" id="option-show-errors" value="option1" onchange="optionToggled(this)">
+						<label class="form-check-label" for="option-show-errors">Show errors</label>
+					</div>
+					<div class="form-check form-check-inline">
+						<input class="form-check-input" type="checkbox" id="option-show-fills" value="option2" onchange="optionToggled(this)" checked>
+						<label class="form-check-label" for="option-show-fills">Show fills</label>
+					</div>
+					<div class="form-check form-check-inline">
+						<input class="form-check-input" type="checkbox" id="option-show-run-duration" value="option3" onchange="optionToggled(this)" checked>
+						<label class="form-check-label" for="option-show-run-duration">Show run duration</label>
+					</div>
+					<div class="form-check form-check-inline">
+						<input class="form-check-input" type="checkbox" id="option-show-regression-lines" value="option4" onchange="optionToggled(this)" checked>
+						<label class="form-check-label" for="option-show-regression-lines">Show regression lines</label>
+					</div>
+					<div class="form-check form-check-inline">
+						<input class="form-check-input" type="checkbox" id="option-show-xrange" value="option5" onchange="optionToggled(this)">
+						<label class="form-check-label" for="option-show-xrange">Show run duration proportional plot</label>
+					</div>
+					<div class="form-check form-check-inline">
+						<input class="form-check-input" type="checkbox" id="option-show-int-lumi" value="option6" onchange="optionToggled(this)">
+						<label class="form-check-label" for="option-show-int-lumi">Show proportional to intergrated luminosity</label>
+					</div>
+					<div class="form-check form-check-inline">
+						<input class="form-check-input" type="checkbox" id="option-show-datetime" value="option7" onchange="optionToggled(this)">
+						<label class="form-check-label" for="option-show-datetime">Show datetime plot</label>
 					</div>
 				</div>
 			</div>
 
-			<button type="submit" class="btn btn-outline-primary mt-2" id="submit-button" onclick="submitClicked(event)" disabled>
-				<span id="submit-button-spinner" class="spinner-border spinner-border-sm" role="status"></span>
-				Submit
-			</button>
+			<div class="collapse" id="plot-list-card">
+				<div class="card card-body mt-1 pt-1 pb-1 pr-0 pl-0">
+					<div class="overflow-auto text-nowrap" id="plot-list-container">
+					</div>
+				</div>
+			</div>
 		</form>
 
 		<!-- Plots -->
