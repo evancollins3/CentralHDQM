@@ -15,30 +15,40 @@
 </head>
 
 <body class="bg-light">
-	<nav class="navbar navbar-dark bg-dark pt-0 pb-0 pl-1">
-		<a class="navbar-brand" href="/">
-			<img src="static/logo.jpg" width="60" height="60" alt="CMS logo" class="mr-1">
-			HDQM
-		</a>
-
-		<div class="form-group row mt-3" id="data-selection-container" style="width: calc(100% - 440px); min-width: 200px;"></div>
-
-		<div class="form-inline">
-			<div class="col mt-2 mt-md-0">
-				<input type="text" class="form-control form-control-sm" id="search-query-input" placeholder="Search query">
+	<div class="bg-dark pt-0 pb-0 pl-1">
+		<div class="row mr-0">
+			<div class="col-12 col-md-auto" style="width: 300px;">
+				<div class="row">
+					<div class="col-6">
+						<a class="navbar-brand text-white" href="/">
+							<img src="static/logo.jpg" width="56" height="56" alt="CMS logo" class="mr-1">
+							HDQM
+						</a>
+					</div>
+					<div class="col-6">
+						<ul class="form-group navbar-nav" style="margin-top: 12px;">
+							<li class="nav-item active">
+								<a class="nav-link text-white" href="" data-toggle="modal" data-target=".instructions-modal">Instructions</a>
+							</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+			<div class="col-12 col-md-auto" style="width: calc(100% - 300px);">
+				<div class="row mt-0 mt-md-3 mb-2" id="data-selection-container"></div>
 			</div>
 		</div>
-	</nav>
+	</div>
 
 	<main role="main" class="container-fluid pb-2">
 
 		<form>
-			<label for="filter-select" class="small mt-2">Filter runs</label>
+			<label for="filter-select" class="small mt-2">Filter runs and search for plots</label>
 
 			<div class="row">
-				<div class="col-12 col-md-auto" style="width: calc(100% - 420px);">
+				<div class="col-12 col-md-auto" style="width: calc(100% - 320px);">
 					<div class="form-group row mb-2">
-						<div class="col-12 col-md-5">
+						<div class="col-12 col-md-3">
 							<select class="form-control form-control-sm" id="filter-select" onchange="filterSelectionChanged()">
 								<option value="latest">Latest</option>
 								<option value="range">Range</option>
@@ -47,23 +57,23 @@
 								<option value="rr" disabled>Run Registry url</option>
 							</select>
 						</div>
-						<div class="col-12 col-md-7 mt-2 mt-md-0" id="filter-value-container"></div>
+						<div class="col-12 col-md-6 mt-2 mt-md-0" id="filter-value-container"></div>
+						<div class="col-12 col-md-3 mt-2 mt-md-0">
+							<input type="text" class="form-control form-control-sm" id="search-query-input" placeholder="Search query">
+						</div>
 					</div>
 				</div>
 
-				<div class="col-12 col-md-auto" style="width: 420px;">
+				<div class="col-12 col-md-auto" style="width: 320px;">
 					<div class="col-12 mt-md-0">
 						<div class="row">
-							<div class="col-3">
+							<div class="col-4">
 								<button type="button" class="btn btn-outline-primary btn-sm col-12" type="button" data-toggle="collapse" data-target="#options-collapse">Options</button>
 							</div>
-							<div class="col-3">
+							<div class="col-4">
 								<button type="button" class="btn btn-outline-primary btn-sm col-12" type="button" data-toggle="collapse" data-target="#plot-list-card" id="show-plot-list-button" disabled>Plot list</button>
 							</div>
-							<div class="col-3">
-								<button type="button" class="btn btn-outline-primary btn-sm col-12" data-toggle="modal" data-target=".instructions-modal">Info</button>
-							</div>
-							<div class="col-3">
+							<div class="col-4">
 								<button type="submit" class="btn btn-outline-success btn-sm col-12" id="submit-button" onclick="submitClicked(event)" style="min-height: 31px;" disabled>
 									<span id="submit-button-spinner" class="spinner-border spinner-border-sm" role="status"></span>
 									<span id="submit-button-title" style="display: none;">Submit</span>
@@ -75,7 +85,7 @@
 			</div>
 			
 			<div class="collapse" id="options-collapse">
-				<div class="form-group mb-0">
+				<div class="form-group mb-0 mt-2 mt-md-0">
 					<p class="mb-0">
 						<label for="filter-checkbox" class="small">Options</label>
 					</p>
