@@ -1,6 +1,7 @@
 
 var dataIndex
 var currentlySelectedTitles = []
+const defaultDisabledSelectValue = "Select your option"
 
 function setupSelects()
 {
@@ -18,7 +19,7 @@ function setupSelects()
         
         if(typeof current[index] != "string")
         {
-            var optionsList = []
+            var optionsList = [defaultDisabledSelectValue]
             current.forEach(option => 
             {
                 if(typeof option != "string")
@@ -51,7 +52,11 @@ function updateSelects(categories)
         <select class="form-control form-control-sm" id="select_category_${count}" onchange="selectChanged(this)">`
 
         category.forEach(item => {
-            if(getSelectTitleById(count) == item)
+            if(item == defaultDisabledSelectValue)
+            {
+                html += `<option disabled selected>` + item + `</option>`
+            }
+            else if(getSelectTitleById(count) == item)
             {
                 html += `<option selected>` + item + `</option>`
             }
@@ -160,12 +165,6 @@ $(document).ready(async function()
     if(dataList != null)
     {
         currentlySelectedTitles = dataList.split(",")
-    }
-    else
-    {
-        currentlySelectedTitles[0] = "2018"
-        currentlySelectedTitles[1] = "StreamExpress"
-        currentlySelectedTitles[2] = "PixelPhase1"
     }
     
     setupSelects()

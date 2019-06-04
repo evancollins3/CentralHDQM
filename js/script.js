@@ -29,6 +29,13 @@ async function submit(page)
             return
     }
 
+    // Check if there are selects that still have the default value
+    var selects = $("#data-selection-container").find("select")
+    if(selects.filter((_, s) => s.selectedIndex == 0).length != 0)
+    {
+        return
+    }
+
     $("#pagination-container").removeClass("d-none")
     clearLinks()
 
@@ -332,10 +339,4 @@ $(document).ready(async function()
     {
         await changeRangesClicked(getUrlVariable("modalPlot"))
     }
-
-    // http://vocms0183.cern.ch/agg/api/v1/runs/meta
-    // http://vocms0183.cern.ch/agg/api/v1/runs?fields=recorded_lumi&page[limit]=1000
-    // http://vocms0183.cern.ch/agg/api/v1/runs?fields=run_number,fill_number,duration,start_time&sort=-run_number&page[limit]=1000
-    // EQ, LT, LE, GT, GE
-    // http://vocms0183.cern.ch/agg/api/v1/runs?fields=run_number,fill_number,duration,start_time&sort=-run_number&page[limit]=1000&filter[run_number][GE]=250000&filter[run_number][LE]=250100
 })
