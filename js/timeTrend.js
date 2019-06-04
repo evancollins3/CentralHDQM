@@ -206,8 +206,8 @@ function drawScatterPlot(xValues, yValues, yErr, fills, durations, intLumis, ren
             }, false)
         }
     }
-
-    if (globalOptions.showDurations) 
+    
+    if (globalOptions.showDurations)
     {
         chartObj.addSeries({
             type: 'column',
@@ -229,9 +229,10 @@ function drawScatterPlot(xValues, yValues, yErr, fills, durations, intLumis, ren
                     opacity: 1
                 }
             }
-        })
+        }, false)
     }
-
+    
+    chartObj.redraw()
     chartObj.reflow()
 
     return chartObj
@@ -358,6 +359,10 @@ function drawXRangePlot(xValues, yValues, yErr, fills, durations, intLumis, rend
             if(globalOptions.showIntLumi)
                 valueForBinLength = raw[j].intLumi
 
+            // Make sure bin length is not 0
+            if(valueForBinLength == 0)
+                valueForBinLength = 1
+
             var prev_x2 = get_prev_x2(j, data)
             data.push({ 
                     x: prev_x2, 
@@ -407,7 +412,7 @@ function drawXRangePlot(xValues, yValues, yErr, fills, durations, intLumis, rend
             },
             showInLegend: true,
             animation: false
-        }, true)
+        }, false)
 
         if (globalOptions.showErrors) 
         {
@@ -457,6 +462,7 @@ function drawXRangePlot(xValues, yValues, yErr, fills, durations, intLumis, rend
         }
     }
 
+    chartObj.redraw()
     chartObj.reflow()
 
     return chartObj
@@ -617,7 +623,7 @@ function drawXRangeDatetimePlot(xValues, yValues, yErr, fills, durations, intLum
             },
             showInLegend: true,
             animation: false
-        }, true)
+        }, false)
 
         if (globalOptions.showErrors) 
         {
@@ -667,6 +673,7 @@ function drawXRangeDatetimePlot(xValues, yValues, yErr, fills, durations, intLum
         }
     }
 
+    chartObj.redraw()
     chartObj.reflow()
 
     return chartObj
