@@ -124,7 +124,8 @@ function drawPlotList()
         column += `<div class="row">${getJustFilename(directoryPlotFiles[i])}</div>`
         if((i + 1) % 4 == 0 || i == directoryPlotFiles.length - 1)
         {
-            var pageTitle = `<div class="row small font-italic">Page ${Math.ceil((i + 1) / 4)}</div>`
+            var pageNumber = Math.ceil((i + 1) / 4)
+            var pageTitle = `<a class="row small font-italic" href="#" onclick="pageSelected(event, ${pageNumber})">Page ${pageNumber}</a>`
             html += divStart + pageTitle + column + divEnd
             column = ""
         }
