@@ -19,12 +19,16 @@ function setupSelects()
         
         if(typeof current[index] != "string")
         {
-            var optionsList = [defaultDisabledSelectValue]
+            var optionsList = []
             current.forEach(option => 
             {
                 if(typeof option != "string")
                     optionsList.push(Object.keys(option)[0])
             })
+
+            // Add default placeholder and sort alphabetically
+            optionsList = [defaultDisabledSelectValue].concat(optionsList.sort())
+
             categories.push(optionsList)
         }
         else
