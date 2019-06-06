@@ -33,7 +33,18 @@ async function draw(collection, data, renderTo, filterFunction = undefined)
     var intLumis = omsRuns.map(x => x.int_lumi)
     var times = omsRuns.map(x => [x.start_time, x.end_time])
     var plotName = getJustFilename(collection["name"])
-    var yTitle = filteredData[0].length != 0 ? filteredData[0][0]['yTitle'] : ""
+    var yTitle = filteredData[0].length != 0 ? filteredData[0][0]["yTitle"] : ""
+
+    if(collection.corr)
+    {
+        if(collection["files"].length == 2)
+        {
+            var yTitles = filteredData[0].length != 0 ? [filteredData[0][0]["yTitle"], filteredData[1][0]["yTitle"]] : ["", ""]
+            return drawCorrelationPlot(xValues, yValues, renderTo, plotName, yTitles)
+        }
+        else
+            return null
+    }
 
     if(globalOptions.showXRange || globalOptions.showIntLumi)
         return drawXRangePlot(xValues, yValues, yErr, fills, durations, intLumis, renderTo, plotName, yTitle, seriesTitles)
@@ -41,6 +52,96 @@ async function draw(collection, data, renderTo, filterFunction = undefined)
         return drawXRangeDatetimePlot(xValues, yValues, yErr, fills, durations, intLumis, times, renderTo, plotName, yTitle, seriesTitles)
     else
         return drawScatterPlot(xValues, yValues, yErr, fills, durations, intLumis, renderTo, plotName, yTitle, seriesTitles)
+}
+
+function drawCorrelationPlot(xValues, yValues, renderTo, plotName, yTitles)
+{
+    // First array contains x values and second array contains y values
+    var values = yValues[0].map((v, i) => ({
+        x: v,
+        y: yValues[1][i],
+        run: xValues[i],
+        marker: {
+            fillColor: colorScale((xValues[i] - xValues[0]) / (xValues[xValues.length - 1] - xValues[0])),
+            radius: 4,
+        }
+    }))
+
+    var options = {
+        credits: {
+            enabled: false
+        },
+        chart: {
+            renderTo: renderTo,
+            zoomType: "xy",
+            animation: false
+        },
+        lang: {
+            noData: "No data found for given runs"
+        },
+        title: {
+            text: plotName
+        },
+        xAxis: {
+            title: {
+                text: yTitles[0],
+            },
+            max: Math.max(...values.map(i => i.x)),
+            min: Math.min(...values.map(i => i.x))
+        },
+        yAxis: {
+            title: {
+                text: yTitles[1],
+            },
+        },
+        tooltip: {
+            headerFormat: "",
+            pointFormat: "<b>Run No:</b> {point.run}<br><b>X</b>: {point.x}<br><b>Y</b>: {point.y}"
+        },
+        series: [{
+                type: "scatter",
+                name: "Correlation",
+                data: values,
+                animation: false,
+                marker: {
+                    symbol: "circle",
+                },
+                color: "#000000"
+            }
+        ],
+        colorAxis: {
+            min: xValues[0],
+            max: xValues[xValues.length - 1],
+            minColor: "#00FF00",
+            maxColor: "#FF0000",
+            stops: [
+                [0, "#00FF00"],
+                [0.5, "#FFFF00"],
+                [1, "#FF0000"]
+            ]
+        },
+    }
+
+    var chartObj = new Highcharts.Chart(options)
+
+    if(globalOptions.showRegression)
+    {
+        chartObj.addSeries({
+            type: "line",
+            name: "Regression Line",
+            data: linearRegression(values),
+            marker: {
+                enabled: false
+            },
+            enableMouseTracking: false,
+            animation: false,
+        }, false)
+    }
+
+    chartObj.redraw()
+    chartObj.reflow()
+
+    return chartObj
 }
 
 function drawScatterPlot(xValues, yValues, yErr, fills, durations, intLumis, renderTo, plotName, yTitle, seriesTitles) 
@@ -60,7 +161,7 @@ function drawScatterPlot(xValues, yValues, yErr, fills, durations, intLumis, ren
         },
         chart: {
             renderTo: renderTo,
-            zoomType: 'xy',
+            zoomType: "xy",
             animation: false
         },
         lang: {
@@ -74,7 +175,7 @@ function drawScatterPlot(xValues, yValues, yErr, fills, durations, intLumis, ren
         },
         xAxis: {
             title: {
-                text: 'Run No.',
+                text: "Run No.",
             },
             categories: [...new Set([].concat(...xValues))], 
             plotBands: globalOptions.showFills ? bands : []
@@ -168,7 +269,7 @@ function drawScatterPlot(xValues, yValues, yErr, fills, durations, intLumis, ren
 
         chartObj.addSeries({
             name: seriesTitles[i],
-            type: 'scatter',
+            type: "scatter",
             data: data,
             borderWidth: 20,
             marker: {
@@ -190,8 +291,8 @@ function drawScatterPlot(xValues, yValues, yErr, fills, durations, intLumis, ren
         if (globalOptions.showErrors) 
         {
             chartObj.addSeries({
-                name: 'Bin Content Error',
-                type: 'errorbar',
+                name: "Bin Content Error",
+                type: "errorbar",
                 data: yValues[i].map(function(value, index) {
                     return [value - yErr[i][index], value + yErr[i][index]]
                 }),
@@ -210,8 +311,8 @@ function drawScatterPlot(xValues, yValues, yErr, fills, durations, intLumis, ren
     if (globalOptions.showDurations)
     {
         chartObj.addSeries({
-            type: 'column',
-            name: 'Run Duration',
+            type: "column",
+            name: "Run Duration",
             yAxis: 1,
             color: "#a8a8a8",
             zIndex: -1,

@@ -17,24 +17,23 @@
 <body class="bg-light">
 	<div class="bg-dark pt-0 pb-0 pl-1">
 		<div class="row mr-0">
-			<div class="col-12 col-md-auto" style="width: 300px;">
+			<div class="col-12 col-md-auto" style="width: 180px;">
 				<div class="row">
-					<div class="col-6">
+					<div class="col-auto col-md-8">
 						<a class="navbar-brand text-white" href="/">
-							<img src="static/logo.jpg" width="56" height="56" alt="CMS logo" class="mr-1">
-							HDQM
+							<img src="static/logo.png" width="105" height="56" alt="CMS logo" class="mr-1">
 						</a>
 					</div>
-					<div class="col-6">
+					<div class="col-auto col-md-4">
 						<ul class="form-group navbar-nav" style="margin-top: 12px;">
 							<li class="nav-item active">
-								<a class="nav-link text-white" href="" data-toggle="modal" data-target=".instructions-modal">Instructions</a>
+								<a class="nav-link text-white" href="" data-toggle="modal" data-target=".instructions-modal">Help</a>
 							</li>
 						</ul>
 					</div>
 				</div>
 			</div>
-			<div class="col-12 col-md-auto" style="width: calc(100% - 300px);">
+			<div class="col-12 col-md-auto" style="width: calc(100% - 180px);">
 				<div class="row mt-0 mt-md-3 mb-2" id="data-selection-container"></div>
 			</div>
 		</div>
@@ -43,7 +42,7 @@
 	<main role="main" class="container-fluid pb-2">
 
 		<form>
-			<label for="filter-select" class="small mt-2">Filter runs and search for plots</label>
+			<label for="filter-select" class="small mt-2">Select runs and search for plots</label>
 
 			<div class="row">
 				<div class="col-12 col-md-auto" style="width: calc(100% - 320px);">
@@ -102,10 +101,10 @@
 						<input class="form-check-input" type="checkbox" id="option-show-run-duration" value="option3" onchange="optionToggled(this)" checked>
 						<label class="form-check-label" for="option-show-run-duration">Show run duration</label>
 					</div>
-					<!-- <div class="form-check form-check-inline">
+					<div class="form-check form-check-inline">
 						<input class="form-check-input" type="checkbox" id="option-show-regression-lines" value="option4" onchange="optionToggled(this)" checked>
 						<label class="form-check-label" for="option-show-regression-lines">Show regression lines</label>
-					</div> -->
+					</div>
 					<div class="form-check form-check-inline">
 						<input class="form-check-input" type="checkbox" id="option-show-xrange" value="option5" onchange="optionToggled(this)">
 						<label class="form-check-label" for="option-show-xrange">Show run duration proportional plot</label>
@@ -297,6 +296,7 @@
 	<script src="js/bootstrap/bootstrap.bundle.min.js"></script>
 
 	<script src="js/highcharts/highcharts.js"></script>
+	<script src="js/highcharts/map.js"></script>
 	<script src="js/highcharts/highcharts-more.js"></script>
 	<script src="js/highcharts/exporting.js"></script>
 	<script src="js/highcharts/xrange.js"></script>
