@@ -52,22 +52,29 @@ function updateSelects(categories)
 
     categories.forEach(category => 
     {
+        // Color selects that are not selected yet
+        var color = ""
+        if(getSelectTitleById(count) == null)
+            color = 'style="background: #ffe4c1;"'
+
         html += `<div class="col-12 col-md mt-2 mt-md-0">
-        <select class="form-control form-control-sm" id="select_category_${count}" onchange="selectChanged(this)">`
+        <select class="form-control form-control-sm" id="select_category_${count}" onchange="selectChanged(this)" ${color}>`
 
         category.forEach(item => {
+            var attributes = ""
+            
             if(item == defaultDisabledSelectValue)
             {
-                html += `<option disabled selected>` + item + `</option>`
+                attributes += "disabled "
+                if(getSelectTitleById(count) == null)
+                    attributes += "selected "
             }
             else if(getSelectTitleById(count) == item)
             {
-                html += `<option selected>` + item + `</option>`
+                attributes += "selected "
             }
-            else
-            {
-                html += `<option>` + item + `</option>`
-            }
+
+            html += `<option ${attributes}>${item}</option>`
         })
         
         html += `</select></div>`
