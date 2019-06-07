@@ -107,11 +107,11 @@
 					</div>
 					<div class="form-check form-check-inline">
 						<input class="form-check-input" type="checkbox" id="option-show-xrange" value="option5" onchange="optionToggled(this)">
-						<label class="form-check-label" for="option-show-xrange">Show run duration proportional plot</label>
+						<label class="form-check-label" for="option-show-xrange">Bin width proportional to run duration</label>
 					</div>
 					<div class="form-check form-check-inline">
 						<input class="form-check-input" type="checkbox" id="option-show-int-lumi" value="option6" onchange="optionToggled(this)">
-						<label class="form-check-label" for="option-show-int-lumi">Show proportional to intergrated luminosity</label>
+						<label class="form-check-label" for="option-show-int-lumi">Bin width proportional integrated luminosity</label>
 					</div>
 					<div class="form-check form-check-inline">
 						<input class="form-check-input" type="checkbox" id="option-show-datetime" value="option7" onchange="optionToggled(this)">
@@ -226,30 +226,45 @@
 				</div>
 				<div class="modal-body">
 					<ul class="instructions-list">
-						<li>In the <b>RunRange(From)</b>, put <b>0</b> if you want to start from the first run of the collection</li>
-						<li>In the <b>RunRange(To)</b>, put <b>0</b> if you want to end with the last run of the collection</li>
-						<li>Otherwise, set a <b>Starting run</b> and a <b>Final run</b> in the appropriate <b>RunRange </b> buttons</li>
-						<li><b>Notification 1:</b> If you select <b>Strips</b> you have the option to choose <b>PEAK</b> or <b>DECO</b> mode</li>
-						<li><b>Notification 2:</b> If you select <b>Tracking</b> or <b>RecoErrors</b> the only option you have is <b>PEAK+DECO</b> mode</li>
-						<li>There is a <b>Charts per page</b> counter left to the <b>Submit</b> button that specifies the number of plots to be drawn per page</li>
-						<li>Initially all the check buttons are ON(Activated)</li>
-						<li>Clicking <b>TWICE</b> in any check button you select or de-select all the plots</li>
-						<li>Clicking <b>ONCE</b> in a button you can select individual plots or groups of plots</li>
-						<li>By clicking in a legend, you can show or hide the points on the specific plot</li>
-						<li>With the left mouse button, you can do dynamic zooming</li>
-						<li>The <b>Reset zoom</b> button on the plot area resets the initial view of the plot</li>
-						<li>There is a square button in the uper right place of each plot where you can left click and localy save an image of the plot</li>
-						<li>The dataset options: <b>StreamExpressCosmicsCommissioning</b> and <b>CosmicsCommissioning</b> work only for Year:2017 and Subsystems: Strips & PixelPhase1 </li>
-						<li>If you uncheck the <b>Filter Runs </b> check box <b> ALL </b> the runs will be displayed</li>
-						<li>From <b>Filter Runs </b> drop down menu you can select <b>Latest </b> to display the lastest number of runs</li>
-						<li>From <b>Filter Runs </b> drop down menu you can select <b>Range  </b> to display a specific run range</li>
-						<li>From <b>Filter Runs </b> drop down menu you can select <b> List  </b> to display a list of runs separated by commas(if between the runs you put a <b> - </b> then you select all the runs in this range)</li>
-						<li>From <b>Filter Runs </b> drop down menu you can select <b>File   </b> to display runs from a predefined file with the same format as mentioned in the option <b> List  </b> above </li>
-						<li>Clicking <b>Scatter</b> will generate a Scatter plot where Y axis is used to represent both the value of the plot and the length of a run</li>
-						<li>Clicking <b>Run-length</b> will generate an XRange plot where every bar has a width proportional to the length of the run it represents</li>
-						<li>By clicking <b>Toggle plot whitelist</b> you can toggle a list where certain plots can be removed from display</li>
-						<li>By clicking <b>CHANGE RANGES</b> you can change both x and y axis ranges of the plot, and see the updated plot immediately</li>
-						<li>By clicking on every data point in the plot you can reveal urls to OMS and Run Registry for a selected run. Links will appear on the bottom right of the plot</li>
+							<li> Select the year, data type (Prompt, Express, etc ...), Primary Dataset (ZeroBias, DoubleMuon, etc..) and Subdetector, and click on the Submit button to view the plots </li>
+					
+							<li> Different ways to select the runs to show are available:
+								<ul>
+									<li> <b>Latest N runs:</b> set N in the relevant box </li>
+									<li> <b>Run Range:</b> set the first and the last run in the range </li>
+									<li> <b>List:</b> accept a list of comma separated run numbers </li>
+									<li> <b>Golden JSON:</b> accept a JSON file as input </li>
+									<li> <b>Run Registry url:</b> accept a link to a range of plots in RR (disabled for now) </li>
+								</ul>
+							</li>
+							<li> Use the <b>Search query</b> to enter the name (or part of it) of your favorite plot, then click on submit to show only the plots with the name matching the inserted string. </li>
+							
+							<li><b>Note:</b> It is not granted that all the plots available for recent years are also available for the past. This depends on the actual content of the DQM files in the given period. </li>
+							
+							<li>Click on <b>Options</b> to chose among different plot types, the default is the simple scatter plot, available options are:
+								<ul>
+								<li><b> Show errors: </b> to show the error bars on the trends, typically errors are very small so it is disabled by default </li>
+								<li><b>Show fills: </b> will visualize fill boundaries as alternating white and grey background colors</li>
+								<li><b>Show run duration: </b> the run duration in seconds will be visualized as an histogram, each bin corresponding to one run </li>
+								<li><b> Show regression lines: </b> In case of correlation plot can show or hide a linear regression line  </li>
+								<li><b> Show run duration proportional plot: </b> the bin width of the trends will be proportional to the run duration </li>
+								<li><b> Show proportional to integrated luminosity: </b> the bin width of the trends will be proportional to the integrated luminosity of the run</li>
+								<li><b> Show datetime plot: </b> on the x-axis it will show the date and time, each run represented with a bin going from the start time to the end time (note: this trend may contain white spaces in periods where no run is available) </li>
+								</ul>
+								hit again the Submit button to apply changes.
+							</li>
+							
+							<li>Clicking on <b> Plot List </b> the full list of selected plots will be visible, with links to each individual page </li>
+							
+							<li> Hovering the mouse over the data point will show a tooltip with some info about the specific run (number, fill, int. lumi, ... etc) </l>
+							<li> By clicking on the data point a link to OMS and RR for that specific run will pop up in the plot area </li>
+							<li> In multiple plots, by clicking in a legend, you can show or hide the selected plot</li>
+							<li> With the left mouse button, you can do dynamic zooming </li>
+							<li> The <b>Reset zoom</b> button on the plot area resets the initial view of the plot</li>
+							<li> There is a square button in the upper right place of each plot where you can left click and locally save an image of the plot</li>
+							<li> By clicking <b>Change Ranges</b> you can change both x and y axis ranges of the plot, and see the updated plot immediately</li>
+							<li> <b>NOTE 1: All plots are "linkable"</b>, copy the url to share a specific trend by mail (as an example) </li>
+							<li> <b>NOTE 2:</b> plots are not available for all the Primary Datasets, as an example Muon trend are only produced for SingleMuon and DoubleMuon PDs, while Tracker plots are only produced for StreamExpress and ZeroBias </li>	
 					</ul>
 				</div>
 			</div>
