@@ -1,5 +1,6 @@
 # Central Historic DQM application for CMS detector
 
+The web application is available here: https://historicdqm.web.cern.ch
 
 ## How to update?
 
