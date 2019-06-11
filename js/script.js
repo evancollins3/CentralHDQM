@@ -139,7 +139,14 @@ function drawPlotList()
     }
 
     if(directoryPlotFiles.length == 0)
+    {
         html = `<div class="ml-2">No plots found</div>`
+        showAlert("No plots are available for your selection. Please select different data or enter a different search query.")
+    }
+    else
+    {
+        hideAlert()
+    }
 
     $("#plot-list-container").html(html)
 }
@@ -303,6 +310,18 @@ function destroyAllPresentPlots()
     })
     chartsObjects = []
     drawArguments = []
+}
+
+function showAlert(message)
+{
+    $("#alert").html(message)
+    $("#alert").show()
+}
+
+function hideAlert()
+{
+    $("#alert").html("")
+    $("#alert").hide()
 }
 
 $('#change-ranges-modal').on('hide.bs.modal', function (e)
