@@ -122,11 +122,9 @@ function drawCorrelationPlot(xValues, yValues, renderTo, plotName, yTitles)
         },
     }
 
-    var chartObj = new Highcharts.Chart(options)
-
     if(globalOptions.showRegression)
     {
-        chartObj.addSeries({
+        options.series.push({
             type: "line",
             name: "Regression Line",
             data: linearRegression(values),
@@ -135,9 +133,10 @@ function drawCorrelationPlot(xValues, yValues, renderTo, plotName, yTitles)
             },
             enableMouseTracking: false,
             animation: false,
-        }, false)
+        })
     }
 
+    var chartObj = new Highcharts.Chart(options)
     chartObj.redraw()
     chartObj.reflow()
 
@@ -246,8 +245,6 @@ function drawScatterPlot(xValues, yValues, yErr, fills, durations, intLumis, ren
             []
     }
 
-    var chartObj = new Highcharts.Chart(options)
-
     for(var i = 0; i < yValues.length; i++)
     {
         var tooltip = '<span style="color:{series.color}"></span><b>{point.series.name}</b><br> <b>Run No:</b> {point.category}<br/><b>'
@@ -267,7 +264,7 @@ function drawScatterPlot(xValues, yValues, yErr, fills, durations, intLumis, ren
         
         tooltip += "<br>Click on the data point to reveal urls to OMS and RR.";
 
-        chartObj.addSeries({
+        options.series.push({
             name: seriesTitles[i],
             type: "scatter",
             data: data,
@@ -286,11 +283,11 @@ function drawScatterPlot(xValues, yValues, yErr, fills, durations, intLumis, ren
                     opacity: 1
                 }
             }
-        }, false)
+        })
 
         if (globalOptions.showErrors) 
         {
-            chartObj.addSeries({
+            options.series.push({
                 name: "Bin Content Error",
                 type: "errorbar",
                 data: yValues[i].map(function(value, index) {
@@ -304,13 +301,13 @@ function drawScatterPlot(xValues, yValues, yErr, fills, durations, intLumis, ren
                     pointFormat: '<b>{point.series.name}</b><br> <b>Run No:</b> {point.category}<br/><b>Error Range</b> : {point.low} to {point.high}<br/>'
                 },
                 animation: false,
-            }, false)
+            })
         }
     }
     
     if (globalOptions.showDurations)
     {
-        chartObj.addSeries({
+        options.series.push({
             type: "column",
             name: "Run Duration",
             yAxis: 1,
@@ -330,9 +327,10 @@ function drawScatterPlot(xValues, yValues, yErr, fills, durations, intLumis, ren
                     opacity: 1
                 }
             }
-        }, false)
+        })
     }
     
+    var chartObj = new Highcharts.Chart(options)
     chartObj.redraw()
     chartObj.reflow()
 
@@ -432,9 +430,7 @@ function drawXRangePlot(xValues, yValues, yErr, fills, durations, intLumis, rend
             }]
             :
             []
-    };
-
-    chartObj = new Highcharts.Chart(options)
+    }
 
     var ticks = []
 
@@ -482,7 +478,7 @@ function drawXRangePlot(xValues, yValues, yErr, fills, durations, intLumis, rend
             }
         }
 
-        chartObj.xAxis[0].update({
+        Object.assign(options.xAxis, {
             labels: {
                 enabled: true,
                 formatter: function () {
@@ -500,7 +496,7 @@ function drawXRangePlot(xValues, yValues, yErr, fills, durations, intLumis, rend
             plotBands: globalOptions.showFills ? bands : []
         })
 
-        chartObj.addSeries({
+        options.series.push({
             name: seriesTitles[i],
             type: "xrange",
             pointWidth: 6,
@@ -513,11 +509,11 @@ function drawXRangePlot(xValues, yValues, yErr, fills, durations, intLumis, rend
             },
             showInLegend: true,
             animation: false
-        }, false)
+        })
 
         if (globalOptions.showErrors) 
         {
-            chartObj.addSeries({
+            options.series.push({
                 type: "xrange",
                 pointWidth: 9,
                 data: yErr[i].map((element, index) => {
@@ -537,9 +533,9 @@ function drawXRangePlot(xValues, yValues, yErr, fills, durations, intLumis, rend
                         opacity: 1
                     }
                 }
-            }, false)
+            })
     
-            chartObj.addSeries({
+            options.series.push({
                 type: "xrange",
                 pointWidth: 9,
                 data: yErr[i].map((element, index) => {
@@ -559,10 +555,11 @@ function drawXRangePlot(xValues, yValues, yErr, fills, durations, intLumis, rend
                         opacity: 1
                     }
                 }
-            }, false)
+            })
         }
     }
 
+    var chartObj = new Highcharts.Chart(options)
     chartObj.redraw()
     chartObj.reflow()
 
@@ -662,11 +659,9 @@ function drawXRangeDatetimePlot(xValues, yValues, yErr, fills, durations, intLum
             []
     }
 
-    chartObj = new Highcharts.Chart(options)
-
     var bands = getXRangeDatetimeFillBands(fills, times)
 
-    chartObj.xAxis[0].update({
+    Object.assign(options.xAxis, {
         plotBands: globalOptions.showFills ? bands : []
     })
 
@@ -711,7 +706,7 @@ function drawXRangeDatetimePlot(xValues, yValues, yErr, fills, durations, intLum
                 })
         }        
 
-        chartObj.addSeries({
+        options.series.push({
             name: seriesTitles[i],
             type: "xrange",
             pointWidth: 6,
@@ -724,11 +719,11 @@ function drawXRangeDatetimePlot(xValues, yValues, yErr, fills, durations, intLum
             },
             showInLegend: true,
             animation: false
-        }, false)
+        })
 
         if (globalOptions.showErrors) 
         {
-            chartObj.addSeries({
+            options.series.push({
                 type: "xrange",
                 pointWidth: 9,
                 data: yErr[i].map((element, index) => {
@@ -748,9 +743,9 @@ function drawXRangeDatetimePlot(xValues, yValues, yErr, fills, durations, intLum
                         opacity: 1
                     }
                 }
-            }, false)
+            })
     
-            chartObj.addSeries({
+            options.series.push({
                 type: "xrange",
                 pointWidth: 9,
                 data: yErr[i].map((element, index) => {
@@ -770,10 +765,11 @@ function drawXRangeDatetimePlot(xValues, yValues, yErr, fills, durations, intLum
                         opacity: 1
                     }
                 }
-            }, false)
+            })
         }
     }
 
+    var chartObj = new Highcharts.Chart(options)
     chartObj.redraw()
     chartObj.reflow()
 
