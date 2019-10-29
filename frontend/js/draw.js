@@ -1,879 +1,950 @@
 
-async function draw(collection, data, renderTo, filterFunction = undefined) 
-{
-    if(filterFunction == undefined)
-    {
-        filterFunction = getFilteredArray
-    }
+const plotter = (function() {
+    return {
 
-    var filteredData = []
-    var seriesTitles = []
-    var yValues = []
-    var yErr = []
-
-    for(var i = 0; i < data.length; i++)
-    {
-        if(collection["files"].length == 1)
-            seriesTitles[i] = collection["files"][i]
-        else
-            seriesTitles[i] = getSeriesTitleByFilename(collection["files"][i])
-
-        filteredData[i] = await filterFunction(data[i])
-
-        yValues[i] = filteredData[i].map(x => x.y)
-        yErr[i] = filteredData[i].map(x => x.yErr)
-    }
-
-    var xValues = filteredData[0].map(x => x.run)
-
-    var omsRuns = omsInfo.filter(x => xValues.includes(x.run))
-
-    var fills = omsRuns.map(x => x.lhcfill)
-    var durations = omsRuns.map(x => x.rundur)
-    var intLumis = omsRuns.map(x => x.int_lumi)
-    var times = omsRuns.map(x => [x.start_time, x.end_time])
-    var plotName = getJustFilename(collection["name"])
-    var yTitle = filteredData[0].length != 0 ? filteredData[0][0]["yTitle"] : ""
-
-    if(collection.corr)
-    {
-        if(collection["files"].length == 2)
+        draw: async function(plotData, renderTo) 
         {
-            var yTitles = filteredData[0].length != 0 ? [filteredData[0][0]["yTitle"], filteredData[1][0]["yTitle"]] : ["", ""]
-            return drawCorrelationPlot(xValues, yValues, renderTo, plotName, yTitles)
-        }
-        else
-            return null
-    }
-
-    if(globalOptions.showXRange || globalOptions.showIntLumi)
-        return drawXRangePlot(xValues, yValues, yErr, fills, durations, intLumis, renderTo, plotName, yTitle, seriesTitles)
-    else if(globalOptions.showDatetime)
-        return drawXRangeDatetimePlot(xValues, yValues, yErr, fills, durations, intLumis, times, renderTo, plotName, yTitle, seriesTitles)
-    else
-        return drawScatterPlot(xValues, yValues, yErr, fills, durations, intLumis, renderTo, plotName, yTitle, seriesTitles)
-}
-
-function drawCorrelationPlot(xValues, yValues, renderTo, plotName, yTitles)
-{
-    // First array contains x values and second array contains y values
-    var values = yValues[0].map((v, i) => ({
-        x: v,
-        y: yValues[1][i],
-        run: xValues[i],
-        marker: {
-            fillColor: colorScale((xValues[i] - xValues[0]) / (xValues[xValues.length - 1] - xValues[0])),
-            radius: 4,
-        }
-    }))
-
-    var options = {
-        credits: {
-            enabled: false
-        },
-        chart: {
-            renderTo: renderTo,
-            zoomType: "xy",
-            animation: false
-        },
-        lang: {
-            noData: "No data found for given runs"
-        },
-        title: {
-            text: plotName
-        },
-        xAxis: {
-            title: {
-                text: yTitles[0],
-            },
-            max: Math.max(...values.map(i => i.x)),
-            min: Math.min(...values.map(i => i.x))
-        },
-        yAxis: {
-            title: {
-                text: yTitles[1],
-            },
-        },
-        tooltip: {
-            headerFormat: "",
-            pointFormat: "<b>Run No:</b> {point.run}<br><b>X</b>: {point.x}<br><b>Y</b>: {point.y}"
-        },
-        series: [{
-                type: "scatter",
-                name: "Correlation",
-                data: values,
-                animation: false,
-                marker: {
-                    symbol: "circle",
-                },
-                color: "#000000"
-            }
-        ],
-        colorAxis: {
-            min: xValues[0],
-            max: xValues[xValues.length - 1],
-            minColor: "#00FF00",
-            maxColor: "#FF0000",
-            stops: [
-                [0, "#00FF00"],
-                [0.5, "#FFFF00"],
-                [1, "#FF0000"]
-            ]
-        },
-    }
-
-    if(globalOptions.showRegression)
-    {
-        options.series.push({
-            type: "line",
-            name: "Regression Line",
-            data: linearRegression(values),
-            marker: {
-                enabled: false
-            },
-            enableMouseTracking: false,
-            animation: false,
-        })
-    }
-
-    var chartObj = new Highcharts.Chart(options)
-    chartObj.redraw()
-    chartObj.reflow()
-
-    return chartObj
-}
-
-function drawScatterPlot(xValues, yValues, yErr, fills, durations, intLumis, renderTo, plotName, yTitle, seriesTitles) 
-{
-    var meanAndRms = calculateMeanAndRMS(yValues)
-    var mean = meanAndRms[0]
-    var rms = meanAndRms[1]
-    var range = getYRange(mean, rms)
-    var min_y = range[0]
-    var max_y = range[1]
-
-    var bands = getScatterFillBands(xValues, fills)
-
-    var options = {
-        credits: {
-            enabled: false
-        },
-        chart: {
-            renderTo: renderTo,
-            zoomType: "xy",
-            animation: false
-        },
-        lang: {
-            noData: "No data found for given runs"
-        },
-        title: {
-            text: plotName
-        },
-        subtitle: {
-            text: `Mean: ${mean.toExponential(4)}, RMS: ${rms.toExponential(4)}`
-        },
-        xAxis: {
-            title: {
-                text: "Run No.",
-            },
-            categories: [...new Set([].concat(...xValues))], 
-            plotBands: globalOptions.showFills ? bands : []
-        },
-        yAxis: [
+            // console.log(plotData)
+            if(plotData.correlation) 
             {
-                title: {
-                    text: yTitle,
-                },
-                min: min_y,
-                max: max_y,
-                tickPixelInterval: 60
-            },
-            {
-                zoomEnabled: false,
-                title: {
-                    text: "Run Duration [sec]",
-                },
-                opposite: true,
-                visible: globalOptions.showDurations && durations !== undefined,
-                tickPixelInterval: 60
+                if(plotData.series.length === 2)
+                    return this.drawCorrelationPlot(plotData, renderTo)
+                else
+                    return null
             }
-        ],
-        plotOptions: {
-            series: {
-                // Make sure legend click toggles the visibility of fill lines
-                events: globalOptions.showFills ? {
-                    legendItemClick: function () {
-                        if (this.name == "Fills") {
-                            var plotBands = this.chart.xAxis[0].plotLinesAndBands;
-                            if (!this.visible) {
-                                for (var i = 0; i < plotBands.length; i++) {
-                                    this.chart.xAxis[0].plotLinesAndBands[i].hidden = false;
-                                    $(this.chart.xAxis[0].plotLinesAndBands[i].svgElem.element).show();
-                                }
-                            }
-                            else {
-                                for (var i = 0; i < plotBands.length; i++) {
-                                    this.chart.xAxis[0].plotLinesAndBands[i].hidden = true;
-                                    $(this.chart.xAxis[0].plotLinesAndBands[i].svgElem.element).hide();
-                                }
-                            }
-                        }
-                    }
-                } : {},
-                allowPointSelect: true,
-                point: {
-                    events: {
-                        click: function () {
-                            var parent = $(this.series.chart.container).parent().parent()
-                            updateLinks(parent, this.category)
-                        }
-                    }
-                },
-                marker: {
-                    symbol: "circle"
-                }
-            },
+
+            if(optionsController.options.showXRange || optionsController.options.showIntLumi)
+                return this.drawXRangePlot(plotData, renderTo)
+            else if(optionsController.options.showDatetime)
+                return this.drawXRangeDatetimePlot(plotData, renderTo)
+            else
+                return this.drawScatterPlot(plotData, renderTo)
         },
-        series: globalOptions.showFills ?
-            [{ // "Fills" legend item
-                name: "Fills",
-                color: "#e6eaf2",
-                type: "area",
-                legendIndex: 100
-            }]
-            :
-            []
-    }
 
-    for(var i = 0; i < yValues.length; i++)
-    {
-        var tooltip = '<span style="color:{series.color}"></span><b>{point.series.name}</b><br> <b>Run No:</b> {point.category}<br/><b>'
-                + yTitle + ': </b>{point.y}<br><b>Fill No:</b> {point.fill}'
-
-        var data = []
-
-        if (globalOptions.showDurations) 
+        drawCorrelationPlot: function(plotData, renderTo)
         {
-            tooltip += "<br><b>Duration:</b> {point.dur}";
-            data = yValues[i].map((y, k) => ({ y: y, fill: fills[k], dur: durations[k] }));
-        }
-        else 
-        {
-            data = yValues[i].map((y, k) => ({ y: y, fill: fills[k] }))
-        }
-        
-        tooltip += "<br>Click on the data point to reveal urls to OMS and RR.";
+            const plotName = plotData.plot_title
+            const xValues = plotData.series[0].trends.map(x => x.run)
+            const yValues = plotData.series.map(x => x.trends.map(y => y.value))
+            const seriesTitles = plotData.series.map(x => x.metadata.y_title)
 
-        options.series.push({
-            name: seriesTitles[i],
-            type: "scatter",
-            data: data,
-            borderWidth: 20,
-            marker: {
-                radius: 3
-            },
-            tooltip: {
-                headerFormat: "",
-                pointFormat: tooltip
-            },
-            showInLegend: true,
-            animation: false,
-            states: {
-                inactive: {
-                    opacity: 1
-                }
-            }
-        })
-
-        if (globalOptions.showErrors) 
-        {
-            options.series.push({
-                name: "Bin Content Error",
-                type: "errorbar",
-                data: yValues[i].map(function(value, index) {
-                    return [value - yErr[i][index], value + yErr[i][index]]
-                }),
+            // First array contains x values and second array contains y values
+            var values = yValues[0].map((v, i) => ({
+                x: v,
+                y: yValues[1][i],
+                run: xValues[i],
                 marker: {
-                    radius: 3
+                    fillColor: helpers.colorScale((xValues[i] - xValues[0]) / (xValues[xValues.length - 1] - xValues[0])),
+                    radius: 4,
+                }
+            }))
+
+            var options = {
+                credits: {
+                    enabled: false
+                },
+                chart: {
+                    renderTo: renderTo,
+                    zoomType: "xy",
+                    animation: false
+                },
+                lang: {
+                    noData: "No data found for given runs"
+                },
+                title: {
+                    text: plotName
+                },
+                subtitle: {
+                    text: `<i>${plotData.name}</i>`
+                },
+                xAxis: {
+                    title: {
+                        text: seriesTitles[0],
+                    },
+                    max: Math.max(...values.map(i => i.x)),
+                    min: Math.min(...values.map(i => i.x))
+                },
+                yAxis: {
+                    title: {
+                        text: seriesTitles[1],
+                    },
                 },
                 tooltip: {
                     headerFormat: "",
-                    pointFormat: '<b>{point.series.name}</b><br> <b>Run No:</b> {point.category}<br/><b>Error Range</b> : {point.low} to {point.high}<br/>'
+                    pointFormat: "<b>Run No sdsdsd:</b> {point.run}<br><b>X</b>: {point.x}<br><b>Y</b>: {point.y}",
+                    style : { opacity: 0.9 },
                 },
-                animation: false,
-            })
-        }
-    }
-    
-    if (globalOptions.showDurations)
-    {
-        options.series.push({
-            type: "column",
-            name: "Run Duration",
-            yAxis: 1,
-            color: "#a8a8a8",
-            zIndex: -1,
-            groupPadding: 0,
-            pointPadding: 0,
-            borderWidth: 0,
-            tooltip: {
-                headerFormat: "",
-                pointFormat: '<b>Run No</b>: {point.category}<br/><b>Duration</b>: {point.y}<br/>'
-            },
-            data: durations,
-            animation: false,
-            states: {
-                inactive: {
-                    opacity: 1
-                }
+                series: [{
+                        type: "scatter",
+                        name: "Correlation",
+                        data: values,
+                        animation: false,
+                        marker: {
+                            symbol: "circle",
+                        },
+                        color: "#000000"
+                    }
+                ],
+                colorAxis: {
+                    min: xValues[0],
+                    max: xValues[xValues.length - 1],
+                    minColor: "#00FF00",
+                    maxColor: "#FF0000",
+                    stops: [
+                        [0, "#00FF00"],
+                        [0.5, "#FFFF00"],
+                        [1, "#FF0000"]
+                    ]
+                },
             }
-        })
-    }
-    
-    var chartObj = new Highcharts.Chart(options)
-    chartObj.redraw()
-    chartObj.reflow()
 
-    return chartObj
-}
-
-function drawXRangePlot(xValues, yValues, yErr, fills, durations, intLumis, renderTo, plotName, yTitle, seriesTitles) 
-{
-    var meanAndRms = calculateMeanAndRMS(yValues)
-    var mean = meanAndRms[0]
-    var rms = meanAndRms[1]
-    var range = getYRange(mean, rms)
-    var min_y = range[0]
-    var max_y = range[1]
-
-    var bands = getXRangeFillBands(globalOptions.showIntLumi ? intLumis : durations, fills)
-    
-    var options = {
-        credits: {
-            enabled: false
-        },
-        chart: {
-            renderTo: renderTo,
-            zoomType: "xy",
-            animation: false
-        },
-        lang: {
-            noData: "No data found for given runs"
-        },
-        title: {
-            text: plotName
-        },
-        subtitle: {
-            text: `Mean: ${mean.toExponential(4)}, RMS: ${rms.toExponential(4)}`
-        },
-        xAxis: {
-            title: {
-                text: "Run No.",
-            },
-            type: "linear",
-            labels: {
-                rotation: -45,
-            },
-            // categories: [...new Set([].concat(...xValues))],
-        },
-        yAxis: [
+            if(optionsController.options.showRegression)
             {
-                title: {
-                    text: yTitle,
-                },
-                min: min_y,
-                max: max_y,
-            },
-        ],
-        plotOptions: {
-            xrange: {
-                grouping: false,
-                borderRadius: 0,
-            },
-            series: {
-                events: globalOptions.showFills ? {
-                    legendItemClick: function () {
-                        if (this.name == "Fills") {
-                            var plotBands = this.chart.xAxis[0].plotLinesAndBands;
-                            if (!this.visible) {
-                                for (var i = 0; i < plotBands.length; i++) {
-                                    this.chart.xAxis[0].plotLinesAndBands[i].hidden = false;
-                                    $(this.chart.xAxis[0].plotLinesAndBands[i].svgElem.element).show();
-                                }
-                            }
-                            else {
-                                for (var i = 0; i < plotBands.length; i++) {
-                                    this.chart.xAxis[0].plotLinesAndBands[i].hidden = true;
-                                    $(this.chart.xAxis[0].plotLinesAndBands[i].svgElem.element).hide();
-                                }
-                            }
-                        }
-                    }
-                } : {},
-                allowPointSelect: true,
-                point: {
-                    events: {
-                        click: function () {
-                            var parent = $(this.series.chart.container).parent().parent()
-                            updateLinks(parent, this.run)
-                        }
-                    }
-                },
-            }
-        },
-        series: globalOptions.showFills ?
-            [{
-                name: "Fills",
-                color: "#e6eaf2",
-                type: "area",
-                legendIndex: 100
-            }]
-            :
-            []
-    }
-
-    var ticks = []
-
-    for(var i = 0; i < yValues.length; i++)
-    {
-        var tooltip = '<span style="color:{series.color}"></span><b>{point.series.name}'
-        tooltip += "</b><br><b>Run No:</b> {point.run}"
-        tooltip += `<br/><b>${yTitle} : </b>{point.y}<br><b>Fill No:</b> {point.fill}<br><b>Error:</b> {point.err}`
-
-        var raw = []
-        raw = yValues[i].map((y, k) => ({ y: y, fill: fills[k], dur: durations[k], intLumi: intLumis[k] }))
-
-        tooltip += "<br><b>Duration:</b> {point.dur}"
-        tooltip += "<br><b>Integrated luminosity:</b> {point.intLumi}"
-        tooltip += "<br>Click on the data point to reveal urls to OMS and RR."
-        
-        var data = []
-        ticks = []
-
-        for (var j = 0; j < raw.length; j++) 
-        {
-            var valueForBinLength = raw[j].dur
-            if(globalOptions.showIntLumi)
-                valueForBinLength = raw[j].intLumi
-
-            // Make sure bin length is not 0
-            if(valueForBinLength == 0)
-                valueForBinLength = 1
-
-            var prev_x2 = get_prev_x2(j, data)
-            data.push({ 
-                    x: prev_x2, 
-                    x2: prev_x2 + valueForBinLength, 
-                    y: raw[j].y, 
-                    run: xValues[j], 
-                    dur: raw[j].dur, 
-                    intLumi: raw[j].intLumi,
-                    fill: raw[j].fill,
-                    err: yErr[i][j],
-                });
-            ticks.push(prev_x2 + (raw[j].dur / 2));
-            
-            function get_prev_x2(index, arr) {
-                return index === 0 ? 0 : arr[index - 1].x2;
-            }
-        }
-
-        Object.assign(options.xAxis, {
-            labels: {
-                enabled: true,
-                formatter: function () {
-                    var index = ticks.indexOf(this.value);
-                    var n = parseInt(ticks.length / 10);
-    
-                    // Show only every nth label and, always, the last one
-                    if (index % n != 0 && index != ticks.length - 1)
-                        return ""
-    
-                    return xValues[index];
-                },
-            },
-            tickPositions: ticks,
-            plotBands: globalOptions.showFills ? bands : []
-        })
-
-        options.series.push({
-            name: seriesTitles[i],
-            type: "xrange",
-            pointWidth: 6,
-            data: data,
-            color: seriesColors[i],
-            colorByPoint: false,
-            tooltip: {
-                headerFormat: "",
-                pointFormat: tooltip
-            },
-            showInLegend: true,
-            animation: false
-        })
-
-        if (globalOptions.showErrors) 
-        {
-            options.series.push({
-                type: "xrange",
-                pointWidth: 9,
-                data: yErr[i].map((element, index) => {
-                    return {
-                        x: data[index].x,
-                        x2: data[index].x2,
-                        y: data[index].y + element
-                    }
-                }),
-                color: seriesColors[i],
-                colorByPoint: false,
-                showInLegend: false,
-                animation: false,
-                enableMouseTracking: false,
-                states: {
-                    inactive: {
-                        opacity: 1
-                    }
-                }
-            })
-    
-            options.series.push({
-                type: "xrange",
-                pointWidth: 9,
-                data: yErr[i].map((element, index) => {
-                    return {
-                        x: data[index].x,
-                        x2: data[index].x2,
-                        y: data[index].y - element
-                    }
-                }),
-                color: seriesColors[i],
-                colorByPoint: false,
-                showInLegend: false,
-                animation: false,
-                enableMouseTracking: false,
-                states: {
-                    inactive: {
-                        opacity: 1
-                    }
-                }
-            })
-        }
-    }
-
-    var chartObj = new Highcharts.Chart(options)
-    chartObj.redraw()
-    chartObj.reflow()
-
-    return chartObj
-}
-
-function drawXRangeDatetimePlot(xValues, yValues, yErr, fills, durations, intLumis, times, renderTo, plotName, yTitle, seriesTitles)
-{
-    var meanAndRms = calculateMeanAndRMS(yValues)
-    var mean = meanAndRms[0]
-    var rms = meanAndRms[1]
-    var range = getYRange(mean, rms)
-    var min_y = range[0]
-    var max_y = range[1]
-    
-    var options = {
-        credits: {
-            enabled: false
-        },
-        chart: {
-            renderTo: renderTo,
-            type: "xrange",
-            zoomType: "xy",
-            animation: false
-        },
-        lang: {
-            noData: "No data found for given runs"
-        },
-        title: {
-            text: plotName
-        },
-        subtitle: {
-            text: `Mean: ${mean.toExponential(4)}, RMS: ${rms.toExponential(4)}`
-        },
-        xAxis: {
-            title: {
-                text: "Run No.",
-            },
-            type: "datetime",
-            labels: {
-                rotation: -45,
-            },
-        },
-        yAxis: [
-            {
-                title: {
-                    text: yTitle,
-                },
-                min: min_y,
-                max: max_y,
-            },
-        ],
-        plotOptions: {
-            xrange: {
-                grouping: false,
-                borderRadius: 0,
-            },
-            series: {
-                events: globalOptions.showFills ? {
-                    legendItemClick: function () {
-                        if (this.name == "Fills") {
-                            var plotBands = this.chart.xAxis[0].plotLinesAndBands;
-                            if (!this.visible) {
-                                for (var i = 0; i < plotBands.length; i++) {
-                                    this.chart.xAxis[0].plotLinesAndBands[i].hidden = false;
-                                    $(this.chart.xAxis[0].plotLinesAndBands[i].svgElem.element).show();
-                                }
-                            }
-                            else {
-                                for (var i = 0; i < plotBands.length; i++) {
-                                    this.chart.xAxis[0].plotLinesAndBands[i].hidden = true;
-                                    $(this.chart.xAxis[0].plotLinesAndBands[i].svgElem.element).hide();
-                                }
-                            }
-                        }
-                    }
-                } : {},
-                allowPointSelect: true,
-                point: {
-                    events: {
-                        click: function () {
-                            var parent = $(this.series.chart.container).parent().parent()
-                            updateLinks(parent, this.run)
-                        }
-                    }
-                },
-            }
-        },
-        series: globalOptions.showFills ?
-            [{
-                name: "Fills",
-                color: "#e6eaf2",
-                type: "area",
-                legendIndex: 100
-            }]
-            :
-            []
-    }
-
-    var bands = getXRangeDatetimeFillBands(fills, times)
-
-    Object.assign(options.xAxis, {
-        plotBands: globalOptions.showFills ? bands : []
-    })
-
-    for(var i = 0; i < yValues.length; i++)
-    {
-        var tooltip = '<span style="color:{series.color}"></span><b>{point.series.name}'
-        tooltip += "</b><br><b>Run No:</b> {point.run}"
-        tooltip += `<br/><b>${yTitle} : </b>{point.y}<br><b>Fill No:</b> {point.fill}<br><b>Error:</b> {point.err}`
-
-        var raw = yValues[i].map((y, k) => (
-            { 
-                y: y, 
-                fill: fills[k], 
-                dur: durations[k], 
-                intLumi: intLumis[k], 
-                startTime: new Date(safeGetAtIndex(times[k], 0)), 
-                endTime: new Date(safeGetAtIndex(times[k], 1)),
-            }))
-
-        tooltip += "<br><b>Duration:</b> {point.dur}"
-        tooltip += "<br><b>Integrated luminosity:</b> {point.intLumi}"
-        tooltip += "<br><b>Start time:</b> {point.startTime}"
-        tooltip += "<br><b>End time:</b> {point.endTime}"
-        tooltip += "<br>Click on the data point to reveal urls to OMS and RR."
-        
-        var data = []
-        ticks = []
-
-        for (var j = 0; j < raw.length; j++) 
-        {
-            data.push({
-                    x: raw[j].startTime.getTime(), 
-                    x2: raw[j].endTime.getTime(), 
-                    y: raw[j].y, 
-                    run: xValues[j], 
-                    dur: raw[j].dur, 
-                    intLumi: raw[j].intLumi,
-                    startTime: raw[j].startTime,
-                    endTime: raw[j].endTime,
-                    fill: raw[j].fill,
-                    err: yErr[i][j],
+                options.series.push({
+                    type: "line",
+                    name: "Regression Line",
+                    data: helpers.linearRegression(values),
+                    marker: {
+                        enabled: false
+                    },
+                    enableMouseTracking: false,
+                    animation: false,
                 })
-        }        
+            }
 
-        options.series.push({
-            name: seriesTitles[i],
-            type: "xrange",
-            pointWidth: 6,
-            data: data,
-            color: seriesColors[i],
-            colorByPoint: false,
-            tooltip: {
-                headerFormat: "",
-                pointFormat: tooltip
-            },
-            showInLegend: true,
-            animation: false
-        })
+            var chartObj = new Highcharts.Chart(options)
+            chartObj.redraw()
+            chartObj.reflow()
 
-        if (globalOptions.showErrors) 
+            return chartObj
+        },
+
+        drawScatterPlot: function(plotData, renderTo) 
         {
-            options.series.push({
-                type: "xrange",
-                pointWidth: 9,
-                data: yErr[i].map((element, index) => {
-                    return {
-                        x: data[index].x,
-                        x2: data[index].x2,
-                        y: data[index].y + element
+            const plotName = plotData.plot_title
+            const yTitle = plotData.y_title
+            const xValues = plotData.series[0].trends.map(x => x.run)
+            const yValues = plotData.series.map(x => x.trends.map(y => y.value))
+            const yErr = plotData.series.map(x => x.trends.map(y => y.error))
+            const fills = plotData.series[0].trends.map(x => x.oms_info.fill_number)
+            const durations = plotData.series[0].trends.map(x => x.oms_info.duration)
+            const seriesTitles = plotData.series.map(x => x.metadata.y_title)
+
+            const meanAndRms = helpers.calculateMeanAndRMS(yValues)
+            const mean = meanAndRms[0]
+            const rms = meanAndRms[1]
+            const range = helpers.getYRange(mean, rms)
+            const min_y = range[0]
+            const max_y = range[1]
+
+            const bands = this.getScatterFillBands(xValues, fills)
+
+            const options = {
+                credits: {
+                    enabled: false
+                },
+                chart: {
+                    renderTo: renderTo,
+                    zoomType: "xy",
+                    animation: false
+                },
+                lang: {
+                    noData: "No data found for given runs"
+                },
+                title: {
+                    text: plotName
+                },
+                subtitle: {
+                    text: `<i>${plotData.name}</i><br>Mean: ${mean.toExponential(4)}, RMS: ${rms.toExponential(4)}`
+                },
+                tooltip: {
+                    style : { opacity: 0.9 },
+                },
+                xAxis: {
+                    title: {
+                        text: "Run No.",
+                    },
+                    categories: [...new Set([].concat(...xValues))], 
+                    plotBands: optionsController.options.showFills ? bands : []
+                },
+                yAxis: [
+                    {
+                        title: {
+                            text: yTitle,
+                        },
+                        min: min_y,
+                        max: max_y,
+                        tickPixelInterval: 60
+                    },
+                    {
+                        zoomEnabled: false,
+                        title: {
+                            text: "Run Duration (sec)",
+                        },
+                        opposite: true,
+                        visible: optionsController.options.showDurations && durations !== undefined,
+                        tickPixelInterval: 60
                     }
-                }),
-                color: seriesColors[i],
-                colorByPoint: false,
-                showInLegend: false,
-                animation: false,
-                enableMouseTracking: false,
-                states: {
-                    inactive: {
-                        opacity: 1
+                ],
+                plotOptions: {
+                    series: {
+                        // Make sure legend click toggles the visibility of fill lines
+                        events: optionsController.options.showFills ? {
+                            legendItemClick: function () {
+                                if (this.name === "Fills") {
+                                    var plotBands = this.chart.xAxis[0].plotLinesAndBands;
+                                    if (!this.visible) {
+                                        for (var i = 0; i < plotBands.length; i++) {
+                                            this.chart.xAxis[0].plotLinesAndBands[i].hidden = false;
+                                            $(this.chart.xAxis[0].plotLinesAndBands[i].svgElem.element).show();
+                                        }
+                                    }
+                                    else {
+                                        for (var i = 0; i < plotBands.length; i++) {
+                                            this.chart.xAxis[0].plotLinesAndBands[i].hidden = true;
+                                            $(this.chart.xAxis[0].plotLinesAndBands[i].svgElem.element).hide();
+                                        }
+                                    }
+                                }
+                            }
+                        } : {},
+                        allowPointSelect: true,
+                        point: {
+                            events: {
+                                click: function () {
+                                    const parent = $(this.series.chart.container).parent().parent()
+                                    main.updateLinks(parent, plotData, this.category, this.series.index - 1)
+                                }
+                            }
+                        },
+                        marker: {
+                            symbol: "circle"
+                        }
+                    },
+                },
+                series: optionsController.options.showFills ?
+                    [{ // "Fills" legend item
+                        name: "Fills",
+                        color: "#e6eaf2",
+                        type: "area",
+                        legendIndex: 100
+                    }]
+                    :
+                    []
+            }
+
+            for(let i = 0; i < plotData.series.length; i++)
+            {
+                const tooltip = `
+                    <b>{point.series.name}</b><br> 
+                    <b>${yTitle}: </b>{point.y}<br>
+                    <b>Error:</b> {point.error}<br/>
+                    <b>Run No:</b> {point.run}<br/>
+                    <b>Fill No:</b> {point.fill_number}<br>
+                    <b>Duration:</b> {point.duration}<br>
+                    <b>Delivered luminosity:</b> {point.del_lumi}<br>
+                    <b>B field:</b> {point.b_field}<br>
+                    <b>End luminosity:</b> {point.end_lumi}<br>
+                    <b>Start time:</b> {point.start_time}<br>
+                    <b>End time:</b> {point.end_time}<br>
+                    <b>Energy:</b> {point.energy}<br>
+                    <b>Era:</b> {point.era}<br>
+                    <b>Injection scheme:</b> {point.injection_scheme}<br>
+                    <b>HLT key:</b> {point.hlt_key}<br>
+                    <b>HLT physics rate:</b> {point.hlt_physics_rate}<br>
+                    <b>L1T key:</b> {point.l1_key}<br>
+                    <b>L1T rate:</b> {point.l1_rate}<br>
+                    <b>Recorded lumi:</b> {point.recorded_lumi}<br>
+                    Click on the data point to reveal urls to OMS, RR and DQM GUI.`
+
+                const data = plotData.series[i].trends.map(trend => ({
+                    y:                  trend.value,
+                    error:              trend.error,
+                    run:                trend.run,
+                    del_lumi:           trend.oms_info.delivered_lumi,
+                    b_field:            trend.oms_info.b_field,
+                    duration:           trend.oms_info.duration,
+                    end_lumi:           trend.oms_info.end_lumi,
+                    end_time:           trend.oms_info.end_time,
+                    energy:             trend.oms_info.energy,
+                    era:                trend.oms_info.era,
+                    fill_number:        trend.oms_info.fill_number,
+                    hlt_key:            trend.oms_info.hlt_key,
+                    hlt_physics_rate:   trend.oms_info.hlt_physics_rate,
+                    injection_scheme:   trend.oms_info.injection_scheme,
+                    l1_key:             trend.oms_info.l1_key,
+                    l1_rate:            trend.oms_info.l1_rate,
+                    recorded_lumi:      trend.oms_info.recorded_lumi,
+                    start_time:         trend.oms_info.start_time,
+                }))
+
+                options.series.push({
+                    name: seriesTitles[i],
+                    type: "scatter",
+                    data: data,
+                    borderWidth: 20,
+                    marker: {
+                        radius: 3
+                    },
+                    tooltip: {
+                        headerFormat: "",
+                        pointFormat: tooltip,
+                    },
+                    showInLegend: true,
+                    animation: false,
+                    states: {
+                        inactive: {
+                            opacity: 1
+                        },
+                    }
+                })
+
+                if (optionsController.options.showErrors) 
+                {
+                    options.series.push({
+                        name: "Bin Content Error",
+                        type: "errorbar",
+                        data: yValues[i].map(function(value, index) {
+                            return [value - yErr[i][index], value + yErr[i][index]]
+                        }),
+                        marker: {
+                            radius: 3
+                        },
+                        tooltip: {
+                            headerFormat: "",
+                            pointFormat: '<b>{point.series.name}</b><br> <b>Run No:</b> {point.category}<br/><b>Error Range</b> : {point.low} to {point.high}<br/>'
+                        },
+                        animation: false,
+                    })
+                }
+            }
+            
+            if (optionsController.options.showDurations)
+            {
+                options.series.push({
+                    type: "column",
+                    name: "Run Duration",
+                    yAxis: 1,
+                    color: "#a8a8a8",
+                    zIndex: -1,
+                    groupPadding: 0,
+                    pointPadding: 0,
+                    borderWidth: 0,
+                    tooltip: {
+                        headerFormat: "",
+                        pointFormat: '<b>Run No</b>: {point.category}<br/><b>Duration</b>: {point.y}<br/>'
+                    },
+                    data: durations,
+                    animation: false,
+                    states: {
+                        inactive: {
+                            opacity: 1
+                        },
+                    },
+                })
+            }
+            
+            const chartObj = new Highcharts.Chart(options)
+            chartObj.redraw()
+            chartObj.reflow()
+
+            return chartObj
+        },
+
+        drawXRangePlot: function(plotData, renderTo) 
+        {
+            const plotName = plotData.plot_title
+            const yTitle = plotData.y_title
+            const xValues = plotData.series[0].trends.map(x => x.run)
+            const yValues = plotData.series.map(x => x.trends.map(y => y.value))
+            const yErr = plotData.series.map(x => x.trends.map(y => y.error))
+            const fills = plotData.series[0].trends.map(x => x.oms_info.fill_number)
+            const durations = plotData.series[0].trends.map(x => x.oms_info.duration)
+            const intLumis = plotData.series[0].trends.map(x => x.oms_info.init_lumi)
+            const seriesTitles = plotData.series.map(x => x.metadata.y_title)
+
+            const meanAndRms = helpers.calculateMeanAndRMS(yValues)
+            const mean = meanAndRms[0]
+            const rms = meanAndRms[1]
+            const range = helpers.getYRange(mean, rms)
+            const min_y = range[0]
+            const max_y = range[1]
+
+            const bands = this.getXRangeFillBands(optionsController.options.showIntLumi ? intLumis : durations, fills)
+            
+            const options = {
+                credits: {
+                    enabled: false
+                },
+                chart: {
+                    renderTo: renderTo,
+                    zoomType: "xy",
+                    animation: false
+                },
+                lang: {
+                    noData: "No data found for given runs"
+                },
+                title: {
+                    text: plotName
+                },
+                subtitle: {
+                    text: `<i>${plotData.name}</i><br>Mean: ${mean.toExponential(4)}, RMS: ${rms.toExponential(4)}`
+                },
+                tooltip: {
+                    style : { opacity: 0.9 },
+                },
+                xAxis: {
+                    title: {
+                        text: "Run No.",
+                    },
+                    type: "linear",
+                    labels: {
+                        rotation: -45,
+                    },
+                    // categories: [...new Set([].concat(...xValues))],
+                },
+                yAxis: [
+                    {
+                        title: {
+                            text: yTitle,
+                        },
+                        min: min_y,
+                        max: max_y,
+                    },
+                ],
+                plotOptions: {
+                    xrange: {
+                        grouping: false,
+                        borderRadius: 0,
+                    },
+                    series: {
+                        events: optionsController.options.showFills ? {
+                            legendItemClick: function () {
+                                if (this.name === "Fills") {
+                                    var plotBands = this.chart.xAxis[0].plotLinesAndBands;
+                                    if (!this.visible) {
+                                        for (var i = 0; i < plotBands.length; i++) {
+                                            this.chart.xAxis[0].plotLinesAndBands[i].hidden = false;
+                                            $(this.chart.xAxis[0].plotLinesAndBands[i].svgElem.element).show();
+                                        }
+                                    }
+                                    else {
+                                        for (var i = 0; i < plotBands.length; i++) {
+                                            this.chart.xAxis[0].plotLinesAndBands[i].hidden = true;
+                                            $(this.chart.xAxis[0].plotLinesAndBands[i].svgElem.element).hide();
+                                        }
+                                    }
+                                }
+                            }
+                        } : {},
+                        allowPointSelect: true,
+                        point: {
+                            events: {
+                                click: function () {
+                                    const parent = $(this.series.chart.container).parent().parent()
+                                    main.updateLinks(parent, plotData, this.run, this.series.index - 1)
+                                }
+                            }
+                        },
+                    }
+                },
+                series: optionsController.options.showFills ?
+                    [{
+                        name: "Fills",
+                        color: "#e6eaf2",
+                        type: "area",
+                        legendIndex: 100
+                    }]
+                    :
+                    []
+            }
+
+            for(let i = 0; i < plotData.series.length; i++)
+            {
+                const tooltip = `
+                    <b>{point.series.name}</b><br> 
+                    <b>${yTitle}: </b>{point.y}<br>
+                    <b>Error:</b> {point.error}<br/>
+                    <b>Run No:</b> {point.run}<br/>
+                    <b>Fill No:</b> {point.fill_number}<br>
+                    <b>Duration:</b> {point.duration}<br>
+                    <b>Delivered luminosity:</b> {point.del_lumi}<br>
+                    <b>B field:</b> {point.b_field}<br>
+                    <b>End luminosity:</b> {point.end_lumi}<br>
+                    <b>Start time:</b> {point.start_time}<br>
+                    <b>End time:</b> {point.end_time}<br>
+                    <b>Energy:</b> {point.energy}<br>
+                    <b>Era:</b> {point.era}<br>
+                    <b>Injection scheme:</b> {point.injection_scheme}<br>
+                    <b>HLT key:</b> {point.hlt_key}<br>
+                    <b>HLT physics rate:</b> {point.hlt_physics_rate}<br>
+                    <b>L1T key:</b> {point.l1_key}<br>
+                    <b>L1T rate:</b> {point.l1_rate}<br>
+                    <b>Recorded lumi:</b> {point.recorded_lumi}<br>
+                    Click on the data point to reveal urls to OMS, RR and DQM GUI.`
+
+                const data = plotData.series[i].trends.map(trend => ({
+                    y:                  trend.value,
+                    error:              trend.error,
+                    run:                trend.run,
+                    del_lumi:           trend.oms_info.delivered_lumi,
+                    b_field:            trend.oms_info.b_field,
+                    duration:           trend.oms_info.duration,
+                    end_lumi:           trend.oms_info.end_lumi,
+                    end_time:           trend.oms_info.end_time,
+                    energy:             trend.oms_info.energy,
+                    era:                trend.oms_info.era,
+                    fill_number:        trend.oms_info.fill_number,
+                    hlt_key:            trend.oms_info.hlt_key,
+                    hlt_physics_rate:   trend.oms_info.hlt_physics_rate,
+                    injection_scheme:   trend.oms_info.injection_scheme,
+                    l1_key:             trend.oms_info.l1_key,
+                    l1_rate:            trend.oms_info.l1_rate,
+                    recorded_lumi:      trend.oms_info.recorded_lumi,
+                    start_time:         trend.oms_info.start_time,
+                }))
+
+                const ticks = []
+
+                for (var j = 0; j < data.length; j++) 
+                {
+                    let valueForBinLength = data[j].duration
+                    if(optionsController.options.showIntLumi)
+                        valueForBinLength = data[j].del_lumi
+
+                    // Make sure bin length is not 0
+                    if(valueForBinLength === 0)
+                        valueForBinLength = 1
+
+                    const prev_x2 = get_prev_x2(j, data)
+                    data[j].x = prev_x2
+                    data[j].x2 = prev_x2 + valueForBinLength
+
+                    ticks.push(prev_x2 + (data[j].dur / 2));
+                    
+                    function get_prev_x2(index, arr) {
+                        return index === 0 ? 0 : arr[index - 1].x2;
                     }
                 }
-            })
-    
-            options.series.push({
-                type: "xrange",
-                pointWidth: 9,
-                data: yErr[i].map((element, index) => {
-                    return {
-                        x: data[index].x,
-                        x2: data[index].x2,
-                        y: data[index].y - element
-                    }
-                }),
-                color: seriesColors[i],
-                colorByPoint: false,
-                showInLegend: false,
-                animation: false,
-                enableMouseTracking: false,
-                states: {
-                    inactive: {
-                        opacity: 1
-                    }
+
+                Object.assign(options.xAxis, {
+                    labels: {
+                        enabled: true,
+                        formatter: function () {
+                            var index = ticks.indexOf(this.value);
+                            var n = parseInt(ticks.length / 10);
+            
+                            // Show only every nth label and, always, the last one
+                            if (index % n != 0 && index != ticks.length - 1)
+                                return ""
+            
+                            return xValues[index];
+                        },
+                    },
+                    tickPositions: ticks,
+                    plotBands: optionsController.options.showFills ? bands : []
+                })
+
+                options.series.push({
+                    name: seriesTitles[i],
+                    type: "xrange",
+                    pointWidth: 6,
+                    data: data,
+                    color: helpers.seriesColors[i],
+                    colorByPoint: false,
+                    tooltip: {
+                        headerFormat: "",
+                        pointFormat: tooltip,
+                    },
+                    showInLegend: true,
+                    animation: false
+                })
+
+                if (optionsController.options.showErrors) 
+                {
+                    options.series.push({
+                        type: "xrange",
+                        pointWidth: 9,
+                        data: yErr[i].map((element, index) => {
+                            return {
+                                x: data[index].x,
+                                x2: data[index].x2,
+                                y: data[index].y + element
+                            }
+                        }),
+                        color: helpers.seriesColors[i],
+                        colorByPoint: false,
+                        showInLegend: false,
+                        animation: false,
+                        enableMouseTracking: false,
+                        states: {
+                            inactive: {
+                                opacity: 1
+                            }
+                        }
+                    })
+            
+                    options.series.push({
+                        type: "xrange",
+                        pointWidth: 9,
+                        data: yErr[i].map((element, index) => {
+                            return {
+                                x: data[index].x,
+                                x2: data[index].x2,
+                                y: data[index].y - element
+                            }
+                        }),
+                        color: helpers.seriesColors[i],
+                        colorByPoint: false,
+                        showInLegend: false,
+                        animation: false,
+                        enableMouseTracking: false,
+                        states: {
+                            inactive: {
+                                opacity: 1
+                            }
+                        }
+                    })
                 }
-            })
-        }
-    }
+            }
 
-    var chartObj = new Highcharts.Chart(options)
-    chartObj.redraw()
-    chartObj.reflow()
+            const chartObj = new Highcharts.Chart(options)
+            chartObj.redraw()
+            chartObj.reflow()
 
-    return chartObj
-}
+            return chartObj
+        },
 
-function getScatterFillBands(xValues, fills)
-{
-    var bands = []
-    var start_i = 0
-    var lastFill = 0
-    var flag = false
-
-    for (var i = 0; i < xValues.length; i++) 
-    {
-        if (fills[i] !== lastFill)
+        drawXRangeDatetimePlot: function(plotData, renderTo)
         {
-            if (flag) {
+            const plotName = plotData.plot_title
+            const yTitle = plotData.y_title
+            const xValues = plotData.series[0].trends.map(x => x.run)
+            const yValues = plotData.series.map(x => x.trends.map(y => y.value))
+            const yErr = plotData.series.map(x => x.trends.map(y => y.error))
+            const fills = plotData.series[0].trends.map(x => x.oms_info.fill_number)
+            const durations = plotData.series[0].trends.map(x => x.oms_info.duration)
+            const intLumis = plotData.series[0].trends.map(x => x.oms_info.init_lumi)
+            const times = plotData.series[0].trends.map(x => [x.oms_info.start_time, x.oms_info.end_time])
+            const seriesTitles = plotData.series.map(x => x.metadata.y_title)
+
+            const meanAndRms = helpers.calculateMeanAndRMS(yValues)
+            const mean = meanAndRms[0]
+            const rms = meanAndRms[1]
+            const range = helpers.getYRange(mean, rms)
+            const min_y = range[0]
+            const max_y = range[1]
+            
+            const options = {
+                credits: {
+                    enabled: false
+                },
+                chart: {
+                    renderTo: renderTo,
+                    type: "xrange",
+                    zoomType: "xy",
+                    animation: false
+                },
+                lang: {
+                    noData: "No data found for given runs"
+                },
+                title: {
+                    text: plotName
+                },
+                subtitle: {
+                    text: `<i>${plotData.name}</i><br>Mean: ${mean.toExponential(4)}, RMS: ${rms.toExponential(4)}`
+                },
+                tooltip: {
+                    style : { opacity: 0.9 },
+                },
+                xAxis: {
+                    title: {
+                        text: "Run No.",
+                    },
+                    type: "datetime",
+                    labels: {
+                        rotation: -45,
+                    },
+                },
+                yAxis: [
+                    {
+                        title: {
+                            text: yTitle,
+                        },
+                        min: min_y,
+                        max: max_y,
+                    },
+                ],
+                plotOptions: {
+                    xrange: {
+                        grouping: false,
+                        borderRadius: 0,
+                    },
+                    series: {
+                        events: optionsController.options.showFills ? {
+                            legendItemClick: function () {
+                                if (this.name === "Fills") {
+                                    var plotBands = this.chart.xAxis[0].plotLinesAndBands;
+                                    if (!this.visible) {
+                                        for (var i = 0; i < plotBands.length; i++) {
+                                            this.chart.xAxis[0].plotLinesAndBands[i].hidden = false;
+                                            $(this.chart.xAxis[0].plotLinesAndBands[i].svgElem.element).show();
+                                        }
+                                    }
+                                    else {
+                                        for (var i = 0; i < plotBands.length; i++) {
+                                            this.chart.xAxis[0].plotLinesAndBands[i].hidden = true;
+                                            $(this.chart.xAxis[0].plotLinesAndBands[i].svgElem.element).hide();
+                                        }
+                                    }
+                                }
+                            }
+                        } : {},
+                        allowPointSelect: true,
+                        point: {
+                            events: {
+                                click: function () {
+                                    const parent = $(this.series.chart.container).parent().parent()
+                                    main.updateLinks(parent, plotData, this.run, this.series.index - 1)
+                                }
+                            }
+                        },
+                    }
+                },
+                series: optionsController.options.showFills ?
+                    [{
+                        name: "Fills",
+                        color: "#e6eaf2",
+                        type: "area",
+                        legendIndex: 100
+                    }]
+                    :
+                    []
+            }
+
+            const bands = this.getXRangeDatetimeFillBands(fills, times)
+
+            Object.assign(options.xAxis, {
+                plotBands: optionsController.options.showFills ? bands : []
+            })
+
+            for(let i = 0; i < plotData.series.length; i++)
+            {
+                const tooltip = `
+                    <b>{point.series.name}</b><br> 
+                    <b>${yTitle}: </b>{point.y}<br>
+                    <b>Error:</b> {point.error}<br/>
+                    <b>Run No:</b> {point.run}<br/>
+                    <b>Fill No:</b> {point.fill_number}<br>
+                    <b>Duration:</b> {point.duration}<br>
+                    <b>Delivered luminosity:</b> {point.del_lumi}<br>
+                    <b>B field:</b> {point.b_field}<br>
+                    <b>End luminosity:</b> {point.end_lumi}<br>
+                    <b>Start time:</b> {point.start_time}<br>
+                    <b>End time:</b> {point.end_time}<br>
+                    <b>Energy:</b> {point.energy}<br>
+                    <b>Era:</b> {point.era}<br>
+                    <b>Injection scheme:</b> {point.injection_scheme}<br>
+                    <b>HLT key:</b> {point.hlt_key}<br>
+                    <b>HLT physics rate:</b> {point.hlt_physics_rate}<br>
+                    <b>L1T key:</b> {point.l1_key}<br>
+                    <b>L1T rate:</b> {point.l1_rate}<br>
+                    <b>Recorded lumi:</b> {point.recorded_lumi}<br>
+                    Click on the data point to reveal urls to OMS, RR and DQM GUI.`
+
+                const data = plotData.series[i].trends.map(trend => ({
+                    x:                  new Date(trend.oms_info.start_time).getTime(), 
+                    x2:                 new Date(trend.oms_info.end_time).getTime(), 
+                    y:                  trend.value,
+                    error:              trend.error,
+                    run:                trend.run,
+                    del_lumi:           trend.oms_info.delivered_lumi,
+                    b_field:            trend.oms_info.b_field,
+                    duration:           trend.oms_info.duration,
+                    end_lumi:           trend.oms_info.end_lumi,
+                    end_time:           trend.oms_info.end_time,
+                    energy:             trend.oms_info.energy,
+                    era:                trend.oms_info.era,
+                    fill_number:        trend.oms_info.fill_number,
+                    hlt_key:            trend.oms_info.hlt_key,
+                    hlt_physics_rate:   trend.oms_info.hlt_physics_rate,
+                    injection_scheme:   trend.oms_info.injection_scheme,
+                    l1_key:             trend.oms_info.l1_key,
+                    l1_rate:            trend.oms_info.l1_rate,
+                    recorded_lumi:      trend.oms_info.recorded_lumi,
+                    start_time:         trend.oms_info.start_time,
+                }))  
+
+                options.series.push({
+                    name: seriesTitles[i],
+                    type: "xrange",
+                    pointWidth: 6,
+                    data: data,
+                    color: helpers.seriesColors[i],
+                    colorByPoint: false,
+                    tooltip: {
+                        headerFormat: "",
+                        pointFormat: tooltip
+                    },
+                    showInLegend: true,
+                    animation: false
+                })
+
+                if (optionsController.options.showErrors) 
+                {
+                    options.series.push({
+                        type: "xrange",
+                        pointWidth: 9,
+                        data: yErr[i].map((element, index) => {
+                            return {
+                                x: data[index].x,
+                                x2: data[index].x2,
+                                y: data[index].y + element
+                            }
+                        }),
+                        color: helpers.seriesColors[i],
+                        colorByPoint: false,
+                        showInLegend: false,
+                        animation: false,
+                        enableMouseTracking: false,
+                        states: {
+                            inactive: {
+                                opacity: 1
+                            }
+                        }
+                    })
+            
+                    options.series.push({
+                        type: "xrange",
+                        pointWidth: 9,
+                        data: yErr[i].map((element, index) => {
+                            return {
+                                x: data[index].x,
+                                x2: data[index].x2,
+                                y: data[index].y - element
+                            }
+                        }),
+                        color: helpers.seriesColors[i],
+                        colorByPoint: false,
+                        showInLegend: false,
+                        animation: false,
+                        enableMouseTracking: false,
+                        states: {
+                            inactive: {
+                                opacity: 1
+                            }
+                        }
+                    })
+                }
+            }
+
+            const chartObj = new Highcharts.Chart(options)
+            chartObj.redraw()
+            chartObj.reflow()
+
+            return chartObj
+        },
+
+        getScatterFillBands: function(xValues, fills)
+        {
+            const bands = []
+            let start_i = 0
+            let lastFill = 0
+            let flag = false
+
+            for (let i = 0; i < xValues.length; i++) 
+            {
+                if (fills[i] !== lastFill)
+                {
+                    if (flag) {
+                        bands.push({
+                            color: "#e6eaf2",
+                            from: start_i - 0.5,
+                            to: i - 1 + 0.5,
+                            id: "fills"
+                        });
+                    }
+                    else 
+                        start_i = i;
+                    
+                    flag = !flag
+                    lastFill = fills[i]
+                }
+            }
+
+            // Add last fill if needed
+            if (flag) 
+            {
                 bands.push({
                     color: "#e6eaf2",
                     from: start_i - 0.5,
-                    to: i - 1 + 0.5,
+                    to: xValues.length - 1 + 0.5,
                     id: "fills"
-                });
+                })
             }
-            else 
-                start_i = i;
+
+            return bands
+        },
+
+        getXRangeFillBands: function(durations, fills)
+        {
+            if(fills.length === 0 || durations.length === 0)
+                return []
+
+            // Group by fill and sum durations
+            let bands = []
+            let lastFill = fills[0]
+            let durSum = 0
+            let lastDurSum = 0;
+
+            for(let j = 0; j < fills.length; j++)
+            {
+                if(fills[j] != lastFill)
+                {
+                    bands.push({color: "#e6eaf2", from: lastDurSum, to: durSum, id: "fills"})
+                    lastDurSum = durSum
+                    lastFill = fills[j]
+                }
+
+                durSum += durations[j]
+            }
             
-            flag = !flag
-            lastFill = fills[i]
-        }
-    }
-
-    // Add last fill if needed
-    if (flag) 
-    {
-        bands.push({
-            color: "#e6eaf2",
-            from: start_i - 0.5,
-            to: i - 1 + 0.5,
-            id: "fills"
-        })
-    }
-
-    return bands
-}
-
-function getXRangeFillBands(durations, fills)
-{
-    if(fills.length == 0 || durations.length == 0)
-        return []
-
-    // Group by fill and sum durations
-    var bands = []
-    var lastFill = fills[0]
-    var durSum = 0
-    var lastDurSum = 0;
-
-    for(var j = 0; j < fills.length; j++)
-    {
-        if(fills[j] != lastFill)
-        {
+            // Add last fill
             bands.push({color: "#e6eaf2", from: lastDurSum, to: durSum, id: "fills"})
-            lastDurSum = durSum
-            lastFill = fills[j]
-        }
 
-        durSum += durations[j]
-    }
-    
-    // Add last fill
-    bands.push({color: "#e6eaf2", from: lastDurSum, to: durSum, id: "fills"})
+            // Remove every second
+            bands = bands.filter(function(_, i) {
+                return i % 2 === 0;
+            })
 
-    // Remove every second
-    bands = bands.filter(function(_, i) {
-        return i % 2 === 0;
-    })
+            return bands
+        },
 
-    return bands
-}
-
-function getXRangeDatetimeFillBands(fills, times)
-{
-    if(fills.length == 0 || times.length == 0)
-        return []
-    
-    times = times.map(x => x.map(x1 => new Date(x1).getTime()))
-
-    var bands = []
-    var lastFill = fills[0]
-    var lastTime = times[0][0]
-
-    for(var j = 0; j < fills.length - 1; j++)
-    {
-        if(fills[j] != lastFill)
+        getXRangeDatetimeFillBands: function(fills, times)
         {
-            bands.push({color: "#e6eaf2", from: lastTime, to: times[j - 1][1], id: "fills"})
-            lastFill = fills[j]
-            lastTime = times[j][0]
+            if(fills.length === 0 || times.length === 0)
+                return []
+            
+            times = times.map(x => x.map(x1 => new Date(x1).getTime()))
+
+            var bands = []
+            var lastFill = fills[0]
+            var lastTime = times[0][0]
+
+            for(var j = 0; j < fills.length - 1; j++)
+            {
+                if(fills[j] != lastFill)
+                {
+                    bands.push({color: "#e6eaf2", from: lastTime, to: times[j - 1][1], id: "fills"})
+                    lastFill = fills[j]
+                    lastTime = times[j][0]
+                }
+            }
+            
+            // Add last fill
+            bands.push({color: "#e6eaf2", from: lastTime, to: times[times.length - 1][1], id: "fills"})
+
+            return bands
         }
     }
-    
-    // Add last fill
-    bands.push({color: "#e6eaf2", from: lastTime, to: times[times.length - 1][1], id: "fills"})
-
-    return bands
-}
+}())

@@ -37,7 +37,6 @@ DQMGUI = 'https://cmsweb.cern.ch/dqm/offline/'
 
 def process_run(run):
   cfg_files = glob(CFGFILES)
-  # plot_desc = ConfigParser()
   config_parsers = []
 
   good_files = 0
@@ -68,9 +67,6 @@ def process_run(run):
 
   print('About to process %s files...' % len(all_files))
 
-  # Import ROOT now to fail fast
-  # import ROOT
-
   result = []
   for filename in all_files:
     pd_match = PDPATTERN.findall(filename)
@@ -82,15 +78,15 @@ def process_run(run):
       pd = pd_match[0].split('__')[0]
     
     tdirectory = ROOT.TFile.Open(filename)
+    if tdirectory == None:
+      print("Unable to open file: '%s'" % filename)
+      continue
 
     for folder in tdirectory.Get('DQMData').GetListOfKeys():
       if not folder.GetTitle().startswith('Run '):
         continue
       run = int(folder.GetTitle().split(' ')[1])
 
-      # for section in plot_desc:
-      #   if not section.startswith("plot:"):
-      #     continue
       for parser in config_parsers:
         for section in parser['parser']:
           if not section.startswith("plot:"):
@@ -113,6 +109,11 @@ def process_run(run):
             obj['y_title'] = parser['parser'][section]['yTitle']
             obj['value'] = value[0]
             obj['error'] = value[1]
+
+            if 'plotTitle' in parser['parser'][section]:
+              obj['plot_title'] = parser['parser'][section]['plotTitle']
+            else:
+              obj['plot_title'] = section.strip('plot:')
             
             obj['eos_path'] = filename
             obj['me_path'] = me_path
@@ -147,6 +148,7 @@ def process_run(run):
       dataset = obj['dataset'],
       pd = obj['pd'],
       y_title = obj['y_title'],
+      plot_title = obj['plot_title'],
       value = obj['value'],
       error = obj['error'],
     )
@@ -276,13 +278,14 @@ def insert_historic_data_to_db(session, historic_data_object):
       db_access.HistoricData.run == historic_data_object.run,
       db_access.HistoricData.lumi == historic_data_object.lumi,
       db_access.HistoricData.subsystem == historic_data_object.subsystem,
-      db_access.HistoricData.dataset == historic_data_object.dataset,
+      db_access.HistoricData.name == historic_data_object.name,
       ).one()
 
     if historic_data is not None:
       historic_data.dataset = historic_data_object.dataset
       historic_data.pd = historic_data_object.pd
       historic_data.y_title = historic_data_object.y_title
+      historic_data.plot_title = historic_data_object.plot_title
       historic_data.value = historic_data_object.value
       historic_data.error = historic_data_object.error
       session.commit()
@@ -308,10 +311,11 @@ def get_all_available_runs():
     if not len(run_match) == 0:
       run = run_match[0]
       runs.add(int(run))
-  return runs
+  return list(runs)
 
 if __name__ == '__main__':
-  # print(list(get_all_available_runs())[100:])
+  # Get last 101
+  # print(sorted(list(get_all_available_runs()))[-101:])
   parser = argparse.ArgumentParser(description='HDQM data extractor.')
   parser.add_argument('-r', dest='runs', type=int, nargs='+', help='Runs to process. If none were given, will process all available runs.')
   args = parser.parse_args()
@@ -321,8 +325,15 @@ if __name__ == '__main__':
   else:
     runs = args.runs
 
-  pool = Pool(25)
+  pool = Pool(50)
   # runs = [322169, 296365, 318734, 318735, 306528, 306529, 318733, 306522, 306523, 306520, 306521, 306526, 306527, 301062, 301063, 301060, 301061, 301067, 301064, 304013, 301068, 304018, 300256, 300257, 300255, 300259, 323277, 323270, 323279, 297705, 322902, 297702, 297701, 325306, 325309, 325308, 298069, 322909, 295851, 295854, 297563, 297562, 298393, 298392, 298397, 298398, 316991, 305764, 305766, 305761]
   # runs = [322169, 296365]
-  runs = [296365]
+  # runs = [296365]
+  # runs = [319654, 319656, 319657, 319658, 319659, 319661, 319663, 319666, 319667, 319670, 319672, 319675, 319678, 319680, 319682, 319683, 319685, 319686, 319687, 319688, 319689, 319690]
+  # runs = [319690]
+  # runs = [325449, 325458, 325460, 325461, 325463, 325464, 325465, 325466, 325467, 325469, 325470, 325473, 325476, 325477, 325484, 325486, 325492, 325493, 325494, 325495, 325496, 325497, 325500, 325501, 325503, 325506, 325511, 325517, 325518, 325519, 325520, 325522, 325523, 325524, 325525, 325526, 325529, 325530, 325531, 325543, 325550, 325552, 325553, 325554, 325556, 325562, 325565, 325574, 325575, 325577, 325578, 325587, 325588, 325589, 325590, 325591, 325593, 325594, 325597, 325604, 325605, 325606, 325607, 325615, 325616, 325617, 325618, 325619, 325620, 325621, 325622, 325627, 325631, 325637, 325639, 325642, 325643, 325644, 325645, 325646, 325647, 325648, 325653, 325654, 325657, 325680, 325681, 325682, 325684, 325688, 325695, 325696, 325697, 325698, 325699, 325700, 325701, 325702, 325743, 325746]
+  # runs = [325449]
+  # runs = runs[-1000:-1]
+  runs = [r for r in runs if r > 324418 and r < 325310]
+  print(runs)
   pool.map(process_run, runs)

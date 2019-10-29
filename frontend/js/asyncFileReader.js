@@ -1,21 +1,24 @@
 
-const readUploadedFileAsText = (inputFile) => 
-{
-    const temporaryFileReader = new FileReader()
+const asyncFileReader = (function() {
+    return {
+        readUploadedFileAsText: async function(inputFile) {
+            const temporaryFileReader = new FileReader()
 
-    return new Promise((resolve, reject) => 
-    {
-        temporaryFileReader.onerror = () => 
-        {
-            temporaryFileReader.abort()
-            reject(new DOMException("Problem parsing input file."))
-        }
+            return new Promise((resolve, reject) => 
+            {
+                temporaryFileReader.onerror = () => 
+                {
+                    temporaryFileReader.abort()
+                    reject(new DOMException("Problem parsing input file."))
+                }
 
-        temporaryFileReader.onload = () => 
-        {
-            resolve(temporaryFileReader.result)
+                temporaryFileReader.onload = () => 
+                {
+                    resolve(temporaryFileReader.result)
+                }
+            
+                temporaryFileReader.readAsText(inputFile)
+            })
         }
-    
-        temporaryFileReader.readAsText(inputFile)
-    })
-}
+    }
+}())

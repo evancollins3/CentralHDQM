@@ -98,9 +98,8 @@ const filterController = (function(){
             }
         },
 
-        getApiUrl: function()
+        getApiUrl: async function()
         {
-            `http://vocms0231.cern.ch:8080/data?subsystem=${selectionController.selectedSubsystem()}&processing_level=${selectionController.selectedProcessingLevel()}&from_run=319654&to_run=319690`
             const base = 'http://vocms0231.cern.ch:8080'
 
             const value = $("#filter-select").val()
@@ -115,13 +114,25 @@ const filterController = (function(){
             }
             else if(value == "list")
             {
-                // return $("#filter-input-list").val()
                 return `${base}/data?subsystem=${selectionController.selectedSubsystem()}&processing_level=${selectionController.selectedProcessingLevel()}&runs=${$("#filter-input-list").val()}`
             }
             else if(value == "json")
             {
-                // TODO: make this work!
-                return `${base}/data?subsystem=${selectionController.selectedSubsystem()}&processing_level=${selectionController.selectedProcessingLevel()}}`
+                const file = $("#filter-input-file")[0].files[0]
+
+                try
+                {
+                    const fileContents = await asyncFileReader.readUploadedFileAsText(file)  
+                    const goldenJson = JSON.parse(fileContents)
+                    const runs = Object.keys(goldenJson).map(x => parseInt(x)).join()
+                    
+                    return `${base}/data?subsystem=${selectionController.selectedSubsystem()}&processing_level=${selectionController.selectedProcessingLevel()}&runs=${runs}`
+                }
+                catch (e)
+                {
+                    console.log("Unable to read golden json input file")
+                    throw(error)
+                }
             }
             else if(value == "rr")
             {

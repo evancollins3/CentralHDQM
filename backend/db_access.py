@@ -1,11 +1,13 @@
 from __future__ import print_function
+import os
 import enum
 from sqlalchemy import create_engine
 from sqlalchemy import Column, String, Integer, Float, DateTime, Binary, ForeignKey, Enum, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 
-with open('connection_string.txt', 'r') as file:
+dir_path = os.path.dirname(os.path.realpath(__file__))
+with open(os.path.join(dir_path, 'connection_string.txt'), 'r') as file:
   db_string = file.read().replace('\n', '')
 db = create_engine(db_string)
 base = declarative_base()
@@ -21,6 +23,7 @@ class HistoricData(base):
   dataset = Column(String, nullable=False)
   pd = Column(String, nullable=False)
   y_title = Column(String, nullable=False)
+  plot_title = Column(String, nullable=False)
   value = Column(Float, nullable=False)
   error = Column(Float, nullable=False)
 
@@ -32,7 +35,7 @@ class HistoricData(base):
   optional_me2_id = Column(Integer, ForeignKey('monitor_elements.id'))
   optional_me2 = relationship("MonitorElement", foreign_keys=[optional_me2_id])
 
-  __table_args__ = (UniqueConstraint('run', 'lumi', 'subsystem', 'dataset', name='_run_lumi_subsystem_dataset_uc'),)
+  __table_args__ = (UniqueConstraint('run', 'lumi', 'subsystem', 'name', name='_run_lumi_subsystem_name_uc'),)
 
 class MonitorElement(base):
   __tablename__ = 'monitor_elements'
