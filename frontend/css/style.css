@@ -6,3 +6,9 @@
 .modal-xxl {
     max-width: 90%;
 }
+
+@media (min-width: 992px) { 
+    .h-non-lg-100 {
+        height: 100%;
+    }
+}

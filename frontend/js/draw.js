@@ -4,7 +4,6 @@ const plotter = (function() {
 
         draw: async function(plotData, renderTo) 
         {
-            // console.log(plotData)
             if(plotData.correlation) 
             {
                 if(plotData.series.length === 2)
@@ -29,7 +28,7 @@ const plotter = (function() {
             const seriesTitles = plotData.series.map(x => x.metadata.y_title)
 
             // First array contains x values and second array contains y values
-            var values = yValues[0].map((v, i) => ({
+            const values = yValues[0].map((v, i) => ({
                 x: v,
                 y: yValues[1][i],
                 run: xValues[i],
@@ -39,7 +38,7 @@ const plotter = (function() {
                 }
             }))
 
-            var options = {
+            const options = {
                 credits: {
                     enabled: false
                 },
@@ -71,7 +70,7 @@ const plotter = (function() {
                 },
                 tooltip: {
                     headerFormat: "",
-                    pointFormat: "<b>Run No sdsdsd:</b> {point.run}<br><b>X</b>: {point.x}<br><b>Y</b>: {point.y}",
+                    pointFormat: "<b>Run No:</b> {point.run}<br><b>X</b>: {point.x}<br><b>Y</b>: {point.y}",
                     style : { opacity: 0.9 },
                 },
                 series: [{
@@ -112,7 +111,7 @@ const plotter = (function() {
                 })
             }
 
-            var chartObj = new Highcharts.Chart(options)
+            const chartObj = new Highcharts.Chart(options)
             chartObj.redraw()
             chartObj.reflow()
 
@@ -192,15 +191,15 @@ const plotter = (function() {
                         events: optionsController.options.showFills ? {
                             legendItemClick: function () {
                                 if (this.name === "Fills") {
-                                    var plotBands = this.chart.xAxis[0].plotLinesAndBands;
+                                    const plotBands = this.chart.xAxis[0].plotLinesAndBands;
                                     if (!this.visible) {
-                                        for (var i = 0; i < plotBands.length; i++) {
+                                        for (let i = 0; i < plotBands.length; i++) {
                                             this.chart.xAxis[0].plotLinesAndBands[i].hidden = false;
                                             $(this.chart.xAxis[0].plotLinesAndBands[i].svgElem.element).show();
                                         }
                                     }
                                     else {
-                                        for (var i = 0; i < plotBands.length; i++) {
+                                        for (let i = 0; i < plotBands.length; i++) {
                                             this.chart.xAxis[0].plotLinesAndBands[i].hidden = true;
                                             $(this.chart.xAxis[0].plotLinesAndBands[i].svgElem.element).hide();
                                         }
@@ -213,7 +212,13 @@ const plotter = (function() {
                             events: {
                                 click: function () {
                                     const parent = $(this.series.chart.container).parent().parent()
-                                    main.updateLinks(parent, plotData, this.category, this.series.index - 1)
+
+                                    if(fullScreenController.isFullScreen) {
+                                        fullScreenController.selectDataPoint(this.series_index, this.index)
+                                    }
+                                    else {
+                                        main.updateLinks(parent, plotData, this.category, this.series_index)
+                                    }
                                 }
                             }
                         },
@@ -236,46 +241,16 @@ const plotter = (function() {
             for(let i = 0; i < plotData.series.length; i++)
             {
                 const tooltip = `
-                    <b>{point.series.name}</b><br> 
-                    <b>${yTitle}: </b>{point.y}<br>
+                    <b>Value:</b> {point.y}<br>
                     <b>Error:</b> {point.error}<br/>
                     <b>Run No:</b> {point.run}<br/>
-                    <b>Fill No:</b> {point.fill_number}<br>
-                    <b>Duration:</b> {point.duration}<br>
-                    <b>Delivered luminosity:</b> {point.del_lumi}<br>
-                    <b>B field:</b> {point.b_field}<br>
-                    <b>End luminosity:</b> {point.end_lumi}<br>
-                    <b>Start time:</b> {point.start_time}<br>
-                    <b>End time:</b> {point.end_time}<br>
-                    <b>Energy:</b> {point.energy}<br>
-                    <b>Era:</b> {point.era}<br>
-                    <b>Injection scheme:</b> {point.injection_scheme}<br>
-                    <b>HLT key:</b> {point.hlt_key}<br>
-                    <b>HLT physics rate:</b> {point.hlt_physics_rate}<br>
-                    <b>L1T key:</b> {point.l1_key}<br>
-                    <b>L1T rate:</b> {point.l1_rate}<br>
-                    <b>Recorded lumi:</b> {point.recorded_lumi}<br>
-                    Click on the data point to reveal urls to OMS, RR and DQM GUI.`
+                    Click on the data point to reveal more info.`
 
                 const data = plotData.series[i].trends.map(trend => ({
-                    y:                  trend.value,
-                    error:              trend.error,
-                    run:                trend.run,
-                    del_lumi:           trend.oms_info.delivered_lumi,
-                    b_field:            trend.oms_info.b_field,
-                    duration:           trend.oms_info.duration,
-                    end_lumi:           trend.oms_info.end_lumi,
-                    end_time:           trend.oms_info.end_time,
-                    energy:             trend.oms_info.energy,
-                    era:                trend.oms_info.era,
-                    fill_number:        trend.oms_info.fill_number,
-                    hlt_key:            trend.oms_info.hlt_key,
-                    hlt_physics_rate:   trend.oms_info.hlt_physics_rate,
-                    injection_scheme:   trend.oms_info.injection_scheme,
-                    l1_key:             trend.oms_info.l1_key,
-                    l1_rate:            trend.oms_info.l1_rate,
-                    recorded_lumi:      trend.oms_info.recorded_lumi,
-                    start_time:         trend.oms_info.start_time,
+                    y:              trend.value,
+                    error:          trend.error,
+                    run:            trend.run,
+                    series_index:   i,
                 }))
 
                 options.series.push({
@@ -287,7 +262,7 @@ const plotter = (function() {
                         radius: 3
                     },
                     tooltip: {
-                        headerFormat: "",
+                        // headerFormat: "",
                         pointFormat: tooltip,
                     },
                     showInLegend: true,
@@ -315,6 +290,11 @@ const plotter = (function() {
                             pointFormat: '<b>{point.series.name}</b><br> <b>Run No:</b> {point.category}<br/><b>Error Range</b> : {point.low} to {point.high}<br/>'
                         },
                         animation: false,
+                        point: {
+                            events: {
+                                click: () => false
+                            }
+                        },
                     })
                 }
             }
@@ -340,6 +320,11 @@ const plotter = (function() {
                         inactive: {
                             opacity: 1
                         },
+                    },
+                    point: {
+                        events: {
+                            click: () => false
+                        }
                     },
                 })
             }
@@ -401,7 +386,6 @@ const plotter = (function() {
                     labels: {
                         rotation: -45,
                     },
-                    // categories: [...new Set([].concat(...xValues))],
                 },
                 yAxis: [
                     {
@@ -421,15 +405,15 @@ const plotter = (function() {
                         events: optionsController.options.showFills ? {
                             legendItemClick: function () {
                                 if (this.name === "Fills") {
-                                    var plotBands = this.chart.xAxis[0].plotLinesAndBands;
+                                    const plotBands = this.chart.xAxis[0].plotLinesAndBands;
                                     if (!this.visible) {
-                                        for (var i = 0; i < plotBands.length; i++) {
+                                        for (let i = 0; i < plotBands.length; i++) {
                                             this.chart.xAxis[0].plotLinesAndBands[i].hidden = false;
                                             $(this.chart.xAxis[0].plotLinesAndBands[i].svgElem.element).show();
                                         }
                                     }
                                     else {
-                                        for (var i = 0; i < plotBands.length; i++) {
+                                        for (let i = 0; i < plotBands.length; i++) {
                                             this.chart.xAxis[0].plotLinesAndBands[i].hidden = true;
                                             $(this.chart.xAxis[0].plotLinesAndBands[i].svgElem.element).hide();
                                         }
@@ -442,7 +426,13 @@ const plotter = (function() {
                             events: {
                                 click: function () {
                                     const parent = $(this.series.chart.container).parent().parent()
-                                    main.updateLinks(parent, plotData, this.run, this.series.index - 1)
+                                    
+                                    if(fullScreenController.isFullScreen) {
+                                        fullScreenController.selectDataPoint(this.series_index, this.index)
+                                    }
+                                    else {
+                                        main.updateLinks(parent, plotData, this.run, this.series_index)
+                                    }
                                 }
                             }
                         },
@@ -462,51 +452,23 @@ const plotter = (function() {
             for(let i = 0; i < plotData.series.length; i++)
             {
                 const tooltip = `
-                    <b>{point.series.name}</b><br> 
-                    <b>${yTitle}: </b>{point.y}<br>
+                    <b>Value:</b> {point.y}<br>
                     <b>Error:</b> {point.error}<br/>
                     <b>Run No:</b> {point.run}<br/>
-                    <b>Fill No:</b> {point.fill_number}<br>
-                    <b>Duration:</b> {point.duration}<br>
-                    <b>Delivered luminosity:</b> {point.del_lumi}<br>
-                    <b>B field:</b> {point.b_field}<br>
-                    <b>End luminosity:</b> {point.end_lumi}<br>
-                    <b>Start time:</b> {point.start_time}<br>
-                    <b>End time:</b> {point.end_time}<br>
-                    <b>Energy:</b> {point.energy}<br>
-                    <b>Era:</b> {point.era}<br>
-                    <b>Injection scheme:</b> {point.injection_scheme}<br>
-                    <b>HLT key:</b> {point.hlt_key}<br>
-                    <b>HLT physics rate:</b> {point.hlt_physics_rate}<br>
-                    <b>L1T key:</b> {point.l1_key}<br>
-                    <b>L1T rate:</b> {point.l1_rate}<br>
-                    <b>Recorded lumi:</b> {point.recorded_lumi}<br>
-                    Click on the data point to reveal urls to OMS, RR and DQM GUI.`
+                    Click on the data point to reveal more info.`
 
                 const data = plotData.series[i].trends.map(trend => ({
-                    y:                  trend.value,
-                    error:              trend.error,
-                    run:                trend.run,
-                    del_lumi:           trend.oms_info.delivered_lumi,
-                    b_field:            trend.oms_info.b_field,
-                    duration:           trend.oms_info.duration,
-                    end_lumi:           trend.oms_info.end_lumi,
-                    end_time:           trend.oms_info.end_time,
-                    energy:             trend.oms_info.energy,
-                    era:                trend.oms_info.era,
-                    fill_number:        trend.oms_info.fill_number,
-                    hlt_key:            trend.oms_info.hlt_key,
-                    hlt_physics_rate:   trend.oms_info.hlt_physics_rate,
-                    injection_scheme:   trend.oms_info.injection_scheme,
-                    l1_key:             trend.oms_info.l1_key,
-                    l1_rate:            trend.oms_info.l1_rate,
-                    recorded_lumi:      trend.oms_info.recorded_lumi,
-                    start_time:         trend.oms_info.start_time,
+                    y:              trend.value,
+                    error:          trend.error,
+                    run:            trend.run,
+                    del_lumi:       trend.oms_info.delivered_lumi,
+                    duration:       trend.oms_info.duration,
+                    series_index:   i,
                 }))
 
                 const ticks = []
 
-                for (var j = 0; j < data.length; j++) 
+                for (let j = 0; j < data.length; j++) 
                 {
                     let valueForBinLength = data[j].duration
                     if(optionsController.options.showIntLumi)
@@ -531,9 +493,9 @@ const plotter = (function() {
                     labels: {
                         enabled: true,
                         formatter: function () {
-                            var index = ticks.indexOf(this.value);
-                            var n = parseInt(ticks.length / 10);
-            
+                            const index = ticks.indexOf(this.value);
+                            const n = parseInt(ticks.length / 10);
+
                             // Show only every nth label and, always, the last one
                             if (index % n != 0 && index != ticks.length - 1)
                                 return ""
@@ -581,7 +543,12 @@ const plotter = (function() {
                             inactive: {
                                 opacity: 1
                             }
-                        }
+                        },
+                        point: {
+                            events: {
+                                click: () => false
+                            }
+                        },
                     })
             
                     options.series.push({
@@ -603,7 +570,12 @@ const plotter = (function() {
                             inactive: {
                                 opacity: 1
                             }
-                        }
+                        },
+                        point: {
+                            events: {
+                                click: () => false
+                            }
+                        },
                     })
                 }
             }
@@ -619,12 +591,9 @@ const plotter = (function() {
         {
             const plotName = plotData.plot_title
             const yTitle = plotData.y_title
-            const xValues = plotData.series[0].trends.map(x => x.run)
             const yValues = plotData.series.map(x => x.trends.map(y => y.value))
             const yErr = plotData.series.map(x => x.trends.map(y => y.error))
             const fills = plotData.series[0].trends.map(x => x.oms_info.fill_number)
-            const durations = plotData.series[0].trends.map(x => x.oms_info.duration)
-            const intLumis = plotData.series[0].trends.map(x => x.oms_info.init_lumi)
             const times = plotData.series[0].trends.map(x => [x.oms_info.start_time, x.oms_info.end_time])
             const seriesTitles = plotData.series.map(x => x.metadata.y_title)
 
@@ -684,15 +653,15 @@ const plotter = (function() {
                         events: optionsController.options.showFills ? {
                             legendItemClick: function () {
                                 if (this.name === "Fills") {
-                                    var plotBands = this.chart.xAxis[0].plotLinesAndBands;
+                                    const plotBands = this.chart.xAxis[0].plotLinesAndBands;
                                     if (!this.visible) {
-                                        for (var i = 0; i < plotBands.length; i++) {
+                                        for (let i = 0; i < plotBands.length; i++) {
                                             this.chart.xAxis[0].plotLinesAndBands[i].hidden = false;
                                             $(this.chart.xAxis[0].plotLinesAndBands[i].svgElem.element).show();
                                         }
                                     }
                                     else {
-                                        for (var i = 0; i < plotBands.length; i++) {
+                                        for (let i = 0; i < plotBands.length; i++) {
                                             this.chart.xAxis[0].plotLinesAndBands[i].hidden = true;
                                             $(this.chart.xAxis[0].plotLinesAndBands[i].svgElem.element).hide();
                                         }
@@ -705,7 +674,13 @@ const plotter = (function() {
                             events: {
                                 click: function () {
                                     const parent = $(this.series.chart.container).parent().parent()
-                                    main.updateLinks(parent, plotData, this.run, this.series.index - 1)
+
+                                    if(fullScreenController.isFullScreen) {
+                                        fullScreenController.selectDataPoint(this.series_index, this.index)
+                                    }
+                                    else {
+                                        main.updateLinks(parent, plotData, this.run, this.series_index)
+                                    }
                                 }
                             }
                         },
@@ -731,49 +706,19 @@ const plotter = (function() {
             for(let i = 0; i < plotData.series.length; i++)
             {
                 const tooltip = `
-                    <b>{point.series.name}</b><br> 
-                    <b>${yTitle}: </b>{point.y}<br>
+                    <b>Value:</b> {point.y}<br>
                     <b>Error:</b> {point.error}<br/>
                     <b>Run No:</b> {point.run}<br/>
-                    <b>Fill No:</b> {point.fill_number}<br>
-                    <b>Duration:</b> {point.duration}<br>
-                    <b>Delivered luminosity:</b> {point.del_lumi}<br>
-                    <b>B field:</b> {point.b_field}<br>
-                    <b>End luminosity:</b> {point.end_lumi}<br>
-                    <b>Start time:</b> {point.start_time}<br>
-                    <b>End time:</b> {point.end_time}<br>
-                    <b>Energy:</b> {point.energy}<br>
-                    <b>Era:</b> {point.era}<br>
-                    <b>Injection scheme:</b> {point.injection_scheme}<br>
-                    <b>HLT key:</b> {point.hlt_key}<br>
-                    <b>HLT physics rate:</b> {point.hlt_physics_rate}<br>
-                    <b>L1T key:</b> {point.l1_key}<br>
-                    <b>L1T rate:</b> {point.l1_rate}<br>
-                    <b>Recorded lumi:</b> {point.recorded_lumi}<br>
-                    Click on the data point to reveal urls to OMS, RR and DQM GUI.`
+                    Click on the data point to reveal more info.`
 
                 const data = plotData.series[i].trends.map(trend => ({
-                    x:                  new Date(trend.oms_info.start_time).getTime(), 
-                    x2:                 new Date(trend.oms_info.end_time).getTime(), 
-                    y:                  trend.value,
-                    error:              trend.error,
-                    run:                trend.run,
-                    del_lumi:           trend.oms_info.delivered_lumi,
-                    b_field:            trend.oms_info.b_field,
-                    duration:           trend.oms_info.duration,
-                    end_lumi:           trend.oms_info.end_lumi,
-                    end_time:           trend.oms_info.end_time,
-                    energy:             trend.oms_info.energy,
-                    era:                trend.oms_info.era,
-                    fill_number:        trend.oms_info.fill_number,
-                    hlt_key:            trend.oms_info.hlt_key,
-                    hlt_physics_rate:   trend.oms_info.hlt_physics_rate,
-                    injection_scheme:   trend.oms_info.injection_scheme,
-                    l1_key:             trend.oms_info.l1_key,
-                    l1_rate:            trend.oms_info.l1_rate,
-                    recorded_lumi:      trend.oms_info.recorded_lumi,
-                    start_time:         trend.oms_info.start_time,
-                }))  
+                    x:              new Date(trend.oms_info.start_time).getTime(), 
+                    x2:             new Date(trend.oms_info.end_time).getTime(), 
+                    y:              trend.value,
+                    error:          trend.error,
+                    run:            trend.run,
+                    series_index:   i,
+                }))
 
                 options.series.push({
                     name: seriesTitles[i],
@@ -811,7 +756,12 @@ const plotter = (function() {
                             inactive: {
                                 opacity: 1
                             }
-                        }
+                        },
+                        point: {
+                            events: {
+                                click: () => false
+                            }
+                        },
                     })
             
                     options.series.push({
@@ -833,7 +783,12 @@ const plotter = (function() {
                             inactive: {
                                 opacity: 1
                             }
-                        }
+                        },
+                        point: {
+                            events: {
+                                click: () => false
+                            }
+                        },
                     })
                 }
             }
@@ -927,11 +882,11 @@ const plotter = (function() {
             
             times = times.map(x => x.map(x1 => new Date(x1).getTime()))
 
-            var bands = []
-            var lastFill = fills[0]
-            var lastTime = times[0][0]
+            const bands = []
+            let lastFill = fills[0]
+            let lastTime = times[0][0]
 
-            for(var j = 0; j < fills.length - 1; j++)
+            for(let j = 0; j < fills.length - 1; j++)
             {
                 if(fills[j] != lastFill)
                 {

@@ -1,17 +1,9 @@
 
-$('#change-ranges-modal').on('hide.bs.modal', function (e)
-{
-    urlController.delete("modalPlot")
-})
-
-$('#gui-plot-modal').on('show.bs.modal', function (e) 
-{
-    $('#change-ranges-modal').css('z-index', 1000)
-})
-
-$('#gui-plot-modal').on('hide.bs.modal', function (e) 
-{
-    $('#change-ranges-modal').css('z-index', 1050)
+$(document).keyup(function(e){
+    const code = e.keyCode || e.which;
+    if(code === 27) {
+        fullScreenController.exitFullScreen()
+    }
 })
 
 const main = (function() {
@@ -20,11 +12,7 @@ const main = (function() {
         PLOTS_PER_PAGE: 4,
         currentPage: 1,
         chartsObjects: [],
-        modal: {
-            plotDatas: [],
-            popupChartObject: undefined,
-            plotIndex: 0,
-        },
+        plotDatas: [],
         
         submitClicked: async function(event) {
             event.preventDefault()
@@ -147,7 +135,7 @@ const main = (function() {
 
                 const chartObj = await plotter.draw(plotData, renderTo)
                 this.chartsObjects.push(chartObj)
-                this.modal.plotDatas.push(plotData)
+                this.plotDatas.push(plotData)
             }
 
             for(let i = numberOfPlotsToPresent; i < this.PLOTS_PER_PAGE; i++)
@@ -239,78 +227,6 @@ const main = (function() {
             urlController.set("page", this.currentPage)
         },
 
-        changeRangesClicked: async function(plotIndex)
-        {
-            this.modal.plotIndex = plotIndex
-            const plotData = this.modal.plotDatas[plotIndex]
-            const renderTo = 'change-ranges-container'
-
-            if(this.modal.popupChartObject !== undefined)
-                this.modal.popupChartObject.destroy()
-
-            this.modal.popupChartObject = await plotter.draw(plotData, renderTo)
-
-            const initialStartX = plotData.series[0].trends[0].run
-            const initialEndX = plotData.series[0].trends[plotData.series[0].trends.length - 1].run
-            const initialStartY = this.modal.popupChartObject.yAxis[0].min
-            const initialEndY = this.modal.popupChartObject.yAxis[0].max
-            $("#start-x").val(initialStartX)
-            $("#end-x").val(initialEndX)
-            $("#start-y").val(initialStartY)
-            $("#end-y").val(initialEndY)
-
-            $('#change-ranges-modal').modal('show')
-
-            urlController.set("modalPlot", plotIndex)
-        },
-
-        popupSubmitClicked: async function()
-        {
-            let plotData = this.modal.plotDatas[this.modal.plotIndex]
-            const renderTo = 'change-ranges-container'
-            const initialStartX = plotData.series[0].trends[0].run
-            const initialEndX = plotData.series[0].trends[plotData.series[0].trends.length - 1].run
-
-            const newStartX = parseInt($("#start-x").val())
-            const newEndX = parseInt($("#end-x").val())
-            const newStartY = $("#start-y").val()
-            const newEndY = $("#end-y").val()
-
-            if(newStartX !== initialStartX || newEndX !== initialEndX)
-            {
-                // X range changed, fetch new data!
-                let allSeries = []
-                try {
-                    $("#modal-submit-button-spinner").show()
-                    const series = plotData.series.map(x => x.metadata.name)
-                    const base = 'http://vocms0231.cern.ch:8080'
-                    const url = `${base}/data?subsystem=${selectionController.selectedSubsystem()}&processing_level=${selectionController.selectedProcessingLevel()}&from_run=${newStartX}&to_run=${newEndX}&series=${series}`
-                    const response = await fetch(url, {
-                        credentials: "same-origin"
-                    })
-                    allSeries = await response.json()
-                }
-                catch(error) {
-                    console.error(error);
-                }
-                $("#modal-submit-button-spinner").hide()
-
-                plotData = this.transformAPIResponseToData(allSeries).find(x => x.name == plotData.name)
-                if(this.modal.popupChartObject !== undefined)
-                    this.modal.popupChartObject.destroy()
-                this.modal.popupChartObject = await plotter.draw(plotData, renderTo)
-            }
-            
-            this.modal.popupChartObject.yAxis[0].update(
-            {
-                min: newStartY,
-                max: newEndY
-            })
-
-            $("#start-y").val(this.modal.popupChartObject.yAxis[0].min)
-            $("#end-y").val(this.modal.popupChartObject.yAxis[0].max)
-        },
-
         destroyAllPresentPlots: function()
         {
             this.chartsObjects.forEach(x => 
@@ -325,7 +241,7 @@ const main = (function() {
                 }
             })
             this.chartsObjects = []
-            this.modal.plotDatas = []
+            this.plotDatas = []
         },
 
         showAlert: function(message)
@@ -407,8 +323,8 @@ $(document).ready(async function()
         await main.submit(main.currentPage)
     }
 
-    if(urlController.has("modalPlot"))
+    if(urlController.has("fsPlot"))
     {
-        await main.changeRangesClicked(urlController.get("modalPlot"))
+        await fullScreenController.changeRangesClicked(urlController.get("fsPlot"), false)
     }
 })
