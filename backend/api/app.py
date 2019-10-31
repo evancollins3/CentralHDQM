@@ -6,15 +6,15 @@ import requests
 # Insert parent dir to sys.path to import db_access
 sys.path.insert(1, os.path.realpath(os.path.pardir))
 import db_access
+from multiprocessing import Pool
 from cern_sso import get_cookies
 from sqlalchemy import text
+from functools import partial
 
 PROCESSING_LEVELS = ['PromptReco', 'UltraLegacy']
 CERT='private/usercert.pem'
 KEY='private/userkey.pem'
 CACERT='etc/cern_cacert.pem'
-
-OMS_CACHE={}
 
 app = Flask(__name__)
 
@@ -100,10 +100,10 @@ def data():
             name,
             MAX(dataset) AS max_dataset
     FROM historic_data
-    GROUP BY(run,
+    GROUP BY run,
               lumi,
               subsystem,
-              name)) AS grouped
+              name) AS grouped
   JOIN historic_data original ON original.run = grouped.run
   AND original.lumi = grouped.lumi
   AND original.subsystem = grouped.subsystem
@@ -115,15 +115,18 @@ def data():
 
   WHERE original.subsystem = :subsystem
     AND original.lumi = '0'
-    AND original.dataset ILIKE :processing_level
+    AND LOWER(original.dataset) LIKE LOWER(:processing_level)
     %s
     %s
   ORDER BY original.run ASC
   ;
   ''' % (run_selection_sql, series_filter_sql)
-
+  
   rows = session.execute(sql, query_params)
+  rows = list(rows)
   session.close()
+  # print(rows)
+  print(len(rows))
 
   result = {}
   for row in rows:
@@ -140,8 +143,9 @@ def data():
         },
         'trends': []
       }
-
-    oms_info = get_oms_info(row['run'], OMS_CACHE)
+      
+    # runs.add(row["run"])
+    # oms_info = get_oms_info(row['run'], OMS_CACHE)
 
     result[key]['trends'].append({
       'run': row['run'],
@@ -150,13 +154,17 @@ def data():
       'error': row['error'],
       'gui_url': row['gui_url'],
       'image_url': row['image_url'],
-      'oms_info': oms_info,
+      'oms_info': {},
+      # 'oms_info': oms_info,
     })
 
   # Transform result to array
   result = [result[key] for key in result.keys()]
 
+  result = add_oms_info_to_result(result)
+
   return jsonify(result)
+
 
 @app.route('/subsystems', methods=['GET'])
 def subsystems():
@@ -168,6 +176,7 @@ def subsystems():
   session.close()
   return jsonify(subsystems)
 
+
 @app.route('/runs', methods=['GET'])
 def runs():
   db_access.setup_db()
@@ -177,19 +186,96 @@ def runs():
   session.close()
   return jsonify(runs)
 
+
 @app.route('/')
 def index():
   return jsonify('HDQM REST API')
 
-# Each run is cached in memory
-def get_oms_info(run, cache):
-  # Cache only up to 1000 runs
-  if len(cache.keys()) > 1000:
-    cache.clear()
-  
-  if run in cache.keys():
-    return cache[run]
 
+def add_oms_info_to_result(result):
+  runs = set()
+  for item in result:
+    for trend in item['trends']:
+      runs.add(trend['run'])
+  runs = list(runs)
+
+  session = db_access.get_session()
+    
+  query = session.query(db_access.OMSDataCache)\
+    .filter(db_access.OMSDataCache.run.in_(tuple(runs)))\
+    .all()
+  db_oms_data = list(query)
+  session.close()
+
+  oms_data_dict = {}
+  for row in db_oms_data:
+    oms_data_dict[row.run] = {
+      'start_time': row.start_time,
+      'end_time': row.end_time,
+      'b_field': row.b_field,
+      'energy': row.energy,
+      'delivered_lumi': row.delivered_lumi,
+      'end_lumi': row.end_lumi,
+      'recorded_lumi': row.recorded_lumi,
+      'l1_key': row.l1_key,
+      'l1_rate': row.l1_rate,
+      'hlt_key': row.hlt_key,
+      'hlt_physics_rate': row.hlt_physics_rate,
+      'duration': row.duration,
+      'fill_number': row.fill_number,
+      'injection_scheme': row.injection_scheme,
+      'era': row.era,
+    }
+
+  # Keep runs that need to be fetched from OMS API
+  runs = [run for run in runs if run not in oms_data_dict.keys()]
+  print(runs)
+  # Fetch in a multithreaded manner
+  pool = Pool(max(len(runs), 1))
+  api_oms_data = pool.map(get_oms_info_from_api, runs)
+
+  for row in api_oms_data:
+    oms_data_dict.update(row)
+    # key = list(row.keys())[0]
+
+    # Add to cache
+    # try:
+    #   session = db_access.get_session()
+    #   session.add(db_access.OMSDataCache(
+    #     run = key,
+    #     lumi = 0,
+    #     start_time = row[key]['start_time'],
+    #     end_time = row[key]['end_time'],
+    #     b_field = row[key]['b_field'],
+    #     energy = row[key]['energy'],
+    #     delivered_lumi = row[key]['delivered_lumi'],
+    #     end_lumi = row[key]['end_lumi'],
+    #     recorded_lumi = row[key]['recorded_lumi'],
+    #     l1_key = row[key]['l1_key'],
+    #     l1_rate = row[key]['l1_rate'],
+    #     hlt_key = row[key]['hlt_key'],
+    #     hlt_physics_rate = row[key]['hlt_physics_rate'],
+    #     duration = row[key]['duration'],
+    #     fill_number = row[key]['fill_number'],
+    #     injection_scheme = row[key]['injection_scheme'],
+    #     era = row[key]['era'],
+    #   ))
+    #   session.commit()
+    # except Exception as e:
+    #   print(e)
+    #   session.rollback()
+    # finally:
+    #   session.close()
+
+  # Add oms_info to the respose
+  for item in result:
+    for trend in item['trends']:
+      trend['oms_info'] = oms_data_dict[trend['run']]
+
+  return result
+
+
+def get_oms_info_from_api(run):
   runs_url = 'https://cmsoms.cern.ch/agg/api/v1/runs?filter[run_number][eq]=%s&fields=start_time,end_time,b_field,energy,delivered_lumi,end_lumi,recorded_lumi,l1_key,hlt_key,l1_rate,hlt_physics_rate,duration,fill_number' % run
   
   try:
@@ -216,10 +302,40 @@ def get_oms_info(run, cache):
       'injection_scheme': oms_fills_json['data'][0]['attributes']['injection_scheme'],
       'era': oms_fills_json['data'][0]['attributes']['era'],
     }
-    cache[run] = result
-    return result
+
+    # Add to cache
+    try:
+      session = db_access.get_session()
+      session.add(db_access.OMSDataCache(
+        run = run,
+        lumi = 0,
+        start_time = oms_runs_json['data'][0]['attributes']['start_time'],
+        end_time = oms_runs_json['data'][0]['attributes']['end_time'],
+        b_field = oms_runs_json['data'][0]['attributes']['b_field'],
+        energy = oms_runs_json['data'][0]['attributes']['energy'],
+        delivered_lumi = oms_runs_json['data'][0]['attributes']['delivered_lumi'],
+        end_lumi = oms_runs_json['data'][0]['attributes']['end_lumi'],
+        recorded_lumi = oms_runs_json['data'][0]['attributes']['recorded_lumi'],
+        l1_key = oms_runs_json['data'][0]['attributes']['l1_key'],
+        l1_rate = oms_runs_json['data'][0]['attributes']['l1_rate'],
+        hlt_key = oms_runs_json['data'][0]['attributes']['hlt_key'],
+        hlt_physics_rate = oms_runs_json['data'][0]['attributes']['hlt_physics_rate'],
+        duration = oms_runs_json['data'][0]['attributes']['duration'],
+        fill_number = oms_runs_json['data'][0]['attributes']['fill_number'],
+        injection_scheme = oms_fills_json['data'][0]['attributes']['injection_scheme'],
+        era = oms_fills_json['data'][0]['attributes']['era'],
+      ))
+      session.commit()
+    except Exception as e:
+      print(e)
+      session.rollback()
+    finally:
+      session.close()
+
+    return { run: result }
   except Exception as e:
     print(e)
+
 
 if __name__ == '__main__':
   app.run(host='127.0.0.1', port=5000)

@@ -9,6 +9,7 @@ from sqlalchemy.orm import sessionmaker, relationship
 dir_path = os.path.dirname(os.path.realpath(__file__))
 with open(os.path.join(dir_path, 'connection_string.txt'), 'r') as file:
   db_string = file.read().replace('\n', '')
+  # db_string = 'sqlite:///hdqm.db'
 db = create_engine(db_string)
 base = declarative_base()
 
@@ -64,7 +65,7 @@ class OMSDataCache(base):
   b_field = Column(Float, nullable=False)
   energy = Column(Float, nullable=False)
   
-  init_lumi = Column(Float, nullable=False)
+  delivered_lumi = Column(Float, nullable=False)
   end_lumi = Column(Float, nullable=False)
   recorded_lumi = Column(Float, nullable=False)
   l1_key = Column(String, nullable=False)
@@ -73,7 +74,7 @@ class OMSDataCache(base):
   hlt_physics_rate = Column(Float, nullable=False)
   duration = Column(Integer, nullable=False)
   fill_number = Column(Integer, nullable=False)
-  injection_scheme = Column(String, nullable=False)
+  injection_scheme = Column(String)
   era = Column(String, nullable=False)
 
 def setup_db():
