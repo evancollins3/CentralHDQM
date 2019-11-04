@@ -14,5 +14,6 @@ for arg; do
     esac
 done
 
+source ../extractor/cmsenv
 CMD="python3 app.py $DEBUG"
 $CMD;

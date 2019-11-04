@@ -2,7 +2,7 @@ from __future__ import print_function
 import os
 import enum
 from sqlalchemy import create_engine
-from sqlalchemy import Column, String, Integer, Float, DateTime, Binary, ForeignKey, Enum, UniqueConstraint
+from sqlalchemy import Column, String, Integer, Float, DateTime, Binary, ForeignKey, Enum, UniqueConstraint, Index
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 
@@ -36,7 +36,9 @@ class HistoricData(base):
   optional_me2_id = Column(Integer, ForeignKey('monitor_elements.id'))
   optional_me2 = relationship("MonitorElement", foreign_keys=[optional_me2_id])
 
-  __table_args__ = (UniqueConstraint('run', 'lumi', 'subsystem', 'name', name='_run_lumi_subsystem_name_uc'),)
+  __table_args__ = (
+    UniqueConstraint('run', 'lumi', 'subsystem', 'name', name='_run_lumi_subsystem_name_uc'),
+    Index('_run_lumi_subsystem_index', 'run', 'lumi', 'subsystem'))
 
 class MonitorElement(base):
   __tablename__ = 'monitor_elements'
@@ -51,7 +53,9 @@ class MonitorElement(base):
   gui_url = Column(String, nullable=False)
   image_url = Column(String, nullable=False)
 
-  __table_args__ = (UniqueConstraint('run', 'lumi', 'me_path', 'dataset', name='_run_lumi_plotpath_dataset_uc'),)
+  __table_args__ = (
+    UniqueConstraint('run', 'lumi', 'me_path', 'dataset', name='_run_lumi_plotpath_dataset_uc'), 
+    UniqueConstraint('me_path', 'eos_path', name='_me_path_eos_path_uc'))
 
 class OMSDataCache(base):
   __tablename__ = 'oms_data_cache'

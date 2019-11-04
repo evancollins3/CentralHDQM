@@ -4,6 +4,7 @@ from __future__ import print_function
 from sys import argv
 from glob import glob
 from multiprocessing import Pool
+from collections import defaultdict
 from configparser import ConfigParser
 from tempfile import NamedTemporaryFile
 from sqlalchemy.exc import IntegrityError
@@ -23,13 +24,11 @@ sys.path.insert(1, os.path.realpath(os.path.pardir))
 import db_access
 
 CFGFILES = 'cfg/*/*.ini'
-# CFGFILES = 'cfg/trendPlotsTrackingCosmics.ini'
-# CFGFILES = 'cfg/trendPlotsPixelPhase1_DigiCluster.ini'
-# CFGFILES = 'cfg/*.ini'
-# CFGFILES = 'cfg/trendPlotsRECOErrorsCosmics.ini'
-# CFGFILES = 'cfg/trendPlotsStrip_aleTestCharge.ini'
+# CFGFILES = 'cfg/Tracker/trendPlotsTracking.ini'
 ROOTFILES = '/eos/cms/store/group/comm_dqm/DQMGUI_data/*/*/*/DQM*.root'
 # ROOTFILES = '/afs/cern.ch/work/a/akirilov/HDQM/CentralHDQM/CentralHDQM/backend/extractor/testData/DQM*.root'
+# ROOTFILES = '/eos/cms/store/group/comm_dqm/DQMGUI_data/Run2018/StreamExpress/R0003152xx/DQM_V0006*.root'
+
 PDPATTERN = re.compile('DQM_V\d+_R\d+__(.+__.+__.+)[.]root') # PD inside the file name
 VERSIONPATTERN = re.compile('(DQM_V)(\d+)(.+[.]root)')
 RUNPATTERN = re.compile('DQM_V\d+_R0+(\d+)__.+[.]root')
@@ -219,7 +218,7 @@ def get_full_path(relativePath, run):
 def remove_old_versions(all_files):
   # groups is a map: filename with version part removed -> list of all files 
   # with the same name but different version.
-  groups = {}
+  groups = defaultdict(list)
   for fullpath in all_files:
     filename = fullpath.split('/')[-1]
     version = 1
@@ -235,9 +234,6 @@ def remove_old_versions(all_files):
     obj['fullpath'] = fullpath
     obj['filename'] = filename
     obj['version'] = version
-
-    if mapKey not in groups.keys():
-      groups[mapKey] = []
     
     groups[mapKey].append(obj)
 
@@ -265,6 +261,7 @@ def insert_me_to_db(session, me_object):
     return me.id
   finally:
     session.close()
+  return 0
 
 def insert_historic_data_to_db(session, historic_data_object):
   try:
@@ -313,7 +310,208 @@ def get_all_available_runs():
       runs.add(int(run))
   return list(runs)
 
+
+def extract_all_mes():
+  cfg_files = glob(CFGFILES)
+  mes_set = set()
+  good_files = 0
+  for cfg_file in cfg_files:
+    try:
+      parser = ConfigParser()
+      parser.read(unicode(cfg_file))
+      for section in parser:
+        if section.startswith("plot:"):
+          mes_set.add(parser[section]['relativePath'])
+          if 'histo1Path' in parser[section]:
+            mes_set.add(parser[section]['histo1Path'])
+          if 'histo2Path' in parser[section]:
+            mes_set.add(parser[section]['histo2Path'])
+        good_files+=1
+    except:
+      print('Could not read %s, skipping...' % cfg_file)
+  
+  print('Read %d configuration files.' % good_files)
+  print('Read %d distinct ME paths.' % len(mes_set))
+  
+  print('Listing files on EOS, this can take a while...')
+  all_files = glob(ROOTFILES)
+  print('Done.')
+
+  # Keep only the newest version of each file
+  print('Removing old versions of files...')
+  all_files = remove_old_versions(all_files)
+
+  print('Starting to process %s files...' % len(all_files))
+
+  # Fill temp tables!
+  db_access.setup_db()
+  created = create_and_populate_temp_tables(mes_set, all_files)
+  if not created:
+    print('Unable to create temporary DB tables. Terminating.')
+    return
+
+  # Join in the DB to get root file and me path pairs
+  # that still don't exist in the DB
+  sql = '''
+  SELECT temp.me_path, temp.eos_path
+  FROM
+    (SELECT me_path, eos_path FROM temp_root_filenames, temp_me_paths) AS temp
+  LEFT OUTER JOIN monitor_elements ON temp.me_path = monitor_elements.me_path
+    AND temp.eos_path = monitor_elements.eos_path
+    WHERE monitor_elements.eos_path is NULL
+  ;
+  '''
+
+  # Batch DB results. 100 rows for each worker
+  def batch(rows, size=100):
+    while True:
+      batch = rows.fetchmany(size)
+      if not batch:
+        break
+      yield batch
+
+  try:
+    session = db_access.get_session()
+    rows = session.execute(sql)
+
+    print('Starting to extract missing MEs...')
+
+    # pool = Pool(1)
+    # pool.map(extract_mes, batch(rows))
+    for row in rows:
+      extract_mes([{'eos_path': row['eos_path'], 'me_path': row['me_path']}])
+
+  except Exception as e:
+    print(e)
+  finally:
+    session.close()
+
+  print('Done.')
+
+
+def extract_mes(rows):
+  for row in rows:
+    eos_path = row['eos_path']
+    me_path = row['me_path']
+    
+    pd_match = PDPATTERN.findall(eos_path)
+    if len(pd_match) == 0:
+      dataset = ''
+    else:
+      dataset = '/' + pd_match[0].replace('__', '/')
+
+    filename = eos_path.split('/')[-1]
+    run_match = RUNPATTERN.findall(filename)
+    if not len(run_match) == 0:
+      run = run_match[0]
+    else:
+      print('Skipping a malformatted DQM file that does not contain a run number: %s' % eos_path)
+      continue
+    
+    tdirectory = ROOT.TFile.Open(eos_path)
+    if tdirectory == None:
+      print("Unable to open file: '%s'" % eos_path)
+      continue
+
+    fullpath = get_full_path(me_path, run)
+    plot = tdirectory.Get(fullpath)
+    if not plot:
+      # print("Unable to get '%s' from: %s" % (fullpath, eos_path))
+      continue
+
+    plot_folder = '/'.join(me_path.split('/')[:-1])
+    gui_url = '%sstart?runnr=%s;dataset=%s;workspace=Everything;root=%s;focus=%s;zoom=yes;' % (DQMGUI, run, dataset, plot_folder, me_path)
+    image_url = '%splotfairy/archive/%s%s/%s?v=1510330581101995531;w=1906;h=933' % (DQMGUI, run, dataset, me_path)
+    monitor_element = db_access.MonitorElement(
+          run = run,
+          lumi = 0,
+          eos_path = eos_path,
+          me_path = me_path,
+          dataset = dataset,
+          me_blob = get_binary(plot),
+          gui_url = gui_url,
+          image_url = image_url)
+    session = db_access.get_session()
+    me_id = insert_me_to_db(session, monitor_element)
+    print('Added ME to DB: %s' % me_id)
+
+    tdirectory.Close()
+
+
+# Store all currently present EOS files and MEs from .ini files 
+# in temporary DB tables.
+# We will join them later to reduce the query size.
+# The result will be joined with main MEs table to get only missing 
+# file, me pairs to extract.
+def create_and_populate_temp_tables(mes_set, all_files):
+  # Drop temp tables
+  sql_drop_temp = '''
+  DROP TABLE IF EXISTS temp_root_filenames;
+  DROP TABLE IF EXISTS temp_me_paths;
+  '''
+
+  # Create temp tables
+  sql_create_temp = '''
+  CREATE TABLE temp_root_filenames (
+    eos_path character varying NOT NULL
+  );
+  CREATE TABLE temp_me_paths (
+    me_path character varying NOT NULL
+  );
+  '''
+
+  # Populate temp table of eos paths
+  sql_insert_paths_query_params = {}
+  sql_insert_paths_keys = ''
+
+  for i, filepath in enumerate(all_files):
+    key = 'eos_path_%s' % i
+    sql_insert_paths_keys += '(:%s),' % key
+    sql_insert_paths_query_params[key] = filepath
+  sql_insert_paths_keys = sql_insert_paths_keys.rstrip(',')
+
+  sql_insert_paths = '''
+  INSERT INTO temp_root_filenames (eos_path)
+  VALUES
+  %s
+  ;
+  ''' % sql_insert_paths_keys
+
+  # Populate temp table of ME paths
+  sql_insert_mes_query_params = {}
+  sql_insert_mes_keys = ''
+  for i, me_path in enumerate(mes_set):
+    key = 'me_path_%s' % i
+    sql_insert_mes_keys += '(:%s),' % key
+    sql_insert_mes_query_params[key] = me_path
+  sql_insert_mes_keys = sql_insert_mes_keys.rstrip(',')
+
+  sql_insert_mes = '''
+  INSERT INTO temp_me_paths (me_path)
+  VALUES
+  %s
+  ;
+  ''' % sql_insert_mes_keys
+
+  try:
+    session = db_access.get_session()
+    session.execute(sql_drop_temp)
+    session.execute(sql_create_temp)
+    session.execute(sql_insert_paths, sql_insert_paths_query_params)
+    session.execute(sql_insert_mes, sql_insert_mes_query_params)
+    session.commit()
+  except Exception as e:
+    print(e)
+    return False
+  finally:
+    session.close()
+  
+  return True
+
+
 if __name__ == '__main__':
+  extract_all_mes()
+  exit()
   # Get last 101
   # print(sorted(list(get_all_available_runs()))[-101:])
   parser = argparse.ArgumentParser(description='HDQM data extractor.')

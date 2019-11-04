@@ -1,11 +1,4 @@
 
-$(document).keyup(function(e){
-    const code = e.keyCode || e.which;
-    if(code === 27) {
-        fullScreenController.exitFullScreen()
-    }
-})
-
 const main = (function() {
     return {
         data: {},
@@ -46,7 +39,8 @@ const main = (function() {
                 allSeries = await response.json()
             }
             catch(error) {
-                console.error(error);
+                console.error(error)
+                main.showAlert("There was an error loading selected plots from the server. Please try again later.")
             }
 
             $("#submit-button-spinner").hide()
@@ -237,7 +231,7 @@ const main = (function() {
                 }
                 catch(error)
                 {
-                    console.error(error);
+                    console.error(error)
                 }
             })
             this.chartsObjects = []
@@ -311,6 +305,7 @@ $(document).ready(async function()
     await selectionController.documentReady()
     filterController.documentReady()
     optionsController.documentReady()
+    fullScreenController.documentReady()
 
     if(urlController.has("subsystem") && urlController.has("pl"))
     {

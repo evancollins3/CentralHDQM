@@ -145,7 +145,7 @@ const plotter = (function() {
                 chart: {
                     renderTo: renderTo,
                     zoomType: "xy",
-                    animation: false
+                    animation: false,
                 },
                 lang: {
                     noData: "No data found for given runs"
@@ -219,6 +219,10 @@ const plotter = (function() {
                                     else {
                                         main.updateLinks(parent, plotData, this.category, this.series_index)
                                     }
+                                },
+                                unselect: function () {
+                                    // Disable deselection
+                                    return false
                                 }
                             }
                         },
@@ -433,6 +437,10 @@ const plotter = (function() {
                                     else {
                                         main.updateLinks(parent, plotData, this.run, this.series_index)
                                     }
+                                },
+                                unselect: function () {
+                                    // Disable deselection
+                                    return false
                                 }
                             }
                         },
@@ -681,6 +689,10 @@ const plotter = (function() {
                                     else {
                                         main.updateLinks(parent, plotData, this.run, this.series_index)
                                     }
+                                },
+                                unselect: function () {
+                                    // Disable deselection
+                                    return false
                                 }
                             }
                         },

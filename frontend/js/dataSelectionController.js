@@ -41,11 +41,17 @@ const selectionController = (function() {
         selectedProcessingLevel() { return document.getElementById("processing-level-select").value },
 
         documentReady: async function() {
-            const response = await fetch("http://vocms0231.cern.ch:8080/subsystems", {
-                credentials: "same-origin"
-            })
-            dataIndex = await response.json()
-            selectionController.setupSelects(dataIndex)
+            try {
+                const response = await fetch("http://vocms0231.cern.ch:8080/subsystems", {
+                    credentials: "same-origin"
+                })
+                dataIndex = await response.json()
+                selectionController.setupSelects(dataIndex)
+            }
+            catch(error) {
+                console.error(error)
+                main.showAlert("There was an error loading the data from the server. Please try again later.")
+            }
 
             // Safe to click submit now
             $("#submit-button").removeAttr("disabled")

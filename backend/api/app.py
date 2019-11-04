@@ -20,6 +20,7 @@ app = Flask(__name__)
 
 @app.route('/data', methods=['GET'])
 def data():
+  # raise Exception
   subsystem = request.args.get('subsystem')
   processing_level = request.args.get('processing_level', default=PROCESSING_LEVELS[0])
   from_run = request.args.get('from_run', type=int)
@@ -70,9 +71,9 @@ def data():
   # Construct SQL query
   query_params  = {'subsystem': subsystem, 'processing_level': '%' + processing_level + '%'}
 
-  run_selection_sql = 'AND original.run BETWEEN :from_run AND :to_run'
+  run_selection_sql = 'AND run BETWEEN :from_run AND :to_run'
   if runs != None:
-    run_selection_sql = 'AND original.run IN (%s)' % ', '.join(str(x) for x in runs)
+    run_selection_sql = 'AND run IN (%s)' % ', '.join(str(x) for x in runs)
     query_params['runs'] = runs
   else:
     query_params['from_run'] = from_run
@@ -80,7 +81,7 @@ def data():
 
   series_filter_sql = ''
   if series != None:
-    series_filter_sql = 'AND original.name IN ('
+    series_filter_sql = 'AND name IN ('
     series = series.split(',')
     for i in range(len(series)):
       key = 'series_%i' % i
@@ -100,24 +101,26 @@ def data():
             name,
             MAX(dataset) AS max_dataset
     FROM historic_data
+
+    WHERE subsystem = :subsystem
+    AND lumi = '0'
+    AND LOWER(dataset) LIKE LOWER(:processing_level)
+    %s
+    %s
+
     GROUP BY run,
               lumi,
               subsystem,
               name) AS grouped
   JOIN historic_data original ON original.run = grouped.run
-  AND original.lumi = grouped.lumi
-  AND original.subsystem = grouped.subsystem
-  AND original.name = grouped.name
-  AND original.dataset = grouped.max_dataset 
-  -- Do the rest of the processing
+    AND original.lumi = grouped.lumi
+    AND original.subsystem = grouped.subsystem
+    AND original.name = grouped.name
+    AND original.dataset = grouped.max_dataset 
 
+  -- Get the me info
   JOIN monitor_elements AS mes ON original.main_me_id = mes.id
 
-  WHERE original.subsystem = :subsystem
-    AND original.lumi = '0'
-    AND LOWER(original.dataset) LIKE LOWER(:processing_level)
-    %s
-    %s
   ORDER BY original.run ASC
   ;
   ''' % (run_selection_sql, series_filter_sql)
@@ -125,8 +128,6 @@ def data():
   rows = session.execute(sql, query_params)
   rows = list(rows)
   session.close()
-  # print(rows)
-  print(len(rows))
 
   result = {}
   for row in rows:
@@ -143,9 +144,6 @@ def data():
         },
         'trends': []
       }
-      
-    # runs.add(row["run"])
-    # oms_info = get_oms_info(row['run'], OMS_CACHE)
 
     result[key]['trends'].append({
       'run': row['run'],
@@ -155,7 +153,6 @@ def data():
       'gui_url': row['gui_url'],
       'image_url': row['image_url'],
       'oms_info': {},
-      # 'oms_info': oms_info,
     })
 
   # Transform result to array
@@ -168,6 +165,7 @@ def data():
 
 @app.route('/subsystems', methods=['GET'])
 def subsystems():
+  # raise Exception
   db_access.setup_db()
   session = db_access.get_session()
 
@@ -229,7 +227,7 @@ def add_oms_info_to_result(result):
 
   # Keep runs that need to be fetched from OMS API
   runs = [run for run in runs if run not in oms_data_dict.keys()]
-  print(runs)
+
   # Fetch in a multithreaded manner
   pool = Pool(max(len(runs), 1))
   api_oms_data = pool.map(get_oms_info_from_api, runs)
