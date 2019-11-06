@@ -93,7 +93,18 @@ def data():
   -- Group by (run, lumi, subsystem, name) and MAX the dataset name.
   -- Thiw will filter out each group and give us correct datasets to be used
   -- but not the values. Join it with the original table to get the remianing values.
-  SELECT original.*, mes.gui_url, mes.image_url, mes.me_path
+  SELECT original.*, 
+         mes.gui_url AS main_gui_url, 
+         mes.image_url AS main_image_url, 
+         mes.me_path AS main_me_path,
+
+         optional_mes_1.gui_url AS optional1_gui_url,
+         optional_mes_1.image_url AS optional1_image_url,
+         optional_mes_1.me_path AS optional1_me_path,
+
+         optional_mes_2.gui_url AS optional2_gui_url,
+         optional_mes_2.image_url AS optional2_image_url,
+         optional_mes_2.me_path AS optional2_me_path
   FROM
     (SELECT run,
             lumi,
@@ -120,6 +131,8 @@ def data():
 
   -- Get the me info
   JOIN monitor_elements AS mes ON original.main_me_id = mes.id
+  LEFT OUTER JOIN monitor_elements AS optional_mes_1 ON original.optional_me1_id = optional_mes_1.id
+  LEFT OUTER JOIN monitor_elements AS optional_mes_2 ON original.optional_me2_id = optional_mes_2.id
 
   ORDER BY original.run ASC
   ;
@@ -140,7 +153,9 @@ def data():
           'plot_title': row['plot_title'], 
           'name': row['name'], 
           'subsystem': row['subsystem'], 
-          'me_path': row['me_path'],
+          'main_me_path': row['main_me_path'],
+          'optional1_me_path': row['optional1_me_path'],
+          'optional2_me_path': row['optional2_me_path'],
         },
         'trends': []
       }
@@ -150,8 +165,12 @@ def data():
       'lumi': row['lumi'],
       'value': row['value'],
       'error': row['error'],
-      'gui_url': row['gui_url'],
-      'image_url': row['image_url'],
+      'main_gui_url': row['main_gui_url'],
+      'main_image_url': row['main_image_url'],
+      'optional1_gui_url': row['optional1_gui_url'],
+      'optional1_image_url': row['optional1_image_url'],
+      'optional2_gui_url': row['optional2_gui_url'],
+      'optional2_image_url': row['optional2_image_url'],
       'oms_info': {},
     })
 

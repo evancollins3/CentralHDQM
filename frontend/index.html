@@ -163,7 +163,7 @@
 								<a class="oms-link" target="_blank"></a>
 								<a class="rr-link" target="_blank"></a>
 								<a class="gui-link" target="_blank"></a>
-								<a class="img-link" href="#gui-plot-modal" data-toggle="modal" data-target="#gui-plot-modal"></a>
+								<a class="img-link" href="#gui-main-plot-modal" data-toggle="modal" data-target="#gui-main-plot-modal"></a>
 							</div>
 						</div>
 
@@ -185,7 +185,7 @@
 								<a class="oms-link" target="_blank"></a>
 								<a class="rr-link" target="_blank"></a>
 								<a class="gui-link" target="_blank"></a>
-								<a class="img-link" href="#gui-plot-modal" data-toggle="modal" data-target="#gui-plot-modal"></a>
+								<a class="img-link" href="#gui-main-plot-modal" data-toggle="modal" data-target="#gui-main-plot-modal"></a>
 							</div>
 						</div>
 						
@@ -210,7 +210,7 @@
 								<a class="oms-link" target="_blank"></a>
 								<a class="rr-link" target="_blank"></a>
 								<a class="gui-link" target="_blank"></a>
-								<a class="img-link" href="#gui-plot-modal" data-toggle="modal" data-target="#gui-plot-modal"></a>
+								<a class="img-link" href="#gui-main-plot-modal" data-toggle="modal" data-target="#gui-main-plot-modal"></a>
 							</div>
 						</div>
 
@@ -232,7 +232,7 @@
 								<a class="oms-link" target="_blank"></a>
 								<a class="rr-link" target="_blank"></a>
 								<a class="gui-link" target="_blank"></a>
-								<a class="img-link" href="#gui-plot-modal" data-toggle="modal" data-target="#gui-plot-modal"></a>
+								<a class="img-link" href="#gui-main-plot-modal" data-toggle="modal" data-target="#gui-main-plot-modal"></a>
 							</div>
 						</div>
 						
@@ -389,13 +389,27 @@
 							<a id="fs-value-rr-url" target="_blank"><b>Run Registry</b></a>
 						</div>
 					</div>
-		
+					
 					<span>Main plot used for a trend (run <span class="fs-run"></span>):</span>
-					
-					<a href="#gui-plot-modal" data-toggle="modal" data-target="#gui-plot-modal">
-						<img class="border rounded-sm" id="fs-gui-plot-image" style="max-width: 100%; max-height: 100%;" src=""/>
+					<a href="#gui-main-plot-modal" data-toggle="modal" data-target="#gui-main-plot-modal">
+						<img class="border rounded-sm" id="fs-gui-main-plot-image" style="max-width: 100%; max-height: 100%;" src=""/>
 					</a>
+					</br>
+
+					<div id="opt1-plot-container"> 
+						<span>Optional plot 1 used for a trend (run <span class="fs-run"></span>):</span>
+						<a href="#gui-opt1-plot-modal" data-toggle="modal" data-target="#gui-opt1-plot-modal">
+							<img class="border rounded-sm" id="fs-gui-opt1-plot-image" style="max-width: 100%; max-height: 100%;" src=""/>
+						</a>
+						</br>	
+					</div>
 					
+					<div id="opt2-plot-container">
+						<span>Optional plot 2 used for a trend (run <span class="fs-run"></span>):</span>
+						<a href="#gui-opt2-plot-modal" data-toggle="modal" data-target="#gui-opt2-plot-modal">
+							<img class="border rounded-sm" id="fs-gui-opt2-plot-image" style="max-width: 100%; max-height: 100%;" src=""/>
+						</a>
+					</div>
 				</div>
 			</div>
 			
@@ -458,21 +472,68 @@
 		</div>
 	</div>
 
-	<!-- GUI plot modal -->
-	<div class="modal fade" id="gui-plot-modal" tabindex="-1" role="dialog">
+	<!-- Main GUI plot modal -->
+	<div class="modal fade" id="gui-main-plot-modal" tabindex="-1" role="dialog">
 		<div class="modal-dialog modal-xl">
 			<div class="modal-content bg-light">
 				<div class="modal-body">
 					<div class="row">
 						<div class="col text-center">
-							<img class="border rounded-sm" id="gui-plot-modal-image" style="max-width: 100%; max-height: 100%;" src=""/>
+							<img class="border rounded-sm" id="gui-main-plot-modal-image" style="max-width: 100%; max-height: 100%;" src=""/>
 						</div>
 					</div>
 
 					<div class="row pt-3">
 						<div class="col text-center">
-							<span>Run: <i id="gui-plot-modal-run"></i></span>
-							<span>ME: <i id="gui-plot-modal-path"></i></span>
+							<span>Run: <i class="fs-run"></i></span>
+							<span class="pl-2">ME: <i id="gui-main-plot-modal-path"></i></span>
+							<a class="pl-2" id="main-plot-gui-url" target="_blank"><b>DQM GUI</b></a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Optional 1 GUI plot modal -->
+	<div class="modal fade" id="gui-opt1-plot-modal" tabindex="-1" role="dialog">
+		<div class="modal-dialog modal-xl">
+			<div class="modal-content bg-light">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col text-center">
+							<img class="border rounded-sm" id="gui-opt1-plot-modal-image" style="max-width: 100%; max-height: 100%;" src=""/>
+						</div>
+					</div>
+
+					<div class="row pt-3">
+						<div class="col text-center">
+							<span>Run: <i class="fs-run"></i></span>
+							<span class="pl-2">ME: <i id="gui-opt1-plot-modal-path"></i></span>
+							<a class="pl-2" id="opt1-plot-gui-url" target="_blank"><b>DQM GUI</b></a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Optional 2 GUI plot modal -->
+	<div class="modal fade" id="gui-opt2-plot-modal" tabindex="-1" role="dialog">
+		<div class="modal-dialog modal-xl">
+			<div class="modal-content bg-light">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col text-center">
+							<img class="border rounded-sm" id="gui-opt2-plot-modal-image" style="max-width: 100%; max-height: 100%;" src=""/>
+						</div>
+					</div>
+
+					<div class="row pt-3">
+						<div class="col text-center">
+							<span>Run: <i class="fs-run"></i></span>
+							<span class="pl-2">ME: <i id="gui-opt2-plot-modal-path"></i></span>
+							<a class="pl-2" id="opt2-plot-gui-url" target="_blank"><b>DQM GUI</b></a>
 						</div>
 					</div>
 				</div>

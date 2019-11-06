@@ -57,6 +57,15 @@ class MonitorElement(base):
     UniqueConstraint('run', 'lumi', 'me_path', 'dataset', name='_run_lumi_plotpath_dataset_uc'), 
     UniqueConstraint('me_path', 'eos_path', name='_me_path_eos_path_uc'))
 
+class NonExistentMonitorElement(base):
+  __tablename__ = 'non_existent_monitor_elements'
+
+  id = Column(Integer, primary_key=True, nullable=False)
+  me_path = Column(String, nullable=False)
+  eos_path = Column(String, nullable=False)
+
+  __table_args__ = (UniqueConstraint('me_path', 'eos_path', name='_non_existent_me_path_eos_path_uc'),)
+
 class OMSDataCache(base):
   __tablename__ = 'oms_data_cache'
 

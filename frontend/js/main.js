@@ -252,6 +252,7 @@ const main = (function() {
 
         updateLinks: function(parent, plotData, run, seriesIndex) 
         {
+            this.clearLinks()
             const dataPoint = plotData.series[seriesIndex].trends.find(x => x.run === run)
 
             const linksInfo = parent.find(".links-info")
@@ -268,11 +269,11 @@ const main = (function() {
             
             omsLink.attr("href", "https://cmsoms.cern.ch/cms/runs/report?cms_run=" + dataPoint.run)
             rrLink.attr("href", "https://cmsrunregistry.web.cern.ch/offline/workspaces/global?run_number=" + dataPoint.run)
-            guiLink.attr("href", dataPoint.gui_url)
+            guiLink.attr("href", dataPoint.main_gui_url)
 
-            $("#gui-plot-modal-image").attr("src", dataPoint.image_url)
-            $("#gui-plot-modal-run").text(dataPoint.run)
-            $("#gui-plot-modal-path").text(plotData.series[seriesIndex].metadata.me_path)
+            $("#gui-main-plot-modal-image").attr("src", dataPoint.main_image_url)
+            $(".fs-run").text(dataPoint.run)
+            $("#gui-main-plot-modal-path").text(plotData.series[seriesIndex].metadata.main_me_path)
         },
 
         clearLinks: function()

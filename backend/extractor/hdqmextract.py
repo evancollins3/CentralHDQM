@@ -341,7 +341,9 @@ def extract_all_mes():
   print('Removing old versions of files...')
   all_files = remove_old_versions(all_files)
 
-  print('Starting to process %s files...' % len(all_files))
+  print('Found %s files in EOS' % len(all_files))
+
+  print('Computing the list of MEs that need to be extracted...')
 
   # Fill temp tables!
   db_access.setup_db()
@@ -356,30 +358,36 @@ def extract_all_mes():
   SELECT temp.me_path, temp.eos_path
   FROM
     (SELECT me_path, eos_path FROM temp_root_filenames, temp_me_paths) AS temp
+  -- Subtract already existing MEs
   LEFT OUTER JOIN monitor_elements ON temp.me_path = monitor_elements.me_path
     AND temp.eos_path = monitor_elements.eos_path
     WHERE monitor_elements.eos_path is NULL
+  -- Subtract non-existent MEs
+
   ;
   '''
-
-  # Batch DB results. 100 rows for each worker
-  def batch(rows, size=100):
-    while True:
-      batch = rows.fetchmany(size)
-      if not batch:
-        break
-      yield batch
 
   try:
     session = db_access.get_session()
     rows = session.execute(sql)
 
+    print('Done.')
     print('Starting to extract missing MEs...')
 
-    # pool = Pool(1)
-    # pool.map(extract_mes, batch(rows))
-    for row in rows:
-      extract_mes([{'eos_path': row['eos_path'], 'me_path': row['me_path']}])
+    pool = Pool(50)
+
+    queue = []
+    for batch in batch_iterable(rows, chunksize=10000):
+      result = pool.imap(extract_mes, batch_iterable(batch, chunksize=100))
+      queue.append(result)
+
+      if len(queue) >= 3:
+        for _ in queue[0]: pass
+        queue = queue[1:]
+    
+    for items in queue:
+      for _ in items: 
+        pass
 
   except Exception as e:
     print(e)
@@ -416,7 +424,24 @@ def extract_mes(rows):
     fullpath = get_full_path(me_path, run)
     plot = tdirectory.Get(fullpath)
     if not plot:
-      # print("Unable to get '%s' from: %s" % (fullpath, eos_path))
+      non_existent_monitor_element = db_access.NonExistentMonitorElement(
+            eos_path = eos_path,
+            me_path = me_path)
+      
+      # Insert non existent ME.
+      # Next time we will no longer try to fetch this ME.
+      try:
+        session = db_access.get_session()
+        session.add(non_existent_monitor_element)
+        session.commit()
+        print("Added non existent ME (%s, %s)" % (fullpath, eos_path))
+      except Exception as e:
+        print('Insert non existent ME error: %s' % e)
+        session.rollback()
+      finally:
+        session.close()
+
+      # On to the next one
       continue
 
     plot_folder = '/'.join(me_path.split('/')[:-1])
@@ -507,6 +532,15 @@ def create_and_populate_temp_tables(mes_set, all_files):
     session.close()
   
   return True
+
+def batch_iterable(iterable, chunksize=100):
+  queue=[]
+  for value in iterable:
+    if len(queue) >= chunksize:
+      yield queue
+      queue = []
+    queue.append(value)
+  yield queue
 
 
 if __name__ == '__main__':

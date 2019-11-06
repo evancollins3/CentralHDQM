@@ -1,7 +1,11 @@
 $(document).keyup(function(e) {
     const code = e.keyCode || e.which;
     if(code === 27) {
-        if($("#gui-plot-modal").css("display") === "none") {
+        const mainModalHidden = $("#gui-main-plot-modal").css("display") === "none"
+        const opt1ModalHidden = $("#gui-opt1-plot-modal").css("display") === "none"
+        const opt2ModalHidden = $("#gui-opt2-plot-modal").css("display") === "none"
+
+        if(mainModalHidden && opt1ModalHidden && opt2ModalHidden) {
             fullScreenController.exitFullScreen()
         }
     }
@@ -38,6 +42,8 @@ const fullScreenController = (function(){
             urlController.delete("fsPlot")
             $("#fs-gui-plot-image").attr("src", "")
             this.isFullScreen = false
+            this.seriesIndex = 0
+            this.xIndex = 0
         },
 
         changeRangesClicked: async function(plotIndex, animated=true)
@@ -159,15 +165,41 @@ const fullScreenController = (function(){
             $("#fs-value-recorded-lumi").html(String(dataPoint.oms_info.recorded_lumi))
 
             $("#fs-value-oms-url").attr("href", `https://cmsoms.cern.ch/cms/runs/report?cms_run=${dataPoint.run}`)
-            $("#fs-value-gui-url").attr("href", String(dataPoint.gui_url))
+            $("#fs-value-gui-url").attr("href", String(dataPoint.main_gui_url))
             $("#fs-value-rr-url").attr("href", `https://cmsrunregistry.web.cern.ch/offline/workspaces/global?run_number=${dataPoint.run}`)
             
             $(".fs-run").html(String(dataPoint.run))
-            $("#fs-gui-plot-image").attr("src", dataPoint.image_url)
+            $("#fs-gui-main-plot-image").attr("src", dataPoint.main_image_url)
+            $("#fs-gui-opt1-plot-image").attr("src", dataPoint.optional1_image_url)
+            $("#fs-gui-opt2-plot-image").attr("src", dataPoint.optional2_image_url)
+            
+            $("#main-plot-gui-url").attr("href", `https://cmsrunregistry.web.cern.ch/offline/workspaces/global?run_number=${dataPoint.main_gui_url}`)
+            $("#opt1-plot-gui-url").attr("href", `https://cmsrunregistry.web.cern.ch/offline/workspaces/global?run_number=${dataPoint.opt1_gui_url}`)
+            $("#opt2-plot-gui-url").attr("href", `https://cmsrunregistry.web.cern.ch/offline/workspaces/global?run_number=${dataPoint.opt2_gui_url}`)
 
-            $("#gui-plot-modal-image").attr("src", dataPoint.image_url)
+            $("#gui-main-plot-modal-image").attr("src", dataPoint.main_image_url)
+            $("#gui-opt1-plot-modal-image").attr("src", dataPoint.optional1_image_url)
+            $("#gui-opt2-plot-modal-image").attr("src", dataPoint.optional2_image_url)
+            
+            $("#gui-main-plot-modal-path").text(this.plotData.series[this.seriesIndex].metadata.main_me_path)
+            $("#gui-opt1-plot-modal-path").text(this.plotData.series[this.seriesIndex].metadata.optional1_me_path)
+            $("#gui-opt2-plot-modal-path").text(this.plotData.series[this.seriesIndex].metadata.optional2_me_path)
+
             $("#gui-plot-modal-run").text(dataPoint.run)
-            $("#gui-plot-modal-path").text(this.plotData.series[this.seriesIndex].metadata.me_path)
+
+            if(this.plotData.series[this.seriesIndex].metadata.optional1_me_path === null) {
+                $("#opt1-plot-container").hide()
+            }
+            else {
+                $("#opt1-plot-container").show()
+            }
+
+            if(this.plotData.series[this.seriesIndex].metadata.optional2_me_path === null) {
+                $("#opt2-plot-container").hide()
+            }
+            else {
+                $("#opt2-plot-container").show()
+            }
         },
 
         nextRunClicked: function() {
