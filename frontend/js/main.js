@@ -271,6 +271,7 @@ const main = (function() {
             rrLink.attr("href", "https://cmsrunregistry.web.cern.ch/offline/workspaces/global?run_number=" + dataPoint.run)
             guiLink.attr("href", dataPoint.main_gui_url)
 
+            $("#main-plot-gui-url").attr("href", dataPoint.main_gui_url)
             $("#gui-main-plot-modal-image").attr("src", dataPoint.main_image_url)
             $(".fs-run").text(dataPoint.run)
             $("#gui-main-plot-modal-path").text(plotData.series[seriesIndex].metadata.main_me_path)
