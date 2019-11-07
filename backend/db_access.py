@@ -9,7 +9,7 @@ from sqlalchemy.orm import sessionmaker, relationship
 dir_path = os.path.dirname(os.path.realpath(__file__))
 with open(os.path.join(dir_path, 'connection_string.txt'), 'r') as file:
   db_string = file.read().replace('\n', '')
-  db_string = 'sqlite:///hdqm.db'
+  #db_string = 'sqlite:///hdqm.db'
 db = create_engine(db_string)
 base = declarative_base()
 

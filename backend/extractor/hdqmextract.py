@@ -326,7 +326,7 @@ def extract_all_mes():
             mes_set.add(parser[section]['histo1Path'])
           if 'histo2Path' in parser[section]:
             mes_set.add(parser[section]['histo2Path'])
-        good_files+=1
+      good_files+=1
     except:
       print('Could not read %s, skipping...' % cfg_file)
   
@@ -363,11 +363,13 @@ def extract_all_mes():
 
   WHERE (SELECT COUNT(*) FROM monitor_elements 
         WHERE temp_me_paths.me_path = monitor_elements.me_path
-        AND temp_root_filenames.eos_path = monitor_elements.eos_path) = 0
+        AND temp_root_filenames.eos_path = monitor_elements.eos_path
+        LIMIT 1) = 0
         
   AND (SELECT COUNT(*) FROM non_existent_monitor_elements 
         WHERE temp_me_paths.me_path = non_existent_monitor_elements.me_path
-        AND temp_root_filenames.eos_path = non_existent_monitor_elements.eos_path) = 0
+        AND temp_root_filenames.eos_path = non_existent_monitor_elements.eos_path
+        LIMIT 1) = 0
   LIMIT 100000
   ;
   '''
@@ -556,7 +558,6 @@ def insert_me_to_db(monitor_element):
 # The result will be joined with main MEs table to get only missing 
 # file, me pairs to extract.
 def create_and_populate_temp_tables(mes_set, all_files):
-  all_files = all_files[:10]
   # Drop temp tables
   sql_drop_temp_filenames = '''
   DROP TABLE IF EXISTS temp_root_filenames;
@@ -642,7 +643,7 @@ if __name__ == '__main__':
   exit()
   # Get last 101
   # print(sorted(list(get_all_available_runs()))[-101:])
-  parser = argparse.ArgumentParser(description='HDQM data extractor.')
+  parser = argparse.ArgumentParser(description='HDQM monitor element extractor.')
   parser.add_argument('-r', dest='runs', type=int, nargs='+', help='Runs to process. If none were given, will process all available runs.')
   args = parser.parse_args()
 
