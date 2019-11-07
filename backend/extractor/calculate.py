@@ -62,7 +62,7 @@ def calculate_trends(cfg_files, runs):
         
         sql='''
         SELECT id, run, lumi, dataset, me_blob FROM monitor_elements
-        WHERE me_path = :me_path
+        WHERE me_path IN :me_path
         %s
         LIMIT 10
         ;
@@ -74,11 +74,14 @@ def calculate_trends(cfg_files, runs):
 
         session = db_access.get_session()
         try:
-          main_mes = session.execute(sql, {'me_path': parser[section]['relativePath']})
+          # ME paths in the config can be a comma separateed lists. 
+          # This is to account for the DQM ME name changes.
+          # Make sure to get all MEs if that's the case. 
+          main_mes = session.execute(sql, {'me_path': tuple(parser[section]['relativePath'].split(',')) })
           if 'histo1Path' in parser[section]:
-            optional1_mes = session.execute(sql, {'me_path': parser[section]['histo1Path']})
+            optional1_mes = session.execute(sql, {'me_path': tuple(parser[section]['histo1Path'].split(',')) })
           if 'histo2Path' in parser[section]:
-            optional2_mes = session.execute(sql, {'me_path': parser[section]['histo2Path']})
+            optional2_mes = session.execute(sql, {'me_path': tuple(parser[section]['histo2Path'].split(',')) })
         except Exception as e:
           print(e)
         finally:
@@ -162,6 +165,7 @@ def calculate_trends(cfg_files, runs):
                 historic_data_existing.value = historic_data.value
                 historic_data_existing.error = historic_data.error
                 session.commit()
+                print('Updated.')
             except Exception as e:
               print('Update HistoricData error: %s' % e)
               session.rollback()
