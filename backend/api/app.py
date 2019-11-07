@@ -11,7 +11,7 @@ from cern_sso import get_cookies
 from sqlalchemy import text
 from functools import partial
 
-PROCESSING_LEVELS = ['PromptReco', 'UltraLegacy']
+PROCESSING_LEVELS = ['PromptReco', 'UltraLegacy', 'StreamExpress']
 CERT='private/usercert.pem'
 KEY='private/userkey.pem'
 CACERT='etc/cern_cacert.pem'

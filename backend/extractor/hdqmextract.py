@@ -611,8 +611,8 @@ def create_and_populate_temp_tables(mes_set, all_files):
   ;
   ''' % sql_insert_mes_keys
 
+  session = db_access.get_session()
   try:
-    session = db_access.get_session()
     session.execute(sql_drop_temp_filenames)
     session.execute(sql_drop_temp_me_paths)
     session.execute(sql_create_temp_filenames)
