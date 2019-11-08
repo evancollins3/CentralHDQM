@@ -23,6 +23,7 @@ import os, sys
 sys.path.insert(1, os.path.realpath(os.path.pardir))
 import db_access
 
+PLOTNAMEPATTERN = re.compile('^(\w+-*\+*)+$')
 CFGFILES = 'cfg/*/*.ini'
 
 def calculate_trends(cfg_files, runs):
@@ -38,9 +39,13 @@ def calculate_trends(cfg_files, runs):
       parser.read(unicode(cfg_file))
       
       for section in parser:
-        if not section.startswith("plot:"):
+        if not section.startswith('plot:'):
           if(section != 'DEFAULT'):
             print('Invalid configuration section: %s:%s, skipping.' % (cfg_file, section))
+          continue
+
+        if not PLOTNAMEPATTERN.match(section.lstrip('plot:')):
+          print("Invalid plot name: '%s:%s' Plot names can contain only alphanumeric characters or [_, +, -]" % (cfg_file, section.lstrip('plot:')))
           continue
 
         if 'metric' not in parser[section] and\
@@ -50,6 +55,8 @@ def calculate_trends(cfg_files, runs):
           print('Required parameters: metric, relativePath, yTitle')
           continue
         trend_count+=1
+
+        continue
 
         plot_title = parser[section]['yTitle']
         if 'plotTitle' in parser[section]:
