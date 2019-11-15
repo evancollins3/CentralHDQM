@@ -56,8 +56,6 @@ def calculate_trends(cfg_files, runs):
           continue
         trend_count+=1
 
-        continue
-
         plot_title = parser[section]['yTitle']
         if 'plotTitle' in parser[section]:
           plot_title = parser[section]['plotTitle']
@@ -180,7 +178,7 @@ def calculate_trends(cfg_files, runs):
             session.close()
     except Exception as e:
       print(e)
-      print('Could not read %s, skipping.' % cfg_file)
+      print('Could not process %s, skipping.' % cfg_file)
 
   print('Done processing %s trends.' % trend_count)
 

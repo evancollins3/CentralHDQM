@@ -1,15 +1,21 @@
 from __future__ import print_function
 import os
 import enum
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy import Column, String, Integer, Float, DateTime, Binary, ForeignKey, Enum, UniqueConstraint, Index
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 
+# SQLite will be used if there is no production DB credentials
 dir_path = os.path.dirname(os.path.realpath(__file__))
-with open(os.path.join(dir_path, 'connection_string.txt'), 'r') as file:
-  db_string = file.read().replace('\n', '')
-  #db_string = 'sqlite:///hdqm.db'
+db_string = 'sqlite:///' + os.path.join(dir_path, 'hdqm.db')
+# with open(os.path.join(dir_path, 'connection_string.txt'), 'r') as file:
+#   db_string = file.read().replace('\n', '')
+
+is_postgres = True
+if not db_string.startswith('postgres://'):
+  is_postgres = False
+
 db = create_engine(db_string)
 base = declarative_base()
 
@@ -57,14 +63,26 @@ class MonitorElement(base):
     UniqueConstraint('run', 'lumi', 'me_path', 'dataset', name='_run_lumi_plotpath_dataset_uc'), 
     UniqueConstraint('me_path', 'eos_path', name='_me_path_eos_path_uc'))
 
-class NonExistentMonitorElement(base):
-  __tablename__ = 'non_existent_monitor_elements'
+# class NonExistentMonitorElement(base):
+#   __tablename__ = 'non_existent_monitor_elements'
 
-  id = Column(Integer, primary_key=True, nullable=False)
-  me_path = Column(String, nullable=False)
-  eos_path = Column(String, nullable=False)
+#   id = Column(Integer, primary_key=True, nullable=False)
+#   me_path = Column(String, nullable=False)
+#   eos_path = Column(String, nullable=False)
 
-  __table_args__ = (UniqueConstraint('me_path', 'eos_path', name='_non_existent_me_path_eos_path_uc'),)
+#   __table_args__ = (UniqueConstraint('me_path', 'eos_path', name='_non_existent_me_path_eos_path_uc'),)
+
+class ProcessedMonitorElement(base):
+  __tablename__ = 'processed_monitor_elements'
+
+  me_path = Column(String, primary_key=True, nullable=False)
+  eos_path = Column(String, primary_key=True, nullable=False)
+
+  # Foreign keys
+  me_id = Column(Integer, ForeignKey('monitor_elements.id'))
+  me = relationship("MonitorElement", foreign_keys=[me_id])
+
+  __table_args__ = (UniqueConstraint('me_path', 'eos_path', name='_processed_mes_me_path_eos_path_uc'),)
 
 class OMSDataCache(base):
   __tablename__ = 'oms_data_cache'
@@ -100,6 +118,17 @@ def get_session():
 
 def dispose_engine():
   db.dispose()
+
+def vacuum_processed_mes():
+  if is_postgres:
+    connection = db.connect()
+    connection = connection.execution_options(isolation_level='AUTOCOMMIT')
+    try:
+      connection.execute('VACUUM processed_monitor_elements;')
+    except Exception as e:
+      print(e)
+    finally:
+      connection.close()
 
 if __name__ == '__main__':
   setup_db()

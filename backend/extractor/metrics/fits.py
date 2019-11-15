@@ -10,11 +10,11 @@ class LanGau(BaseMetric):
         self.controlVal = controlVal 
         
     def calculate(self, histo):
+        import os
+        langauPath = os.path.join(os.path.dirname(__file__), 'langau.c')
         import ROOT
-        # ROOT.gSystem.Load("/afs/cern.ch/user/c/cctrack/scratch0/hDQM/CMSSW_8_0_2/src/DQM/SiStripHistoricInfoClient/test/NewHDQM/metrics/langau_c")
-        # ROOT.gSystem.Load('/afs/cern.ch/work/a/akirilov/HDQM/CentralHDQM/CentralHDQM/backend/extractor/langau.c')
-        ROOT.gSystem.CompileMacro("/afs/cern.ch/work/a/akirilov/HDQM/CentralHDQM/CentralHDQM/backend/extractor/metrics/langau.c", "k-")
-        ROOT.gSystem.Load("/afs/cern.ch/work/a/akirilov/HDQM/CentralHDQM/CentralHDQM/backend/extractor/metrics/langau.c")
+        ROOT.gSystem.CompileMacro(langauPath, "k-")
+        ROOT.gSystem.Load(langauPath)
         from ROOT import langaufun
         from ROOT import TF1
         fit = TF1("langau",langaufun, self.range[0],self.range[1],4)

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
 
-from sys import argv
 from glob import glob
 from multiprocessing import Pool
 from collections import defaultdict
@@ -11,7 +10,6 @@ from sqlalchemy.exc import IntegrityError
 
 import re
 import ROOT
-import tempfile
 import argparse
 
 import metrics
@@ -82,7 +80,7 @@ def remove_old_versions(all_files):
 # Write an me to a tempfile and read binary from it.
 # This is to keep the compatibility with future ROOT versions.
 def get_binary(me):
-  with tempfile.NamedTemporaryFile() as temp_file:
+  with NamedTemporaryFile() as temp_file:
     result_file = ROOT.TFile(temp_file.name, 'recreate')
     me.Write()
     result_file.Close()
@@ -151,7 +149,7 @@ def extract_all_mes(cfg_files, runs):
 
   print('Found %s files in EOS' % len(all_files))
 
-  print('Setting up a temporary DB table to find out missing MEs...')
+  print('Setting up a temporary DB tables to find out missing MEs...')
 
   # Fill temp tables!
   db_access.setup_db()
@@ -169,16 +167,10 @@ def extract_all_mes(cfg_files, runs):
   SELECT me_path, eos_path
   FROM temp_root_filenames, temp_me_paths
 
-  WHERE (SELECT COUNT(*) FROM monitor_elements 
-        WHERE temp_me_paths.me_path = monitor_elements.me_path
-        AND temp_root_filenames.eos_path = monitor_elements.eos_path
-        LIMIT 1) = 0
-        
-  AND (SELECT COUNT(*) FROM non_existent_monitor_elements 
-        WHERE temp_me_paths.me_path = non_existent_monitor_elements.me_path
-        AND temp_root_filenames.eos_path = non_existent_monitor_elements.eos_path
-        LIMIT 1) = 0
-  LIMIT 500
+  WHERE NOT EXISTS (SELECT me_path, eos_path FROM processed_monitor_elements 
+        WHERE temp_me_paths.me_path = processed_monitor_elements.me_path
+        AND temp_root_filenames.eos_path = processed_monitor_elements.eos_path)
+  LIMIT 100000
   ;
   '''
 
@@ -186,8 +178,12 @@ def extract_all_mes(cfg_files, runs):
 
   while True:
     try:
-      print('Fetching from DB...')
       db_access.dispose_engine()
+
+      print('Vacuuming processed_monitor_elements table...')
+      db_access.vacuum_processed_mes()
+
+      print('Fetching not processed MEs from DB...')
       session = db_access.get_session()
       rows = session.execute(sql)
       rows = list(rows)
@@ -196,7 +192,7 @@ def extract_all_mes(cfg_files, runs):
       if(len(rows) == 0):
         break
       
-      pool.map(extract_mes, batch_iterable(rows, chunksize=100))
+      pool.map(extract_mes, batch_iterable(rows, chunksize=2000))
     except Exception as e:
       print(e)
       session.close()
@@ -206,6 +202,9 @@ def extract_all_mes(cfg_files, runs):
 
 
 def extract_mes(rows):
+  tdirectory = None
+  last_eos_path = None
+
   for row in rows:
     eos_path = row['eos_path']
     me_path = row['me_path']
@@ -225,7 +224,13 @@ def extract_mes(rows):
       insert_non_existent_me_to_db(eos_path, me_path)
       continue
     
-    tdirectory = ROOT.TFile.Open(eos_path)
+    # Open root file only if it's different from the last one
+    if eos_path != last_eos_path or tdirectory == None:
+      if tdirectory != None:
+        tdirectory.Close()
+      tdirectory = ROOT.TFile.Open(eos_path)
+      last_eos_path = eos_path
+
     if tdirectory == None:
       print("Unable to open file: '%s'" % eos_path)
       insert_non_existent_me_to_db(eos_path, me_path)
@@ -235,7 +240,6 @@ def extract_mes(rows):
     plot = tdirectory.Get(fullpath)
     if not plot:
       insert_non_existent_me_to_db(eos_path, me_path)
-      tdirectory.Close()
       continue
 
     plot_folder = '/'.join(me_path.split('/')[:-1])
@@ -252,21 +256,24 @@ def extract_mes(rows):
           image_url = image_url)
     insert_me_to_db(monitor_element)
 
+  if tdirectory != None:
     tdirectory.Close()
 
 
 # Insert non existent ME.
 # Next time we will no longer try to fetch this ME.
 def insert_non_existent_me_to_db(eos_path, me_path):
-  non_existent_monitor_element = db_access.NonExistentMonitorElement(
+  processed_monitor_element = db_access.ProcessedMonitorElement(
     eos_path = eos_path,
-    me_path = me_path)
+    me_path = me_path,
+    me_id = None
+  )
 
   session = db_access.get_session()
   try:
-    session.add(non_existent_monitor_element)
+    session.add(processed_monitor_element)
     session.commit()
-    print("Added non existent ME (%s, %s)" % (me_path, eos_path))
+    print('Added non existent ME to DB')
   except Exception as e:
     print('Insert non existent ME error: %s' % e)
     session.rollback()
@@ -278,8 +285,18 @@ def insert_me_to_db(monitor_element):
   session = db_access.get_session()
   try:
     session.add(monitor_element)
+    session.flush()
+
+    # Add ME to the list of processed MEs
+    processed_monitor_element = db_access.ProcessedMonitorElement(
+      eos_path = monitor_element.eos_path,
+      me_path = monitor_element.me_path,
+      me_id = monitor_element.id
+    )
+    session.add(processed_monitor_element)
+
     session.commit()
-    print('Added ME to DB')
+    print('Added ME to DB: %s', monitor_element.id)
   except Exception as e:
     print('Insert ME error: %s' % e)
     session.rollback()
@@ -313,38 +330,41 @@ def create_and_populate_temp_tables(mes_set, all_files):
   );
   '''
 
+  sql_insert_paths = '''INSERT INTO temp_root_filenames (eos_path) VALUES (:eos_path);'''
+  sql_insert_mes = '''INSERT INTO temp_me_paths (me_path) VALUES (:me_path);'''
+
   # Populate temp table of eos paths
-  sql_insert_paths_query_params = {}
-  sql_insert_paths_keys = ''
+  # sql_insert_paths_query_params = {}
+  # sql_insert_paths_keys = ''
 
-  for i, filepath in enumerate(all_files):
-    key = 'eos_path_%s' % i
-    sql_insert_paths_keys += '(:%s),' % key
-    sql_insert_paths_query_params[key] = filepath
-  sql_insert_paths_keys = sql_insert_paths_keys.rstrip(',')
+  # for i, filepath in enumerate(all_files):
+  #   key = 'eos_path_%s' % i
+  #   sql_insert_paths_keys += '(:%s),' % key
+  #   sql_insert_paths_query_params[key] = filepath
+  # sql_insert_paths_keys = sql_insert_paths_keys.rstrip(',')
 
-  sql_insert_paths = '''
-  INSERT INTO temp_root_filenames (eos_path)
-  VALUES
-  %s
-  ;
-  ''' % sql_insert_paths_keys
+  # sql_insert_paths = '''
+  # INSERT INTO temp_root_filenames (eos_path)
+  # VALUES
+  # %s
+  # ;
+  # ''' % sql_insert_paths_keys
 
-  # Populate temp table of ME paths
-  sql_insert_mes_query_params = {}
-  sql_insert_mes_keys = ''
-  for i, me_path in enumerate(mes_set):
-    key = 'me_path_%s' % i
-    sql_insert_mes_keys += '(:%s),' % key
-    sql_insert_mes_query_params[key] = me_path
-  sql_insert_mes_keys = sql_insert_mes_keys.rstrip(',')
+  # # Populate temp table of ME paths
+  # sql_insert_mes_query_params = {}
+  # sql_insert_mes_keys = ''
+  # for i, me_path in enumerate(mes_set):
+  #   key = 'me_path_%s' % i
+  #   sql_insert_mes_keys += '(:%s),' % key
+  #   sql_insert_mes_query_params[key] = me_path
+  # sql_insert_mes_keys = sql_insert_mes_keys.rstrip(',')
 
-  sql_insert_mes = '''
-  INSERT INTO temp_me_paths (me_path)
-  VALUES
-  %s
-  ;
-  ''' % sql_insert_mes_keys
+  # sql_insert_mes = '''
+  # INSERT INTO temp_me_paths (me_path)
+  # VALUES
+  # %s
+  # ;
+  # ''' % sql_insert_mes_keys
 
   session = db_access.get_session()
   try:
@@ -352,8 +372,8 @@ def create_and_populate_temp_tables(mes_set, all_files):
     session.execute(sql_drop_temp_me_paths)
     session.execute(sql_create_temp_filenames)
     session.execute(sql_create_temp_me_paths)
-    session.execute(sql_insert_paths, sql_insert_paths_query_params)
-    session.execute(sql_insert_mes, sql_insert_mes_query_params)
+    session.execute(sql_insert_paths, [{'eos_path': x} for x in all_files])
+    session.execute(sql_insert_mes, [{'me_path': x} for x in mes_set])
     session.commit()
   except Exception as e:
     print(e)
@@ -363,6 +383,8 @@ def create_and_populate_temp_tables(mes_set, all_files):
   
   return True
 
+def test(rows):
+  print(len(rows))
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='HDQM trend calculation.')
