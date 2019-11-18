@@ -22,10 +22,9 @@ sys.path.insert(1, os.path.realpath(os.path.pardir))
 import db_access
 
 CFGFILES = 'cfg/*/*.ini'
-# CFGFILES = 'cfg/Tracker/trendPlotsTracking.ini'
 ROOTFILES = '/eos/cms/store/group/comm_dqm/DQMGUI_data/*/*/*/DQM*.root'
-# ROOTFILES = '/afs/cern.ch/work/a/akirilov/HDQM/CentralHDQM/CentralHDQM/backend/extractor/testData/DQM*.root'
-# ROOTFILES = '/eos/cms/store/group/comm_dqm/DQMGUI_data/Run2018/StreamExpress/R0003152xx/DQM_V0006*.root'
+# CFGFILES = 'cfg/PixelPhase1/trendPlotsPixelPhase1_BPIX_Residuals.ini'
+# ROOTFILES = '/eos/cms/store/group/comm_dqm/DQMGUI_data/Run2018/StreamExpress/R0003152xx/DQM_V0001_R000315252__StreamExpress__Run2018A-*'
 
 PDPATTERN = re.compile('DQM_V\d+_R\d+__(.+__.+__.+)[.]root') # PD inside the file name
 VERSIONPATTERN = re.compile('(DQM_V)(\d+)(.+[.]root)')
@@ -87,6 +86,7 @@ def get_binary(me):
     with open(temp_file.name, "rb") as file:
       return file.read()
 
+
 def get_all_available_runs():
   eos_files = glob(ROOTFILES)
   runs = set()
@@ -98,6 +98,12 @@ def get_all_available_runs():
       runs.add(int(run))
   return list(runs)
 
+
+# Returns file names as a list from comma separated string
+def get_all_me_names(names):
+  names = names.split(',')
+  names = [x.strip() for x in names if x]
+  return names
 
 def extract_all_mes(cfg_files, runs):
   print('Processing %d configuration files...' % len(cfg_files))
@@ -116,11 +122,13 @@ def extract_all_mes(cfg_files, runs):
           print("Invalid plot name: '%s:%s' Plot names can contain only alphanumeric characters or [_, +, -]" % (cfg_file, section.lstrip('plot:')))
           continue
 
-        mes_set.add(parser[section]['relativePath'])
+        mes_set.update(get_all_me_names(parser[section]['relativePath']))
         if 'histo1Path' in parser[section]:
-          mes_set.add(parser[section]['histo1Path'])
+          mes_set.update(get_all_me_names(parser[section]['histo1Path']))
         if 'histo2Path' in parser[section]:
-          mes_set.add(parser[section]['histo2Path'])
+          mes_set.update(get_all_me_names(parser[section]['histo2Path']))
+        if 'reference' in parser[section]:
+          mes_set.update(get_all_me_names(parser[section]['reference']))
       good_files+=1
     except:
       print('Could not read %s, skipping...' % cfg_file)
@@ -149,40 +157,107 @@ def extract_all_mes(cfg_files, runs):
 
   print('Found %s files in EOS' % len(all_files))
 
-  print('Setting up a temporary DB tables to find out missing MEs...')
+  print('Gathering information about MEs to be extracted...')
 
-  # Fill temp tables!
   db_access.setup_db()
-  created = create_and_populate_temp_tables(mes_set, all_files)
-  if not created:
-    print('Unable to create temporary DB tables. Terminating.')
-    return
+
+  # Get lists of existing mes and eos files.
+  # Existing means that ME was extracted or is in the extraction queue.
+  session = db_access.get_session()
+  existing_me_paths = set(x.me_path for x in session.query(db_access.ExistingMEPath).all())
+  existing_eos_paths = set(x.eos_path for x in session.query(db_access.ExistingEOSPath).all())
+  session.close()
+
+  # -------------------- Update the ME paths in the extraction queue -------------------- #
+  new_mes = mes_set.difference(existing_me_paths)
+  deleted_mes = existing_me_paths.difference(mes_set)
+
+  print('New MEs: %s, deleted MEs: %s' % (len(new_mes), len(deleted_mes)))
+
+  # Remove deleted MEs from the extraction queue
+  if(len(deleted_mes) > 0):
+    sql = 'DELETE FROM queue_to_extract WHERE me_path = :me_path;'
+    exec_transaction(sql, [{'me_path': x} for x in deleted_mes])
+
+    sql = 'DELETE FROM existing_me_paths WHERE me_path = :me_path;'
+    exec_transaction(sql, [{'me_path': x} for x in deleted_mes])
+
+  # Refresh new MEs table
+  sql = 'DELETE FROM new_me_paths;'
+  exec_transaction(sql)
+
+  # Insert new ME paths
+  if(len(new_mes) > 0):
+    sql = 'INSERT INTO new_me_paths (me_path) VALUES (:me_path);'
+    exec_transaction(sql, [{'me_path': x} for x in new_mes])
+
+  # Will have to extract new MEs for every existing file 
+  sql_update_queue = '''
+  INSERT INTO queue_to_extract (eos_path, me_path)
+  SELECT eos_path, me_path
+  FROM existing_eos_paths, new_me_paths
+  ;
+  '''
+
+  sql_update_existing = '''
+  INSERT INTO existing_me_paths (me_path)
+  SELECT me_path
+  FROM new_me_paths
+  ;
+  '''
+  exec_transaction([sql_update_queue, sql_update_existing])
+
+  # -------------------- Update the eos paths in the extraction queue -------------------- #
+  files_set = set(all_files)
+  new_files = files_set.difference(existing_eos_paths)
+  deleted_files = existing_eos_paths.difference(files_set)
+
+  print('New files: %s, deleted files: %s' % (len(new_files), len(deleted_files)))
+
+  # Remove deleted files from the extraction queue
+  if(len(deleted_files) > 0):
+    sql = 'DELETE FROM queue_to_extract WHERE eos_path = :eos_path;'
+    exec_transaction(sql, [{'eos_path': x} for x in deleted_files])
+
+    sql = 'DELETE FROM existing_eos_paths WHERE eos_path = :eos_path;'
+    exec_transaction(sql, [{'eos_path': x} for x in deleted_files])
+
+  # Refresh new files table
+  sql = 'DELETE FROM new_eos_paths;'
+  exec_transaction(sql)
+
+  # Insert new eos paths
+  if(len(new_files) > 0):
+    sql = 'INSERT INTO new_eos_paths (eos_path) VALUES (:eos_path);'
+    exec_transaction(sql, [{'eos_path': x} for x in new_files])
+
+  # Will have to extract all existing MEs for newly added files
+  sql_update_queue = '''
+  INSERT INTO queue_to_extract (eos_path, me_path)
+  SELECT eos_path, me_path
+  FROM new_eos_paths, existing_me_paths
+  ;
+  '''
+
+  sql_update_existing = '''
+  INSERT INTO existing_eos_paths (eos_path)
+  SELECT eos_path
+  FROM new_eos_paths
+  ;
+  '''
+  exec_transaction([sql_update_queue, sql_update_existing])
 
   print('Done.')
   print('Extracting missing MEs...')
 
-  # Join in the DB to get root file and me path pairs
-  # that still don't exist in the DB
-  sql = '''
-  SELECT me_path, eos_path
-  FROM temp_root_filenames, temp_me_paths
+  # ------------------- Start extracting MEs from the extraction queue ------------------- #
 
-  WHERE NOT EXISTS (SELECT me_path, eos_path FROM processed_monitor_elements 
-        WHERE temp_me_paths.me_path = processed_monitor_elements.me_path
-        AND temp_root_filenames.eos_path = processed_monitor_elements.eos_path)
-  LIMIT 100000
-  ;
-  '''
-
+  sql = 'SELECT id, eos_path, me_path FROM queue_to_extract LIMIT 100000;'
   pool = Pool(50)
 
   while True:
     try:
       db_access.dispose_engine()
-
-      print('Vacuuming processed_monitor_elements table...')
-      db_access.vacuum_processed_mes()
-
       print('Fetching not processed MEs from DB...')
       session = db_access.get_session()
       rows = session.execute(sql)
@@ -202,10 +277,12 @@ def extract_all_mes(cfg_files, runs):
 
 
 def extract_mes(rows):
+  db_access.dispose_engine()
   tdirectory = None
   last_eos_path = None
 
   for row in rows:
+    id = row['id']
     eos_path = row['eos_path']
     me_path = row['me_path']
     
@@ -221,7 +298,7 @@ def extract_mes(rows):
       run = run_match[0]
     else:
       print('Skipping a malformatted DQM file that does not contain a run number: %s' % eos_path)
-      insert_non_existent_me_to_db(eos_path, me_path)
+      exec_transaction('DELETE FROM queue_to_extract WHERE id = :id', {'id': id})
       continue
     
     # Open root file only if it's different from the last one
@@ -233,13 +310,13 @@ def extract_mes(rows):
 
     if tdirectory == None:
       print("Unable to open file: '%s'" % eos_path)
-      insert_non_existent_me_to_db(eos_path, me_path)
+      exec_transaction('DELETE FROM queue_to_extract WHERE id = :id', {'id': id})
       continue
 
     fullpath = get_full_path(me_path, run)
     plot = tdirectory.Get(fullpath)
     if not plot:
-      insert_non_existent_me_to_db(eos_path, me_path)
+      exec_transaction('DELETE FROM queue_to_extract WHERE id = :id', {'id': id})
       continue
 
     plot_folder = '/'.join(me_path.split('/')[:-1])
@@ -254,137 +331,40 @@ def extract_mes(rows):
           me_blob = get_binary(plot),
           gui_url = gui_url,
           image_url = image_url)
-    insert_me_to_db(monitor_element)
+
+    session = db_access.get_session()
+    try:
+      session.add(monitor_element)
+      session.execute('DELETE FROM queue_to_extract WHERE id = :id', {'id': id})
+      session.commit()
+      print('Added ME to DB')
+    except Exception as e:
+      print('Insert ME error: %s' % e)
+      session.rollback()
+    finally:
+      session.close()
 
   if tdirectory != None:
     tdirectory.Close()
 
 
-# Insert non existent ME.
-# Next time we will no longer try to fetch this ME.
-def insert_non_existent_me_to_db(eos_path, me_path):
-  processed_monitor_element = db_access.ProcessedMonitorElement(
-    eos_path = eos_path,
-    me_path = me_path,
-    me_id = None
-  )
-
+# Executes a SQL transaction
+def exec_transaction(sql, params=None):
   session = db_access.get_session()
   try:
-    session.add(processed_monitor_element)
+    if type(sql) == list:
+      for query in sql:
+        session.execute(query, params)
+    else:
+      session.execute(sql, params)
     session.commit()
-    print('Added non existent ME to DB')
-  except Exception as e:
-    print('Insert non existent ME error: %s' % e)
-    session.rollback()
-  finally:
-    session.close()
-
-
-def insert_me_to_db(monitor_element):
-  session = db_access.get_session()
-  try:
-    session.add(monitor_element)
-    session.flush()
-
-    # Add ME to the list of processed MEs
-    processed_monitor_element = db_access.ProcessedMonitorElement(
-      eos_path = monitor_element.eos_path,
-      me_path = monitor_element.me_path,
-      me_id = monitor_element.id
-    )
-    session.add(processed_monitor_element)
-
-    session.commit()
-    print('Added ME to DB: %s', monitor_element.id)
-  except Exception as e:
-    print('Insert ME error: %s' % e)
-    session.rollback()
-  finally:
-    session.close()
-
-
-# Store all currently present EOS files and MEs from .ini files 
-# in temporary DB tables.
-# We will join them later to reduce the query size.
-# The result will be joined with main MEs table to get only missing 
-# file, me pairs to extract.
-def create_and_populate_temp_tables(mes_set, all_files):
-  # Drop temp tables
-  sql_drop_temp_filenames = '''
-  DROP TABLE IF EXISTS temp_root_filenames;
-  '''
-  sql_drop_temp_me_paths = '''
-  DROP TABLE IF EXISTS temp_me_paths;
-  '''
-
-  # Create temp tables
-  sql_create_temp_filenames = '''
-  CREATE TABLE temp_root_filenames (
-    eos_path character varying NOT NULL
-  );
-  '''
-  sql_create_temp_me_paths = '''
-  CREATE TABLE temp_me_paths (
-    me_path character varying NOT NULL
-  );
-  '''
-
-  sql_insert_paths = '''INSERT INTO temp_root_filenames (eos_path) VALUES (:eos_path);'''
-  sql_insert_mes = '''INSERT INTO temp_me_paths (me_path) VALUES (:me_path);'''
-
-  # Populate temp table of eos paths
-  # sql_insert_paths_query_params = {}
-  # sql_insert_paths_keys = ''
-
-  # for i, filepath in enumerate(all_files):
-  #   key = 'eos_path_%s' % i
-  #   sql_insert_paths_keys += '(:%s),' % key
-  #   sql_insert_paths_query_params[key] = filepath
-  # sql_insert_paths_keys = sql_insert_paths_keys.rstrip(',')
-
-  # sql_insert_paths = '''
-  # INSERT INTO temp_root_filenames (eos_path)
-  # VALUES
-  # %s
-  # ;
-  # ''' % sql_insert_paths_keys
-
-  # # Populate temp table of ME paths
-  # sql_insert_mes_query_params = {}
-  # sql_insert_mes_keys = ''
-  # for i, me_path in enumerate(mes_set):
-  #   key = 'me_path_%s' % i
-  #   sql_insert_mes_keys += '(:%s),' % key
-  #   sql_insert_mes_query_params[key] = me_path
-  # sql_insert_mes_keys = sql_insert_mes_keys.rstrip(',')
-
-  # sql_insert_mes = '''
-  # INSERT INTO temp_me_paths (me_path)
-  # VALUES
-  # %s
-  # ;
-  # ''' % sql_insert_mes_keys
-
-  session = db_access.get_session()
-  try:
-    session.execute(sql_drop_temp_filenames)
-    session.execute(sql_drop_temp_me_paths)
-    session.execute(sql_create_temp_filenames)
-    session.execute(sql_create_temp_me_paths)
-    session.execute(sql_insert_paths, [{'eos_path': x} for x in all_files])
-    session.execute(sql_insert_mes, [{'me_path': x} for x in mes_set])
-    session.commit()
+    return True
   except Exception as e:
     print(e)
     return False
   finally:
     session.close()
-  
-  return True
 
-def test(rows):
-  print(len(rows))
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='HDQM trend calculation.')
@@ -406,29 +386,3 @@ if __name__ == '__main__':
       exit()
   
   extract_all_mes(config, runs)
-
-  # exit()
-  # Get last 101
-  # print(sorted(list(get_all_available_runs()))[-101:])
-  # parser = argparse.ArgumentParser(description='HDQM monitor element extractor.')
-  # parser.add_argument('-r', dest='runs', type=int, nargs='+', help='Runs to process. If none were given, will process all available runs.')
-  # args = parser.parse_args()
-
-  # if args.runs == None:
-  #   runs = get_all_available_runs()
-  # else:
-  #   runs = args.runs
-
-  # pool = Pool(50)
-  # runs = [322169, 296365, 318734, 318735, 306528, 306529, 318733, 306522, 306523, 306520, 306521, 306526, 306527, 301062, 301063, 301060, 301061, 301067, 301064, 304013, 301068, 304018, 300256, 300257, 300255, 300259, 323277, 323270, 323279, 297705, 322902, 297702, 297701, 325306, 325309, 325308, 298069, 322909, 295851, 295854, 297563, 297562, 298393, 298392, 298397, 298398, 316991, 305764, 305766, 305761]
-  # runs = [322169, 296365]
-  # runs = [296365]
-  # runs = [319654, 319656, 319657, 319658, 319659, 319661, 319663, 319666, 319667, 319670, 319672, 319675, 319678, 319680, 319682, 319683, 319685, 319686, 319687, 319688, 319689, 319690]
-  # runs = [319690]
-  # runs = [325449, 325458, 325460, 325461, 325463, 325464, 325465, 325466, 325467, 325469, 325470, 325473, 325476, 325477, 325484, 325486, 325492, 325493, 325494, 325495, 325496, 325497, 325500, 325501, 325503, 325506, 325511, 325517, 325518, 325519, 325520, 325522, 325523, 325524, 325525, 325526, 325529, 325530, 325531, 325543, 325550, 325552, 325553, 325554, 325556, 325562, 325565, 325574, 325575, 325577, 325578, 325587, 325588, 325589, 325590, 325591, 325593, 325594, 325597, 325604, 325605, 325606, 325607, 325615, 325616, 325617, 325618, 325619, 325620, 325621, 325622, 325627, 325631, 325637, 325639, 325642, 325643, 325644, 325645, 325646, 325647, 325648, 325653, 325654, 325657, 325680, 325681, 325682, 325684, 325688, 325695, 325696, 325697, 325698, 325699, 325700, 325701, 325702, 325743, 325746]
-  # runs = [325449]
-  # runs = runs[-1000:-1]
-  # runs = [r for r in runs if r > 324418 and r < 325310]
-  # print(runs)
-  # runs = [325449]
-  # pool.map(process_run, runs)

@@ -9,8 +9,8 @@ from sqlalchemy.orm import sessionmaker, relationship
 # SQLite will be used if there is no production DB credentials
 dir_path = os.path.dirname(os.path.realpath(__file__))
 db_string = 'sqlite:///' + os.path.join(dir_path, 'hdqm.db')
-# with open(os.path.join(dir_path, 'connection_string.txt'), 'r') as file:
-#   db_string = file.read().replace('\n', '')
+with open(os.path.join(dir_path, 'connection_string.txt'), 'r') as file:
+  db_string = file.read().replace('\n', '')
 
 is_postgres = True
 if not db_string.startswith('postgres://'):
@@ -18,6 +18,7 @@ if not db_string.startswith('postgres://'):
 
 db = create_engine(db_string)
 base = declarative_base()
+
 
 class HistoricData(base):
   __tablename__ = 'historic_data'
@@ -41,10 +42,13 @@ class HistoricData(base):
   optional_me1 = relationship("MonitorElement", foreign_keys=[optional_me1_id])
   optional_me2_id = Column(Integer, ForeignKey('monitor_elements.id'))
   optional_me2 = relationship("MonitorElement", foreign_keys=[optional_me2_id])
+  reference_me_id = Column(Integer, ForeignKey('monitor_elements.id'))
+  reference_me = relationship("MonitorElement", foreign_keys=[reference_me_id])
 
   __table_args__ = (
     UniqueConstraint('run', 'lumi', 'subsystem', 'name', name='_run_lumi_subsystem_name_uc'),
     Index('_run_lumi_subsystem_index', 'run', 'lumi', 'subsystem'))
+
 
 class MonitorElement(base):
   __tablename__ = 'monitor_elements'
@@ -61,28 +65,48 @@ class MonitorElement(base):
 
   __table_args__ = (
     UniqueConstraint('run', 'lumi', 'me_path', 'dataset', name='_run_lumi_plotpath_dataset_uc'), 
-    UniqueConstraint('me_path', 'eos_path', name='_me_path_eos_path_uc'))
+    Index('_me_path_eos_path_ui', 'me_path', 'eos_path', unique=True))
 
-# class NonExistentMonitorElement(base):
-#   __tablename__ = 'non_existent_monitor_elements'
 
-#   id = Column(Integer, primary_key=True, nullable=False)
-#   me_path = Column(String, nullable=False)
-#   eos_path = Column(String, nullable=False)
-
-#   __table_args__ = (UniqueConstraint('me_path', 'eos_path', name='_non_existent_me_path_eos_path_uc'),)
-
-class ProcessedMonitorElement(base):
-  __tablename__ = 'processed_monitor_elements'
+class ExistingMEPath(base):
+  __tablename__ = 'existing_me_paths'
 
   me_path = Column(String, primary_key=True, nullable=False)
+
+  __table_args__ = (Index('_existing_me_paths_me_path_uindex', 'me_path', unique=True),)
+
+
+class ExistingEOSPath(base):
+  __tablename__ = 'existing_eos_paths'
+
   eos_path = Column(String, primary_key=True, nullable=False)
 
-  # Foreign keys
-  me_id = Column(Integer, ForeignKey('monitor_elements.id'))
-  me = relationship("MonitorElement", foreign_keys=[me_id])
+  __table_args__ = (Index('_existing_eos_paths_eos_path_uindex', 'eos_path', unique=True),)
 
-  __table_args__ = (UniqueConstraint('me_path', 'eos_path', name='_processed_mes_me_path_eos_path_uc'),)
+
+class NewMEPath(base):
+  __tablename__ = 'new_me_paths'
+
+  me_path = Column(String, primary_key=True, nullable=False)
+
+  __table_args__ = (Index('_new_me_paths_me_path_uindex', 'me_path', unique=True),)
+
+
+class NewEOSPath(base):
+  __tablename__ = 'new_eos_paths'
+
+  eos_path = Column(String, primary_key=True, nullable=False)
+
+  __table_args__ = (Index('_new_eos_paths_eos_path_uindex', 'eos_path', unique=True),)
+
+
+class QueueToExtract(base):
+  __tablename__ = 'queue_to_extract'
+
+  id = Column(Integer, primary_key=True, nullable=False)
+  eos_path = Column(String, nullable=False)
+  me_path = Column(String, nullable=False)
+
 
 class OMSDataCache(base):
   __tablename__ = 'oms_data_cache'

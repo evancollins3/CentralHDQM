@@ -67,7 +67,7 @@ def calculate_trends(cfg_files, runs):
         
         sql='''
         SELECT id, run, lumi, dataset, me_blob FROM monitor_elements
-        WHERE me_path IN :me_path
+        WHERE me_path IN (:me_path)
         %s
         LIMIT 10
         ;
@@ -76,17 +76,20 @@ def calculate_trends(cfg_files, runs):
         main_mes = []
         optional1_mes = []
         optional2_mes = []
+        references = []
 
         session = db_access.get_session()
         try:
           # ME paths in the config can be a comma separateed lists. 
           # This is to account for the DQM ME name changes.
           # Make sure to get all MEs if that's the case. 
-          main_mes = session.execute(sql, {'me_path': tuple(parser[section]['relativePath'].split(',')) })
+          main_mes = session.execute(sql, {'me_path': parser[section]['relativePath']} )
           if 'histo1Path' in parser[section]:
-            optional1_mes = session.execute(sql, {'me_path': tuple(parser[section]['histo1Path'].split(',')) })
+            optional1_mes = session.execute(sql, {'me_path': parser[section]['histo1Path']} )
           if 'histo2Path' in parser[section]:
-            optional2_mes = session.execute(sql, {'me_path': tuple(parser[section]['histo2Path'].split(',')) })
+            optional2_mes = session.execute(sql, {'me_path': parser[section]['histo2Path']} )
+          if 'reference' in parser[section]:
+            references = session.execute(sql, {'me_path': parser[section]['reference']} )
         except Exception as e:
           print(e)
         finally:
@@ -95,6 +98,7 @@ def calculate_trends(cfg_files, runs):
         for me in main_mes:
           optional1_me = None
           optional2_me = None
+          reference = None
 
           tdirectories = []
           main_plot, main_tdir = get_plot_from_blob(me['me_blob'])
@@ -118,6 +122,13 @@ def calculate_trends(cfg_files, runs):
             optional2_plot, optional2_tdir = get_plot_from_blob(optional2_me['me_blob'])
             tdirectories.append(optional2_tdir)
             metric.setOptionalHisto2(optional2_plot)
+          
+          if 'reference' in parser[section]:
+            reference = next((x for x in references if\
+              x['run'] == me['run'] and x['lumi'] == me['lumi'] and x['dataset'] == me['dataset']), None)
+            reference_plot, reference_tdir = get_plot_from_blob(reference['me_blob'])
+            tdirectories.append(reference_tdir)
+            metric.setReference(reference_plot)
 
           # Calculate
           value, error = metric.calculate(main_plot)
@@ -145,6 +156,8 @@ def calculate_trends(cfg_files, runs):
             historic_data.optional_me1_id = optional1_me['id']
           if optional2_me:
             historic_data.optional_me2_id = optional2_me['id']
+          if reference:
+            historic_data.reference_id = reference['id']
 
           session = db_access.get_session()
           try:
