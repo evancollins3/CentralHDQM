@@ -99,7 +99,7 @@ const fullScreenController = (function(){
                 try {
                     $("#modal-submit-button-spinner").show()
                     const series = this.plotData.series.map(x => x.metadata.name)
-                    const base = 'http://vocms0231.cern.ch:8080'
+                    const base = config.getAPIUrl()
                     const url = `${base}/data?subsystem=${selectionController.selectedSubsystem()}&processing_level=${selectionController.selectedProcessingLevel()}&from_run=${newStartX}&to_run=${newEndX}&series=${series}`
                     const response = await fetch(url, {
                         credentials: "same-origin"

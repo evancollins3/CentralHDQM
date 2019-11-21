@@ -42,7 +42,8 @@ const selectionController = (function() {
 
         documentReady: async function() {
             try {
-                const response = await fetch("http://vocms0231.cern.ch:8080/subsystems", {
+                const base = config.getAPIUrl()
+                const response = await fetch(`${base}/subsystems`, {
                     credentials: "same-origin"
                 })
                 dataIndex = await response.json()

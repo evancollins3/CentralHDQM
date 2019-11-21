@@ -84,12 +84,16 @@ def calculate_trends(cfg_files, runs, nprocs):
           # This is to account for the DQM ME name changes.
           # Make sure to get all MEs if that's the case. 
           main_mes = session.execute(sql, {'me_path': parser[section]['relativePath']} )
+          main_mes = list(main_mes)
           if 'histo1Path' in parser[section]:
             optional1_mes = session.execute(sql, {'me_path': parser[section]['histo1Path']} )
+            optional1_mes = list(optional1_mes)
           if 'histo2Path' in parser[section]:
             optional2_mes = session.execute(sql, {'me_path': parser[section]['histo2Path']} )
+            optional2_mes = list(optional2_mes)
           if 'reference' in parser[section]:
             references = session.execute(sql, {'me_path': parser[section]['reference']} )
+            references = list(references)
         except Exception as e:
           print(e)
         finally:
@@ -173,7 +177,7 @@ def calculate_trends(cfg_files, runs, nprocs):
               db_access.HistoricData.lumi == historic_data.lumi,
               db_access.HistoricData.subsystem == historic_data.subsystem,
               db_access.HistoricData.name == historic_data.name,
-              ).one_or_none()
+              ).one_or_none() # TODO: this is not one_or_none
 
               if historic_data_existing:
                 historic_data_existing.dataset = historic_data.dataset

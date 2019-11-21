@@ -100,7 +100,7 @@ const filterController = (function(){
 
         getApiUrl: async function()
         {
-            const base = 'http://vocms0231.cern.ch:8080'
+            const base = config.getAPIUrl()
 
             const value = $("#filter-select").val()
 

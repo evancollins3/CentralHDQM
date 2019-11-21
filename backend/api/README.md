@@ -6,7 +6,7 @@ Before running the API server there should be a `private/` folder inside `api/` 
 
 ### Instructions:
 
-* Get GRID certificate: https://ca.cern.ch/ca/ You have to use your personal account. Certificate has to be passwordless.
+* Get GRID certificate: https://ca.cern.ch/ca/ You have to use your personal account. **Certificate has to be passwordless**.
 * Instructions on how to get certificate and key files: https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookStartingGrid#ObtainingCert
 * Copy paste-ble instructions:
 ```
