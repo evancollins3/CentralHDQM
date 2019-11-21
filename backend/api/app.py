@@ -6,10 +6,11 @@ import requests
 # Insert parent dir to sys.path to import db_access
 sys.path.insert(1, os.path.realpath(os.path.pardir))
 import db_access
-from multiprocessing import Pool
-from cern_sso import get_cookies
 from sqlalchemy import text
 from functools import partial
+from multiprocessing import Pool
+from cern_sso import get_cookies
+from collections import defaultdict
 
 PROCESSING_LEVELS = ['PromptReco', 'UltraLegacy', 'StreamExpress']
 CERT='private/usercert.pem'
@@ -224,7 +225,7 @@ def add_oms_info_to_result(result):
   db_oms_data = list(query)
   session.close()
 
-  oms_data_dict = {}
+  oms_data_dict = defaultdict(list)
   for row in db_oms_data:
     oms_data_dict[row.run] = {
       'start_time': row.start_time,
@@ -245,44 +246,15 @@ def add_oms_info_to_result(result):
     }
 
   # Keep runs that need to be fetched from OMS API
-  runs = [run for run in runs if run not in oms_data_dict.keys()]
+  runs = [run for run in runs if run not in oms_data_dict]
 
   # Fetch in a multithreaded manner
   pool = Pool(max(len(runs), 1))
   api_oms_data = pool.map(get_oms_info_from_api, runs)
 
   for row in api_oms_data:
-    oms_data_dict.update(row)
-    # key = list(row.keys())[0]
-
-    # Add to cache
-    # try:
-    #   session = db_access.get_session()
-    #   session.add(db_access.OMSDataCache(
-    #     run = key,
-    #     lumi = 0,
-    #     start_time = row[key]['start_time'],
-    #     end_time = row[key]['end_time'],
-    #     b_field = row[key]['b_field'],
-    #     energy = row[key]['energy'],
-    #     delivered_lumi = row[key]['delivered_lumi'],
-    #     end_lumi = row[key]['end_lumi'],
-    #     recorded_lumi = row[key]['recorded_lumi'],
-    #     l1_key = row[key]['l1_key'],
-    #     l1_rate = row[key]['l1_rate'],
-    #     hlt_key = row[key]['hlt_key'],
-    #     hlt_physics_rate = row[key]['hlt_physics_rate'],
-    #     duration = row[key]['duration'],
-    #     fill_number = row[key]['fill_number'],
-    #     injection_scheme = row[key]['injection_scheme'],
-    #     era = row[key]['era'],
-    #   ))
-    #   session.commit()
-    # except Exception as e:
-    #   print(e)
-    #   session.rollback()
-    # finally:
-    #   session.close()
+    if row:
+      oms_data_dict.update(row)
 
   # Add oms_info to the respose
   for item in result:
@@ -352,6 +324,12 @@ def get_oms_info_from_api(run):
     return { run: result }
   except Exception as e:
     print(e)
+
+
+@app.after_request
+def add_ua_compat(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
 
 
 if __name__ == '__main__':
