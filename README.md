@@ -16,6 +16,8 @@ Data is not present in this repository but code expects to find it under `/data/
 
 ## How to run locally
 
+The folllowing instruction are completely copy-pastable. This will start a complete HDQM stack on your local (lxplus) environment:
+
 ``` bash
 ssh -L 8000:localhost:8000 -L 8080:localhost:5000 lxplus7.cern.ch
 mkdir -p /tmp/$USER/hdqm
@@ -43,6 +45,6 @@ python3 -m http.server 8000 &>/dev/null &
 
 # Now visit http://localhost:8000/ on your browser
 
-# Run this to find pids of running servers:
+# Run this to find pids of running servers to kill them:
 # ps awwx | grep python
 ```
