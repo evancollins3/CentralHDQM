@@ -105,7 +105,7 @@ def get_all_me_names(names):
   names = [x.strip() for x in names if x]
   return names
 
-def extract_all_mes(cfg_files, runs):
+def extract_all_mes(cfg_files, runs, nprocs):
   print('Processing %d configuration files...' % len(cfg_files))
   mes_set = set()
   good_files = 0
@@ -253,7 +253,7 @@ def extract_all_mes(cfg_files, runs):
   # ------------------- Start extracting MEs from the extraction queue ------------------- #
 
   sql = 'SELECT id, eos_path, me_path FROM queue_to_extract LIMIT 100000;'
-  pool = Pool(50)
+  pool = Pool(nprocs)
 
   while True:
     try:
@@ -370,10 +370,16 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='HDQM trend calculation.')
   parser.add_argument('-r', dest='runs', type=int, nargs='+', help='Runs to process. If none were given, will process all available runs.')
   parser.add_argument('-c', dest='config', nargs='+', help='Configuration files to process. If none were given, will process all available configuration files. Files must come from here: cfg/*/*.ini')
+  parser.add_argument('-j', dest='nprocs', type=int, default=50, help='Number of processes to use for extraction.')
   args = parser.parse_args()
 
   runs = args.runs
   config = args.config
+  nprocs = args.nprocs
+
+  if nprocs < 0:
+    print('Number of processes must be a positive integer')
+    exit()
 
   if config == None:
     config = glob(CFGFILES)
@@ -385,4 +391,4 @@ if __name__ == '__main__':
       print('Configuration files must come from here: cfg/*/*.ini')
       exit()
   
-  extract_all_mes(config, runs)
+  extract_all_mes(config, runs, nprocs)

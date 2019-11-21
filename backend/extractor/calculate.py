@@ -26,7 +26,7 @@ import db_access
 PLOTNAMEPATTERN = re.compile('^(\w+-*\+*)+$')
 CFGFILES = 'cfg/*/*.ini'
 
-def calculate_trends(cfg_files, runs):
+def calculate_trends(cfg_files, runs, nprocs):
   print('Processing %d configuration files...' % len(cfg_files))
   db_access.setup_db()
   trend_count=0
@@ -69,7 +69,7 @@ def calculate_trends(cfg_files, runs):
         SELECT id, run, lumi, dataset, me_blob FROM monitor_elements
         WHERE me_path IN (:me_path)
         %s
-        LIMIT 10
+        --LIMIT 10
         ;
         ''' % runs_filter
         
@@ -210,10 +210,16 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='HDQM trend calculation.')
   parser.add_argument('-r', dest='runs', type=int, nargs='+', help='Runs to process. If none were given, will process all available runs.')
   parser.add_argument('-c', dest='config', nargs='+', help='Configuration files to process. If none were given, will process all available configuration files. Files must come from here: cfg/*/*.ini')
+  parser.add_argument('-j', dest='nprocs', type=int, default=50, help='Number of processes to use for extraction.')
   args = parser.parse_args()
 
   runs = args.runs
   config = args.config
+  nprocs = args.nprocs
+
+  if nprocs < 0:
+    print('Number of processes must be a positive integer')
+    exit()
 
   if config == None:
     config = glob(CFGFILES)
@@ -225,4 +231,4 @@ if __name__ == '__main__':
       print('Configuration files must come from here: cfg/*/*.ini')
       exit()
 
-  calculate_trends(config, runs)
+  calculate_trends(config, runs, nprocs)

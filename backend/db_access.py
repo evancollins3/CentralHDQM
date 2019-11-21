@@ -6,11 +6,14 @@ from sqlalchemy import Column, String, Integer, Float, DateTime, Binary, Foreign
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 
-# SQLite will be used if there is no production DB credentials
+# SQLite will be used if no production DB credentials will be found
 dir_path = os.path.dirname(os.path.realpath(__file__))
 db_string = 'sqlite:///' + os.path.join(dir_path, 'hdqm.db')
-with open(os.path.join(dir_path, 'connection_string.txt'), 'r') as file:
-  db_string = file.read().replace('\n', '')
+
+prod_db_string_file = os.path.join(dir_path, 'connection_string.txt')
+if os.path.isfile(prod_db_string_file):
+  with open(prod_db_string_file, 'r') as file:
+    db_string = file.read().replace('\n', '')
 
 is_postgres = True
 if not db_string.startswith('postgres://'):
@@ -46,8 +49,9 @@ class HistoricData(base):
   reference_me = relationship("MonitorElement", foreign_keys=[reference_me_id])
 
   __table_args__ = (
-    UniqueConstraint('run', 'lumi', 'subsystem', 'name', name='_run_lumi_subsystem_name_uc'),
-    Index('_run_lumi_subsystem_index', 'run', 'lumi', 'subsystem'))
+    Index('_run_lumi_subsystem_name_dataset_uindex', 'run', 'lumi', 'subsystem', 'name', 'dataset', unique=True),
+    Index('_run_lumi_subsystem_index', 'run', 'lumi', 'subsystem')
+  )
 
 
 class MonitorElement(base):
@@ -64,8 +68,9 @@ class MonitorElement(base):
   image_url = Column(String, nullable=False)
 
   __table_args__ = (
-    UniqueConstraint('run', 'lumi', 'me_path', 'dataset', name='_run_lumi_plotpath_dataset_uc'), 
-    Index('_me_path_eos_path_ui', 'me_path', 'eos_path', unique=True))
+    Index('_monitor_element_me_path_index', 'me_path'),
+    Index('_monitor_element_me_path_eos_path_uindex', 'me_path', 'eos_path', unique=True)
+  )
 
 
 class ExistingMEPath(base):
