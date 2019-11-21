@@ -17,17 +17,14 @@ Data is not present in this repository but code expects to find it under `/data/
 ## How to run locally
 
 ``` bash
-ssh -L port0:ip:port0 -L port1:ip:port1
-ssh -L 8000:localhost:8000 lxplus7.cern.ch
-
 ssh -L 8000:localhost:8000 -L 8080:localhost:5000 lxplus7.cern.ch
 mkdir -p /tmp/$USER/hdqm
-cd /tmp/$USER/hdqm
+cd /tmp/$USER/hdqm/
 
 git clone --branch backend-development https://github.com/andrius-k/CentralHDQM
-cd CentralHDQM
+cd CentralHDQM/
 
-cd backend/extractor
+cd backend/extractor/
 source cmsenv
 
 # Extract few DQM histograms. Using only one process because we are on the SQLite
@@ -36,10 +33,15 @@ source cmsenv
 # Calculate HDQM values from DQM histograms stored in the DB
 ./calculate.py -c cfg/PixelPhase1/trendPlotsPixelPhase1_tracks.ini -r 325684 325688 325698 -j 1
 
-cd ../api
+cd ../api/
 ./run.sh &>/dev/null &
 
 cd ../../frontend/
+# Use local API instead of the production one
+sed -i 's/vocms0231.cern.ch/localhost/g' js/config.js
 python3 -m http.server 8000 &>/dev/null &
+
+# Run this to find pids of running servers:
+# ps awwx | grep python
 
 ```
