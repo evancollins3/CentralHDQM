@@ -41,7 +41,8 @@ cd ../../frontend/
 sed -i 's/vocms0231.cern.ch/localhost/g' js/config.js
 python3 -m http.server 8000 &>/dev/null &
 
+# Now visit http://localhost:8000/ on your browser
+
 # Run this to find pids of running servers:
 # ps awwx | grep python
-
 ```
