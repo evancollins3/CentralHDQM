@@ -36,11 +36,13 @@ source cmsenv
 ./calculate.py -c cfg/PixelPhase1/trendPlotsPixelPhase1_tracks.ini -r 325684 325688 325698 -j 1
 
 cd ../api/
+# Run the API
 ./run.sh &>/dev/null &
 
 cd ../../frontend/
 # Use local API instead of the production one
 sed -i 's/vocms0231.cern.ch/localhost/g' js/config.js
+# Run the static file server
 python3 -m http.server 8000 &>/dev/null &
 
 # Now visit http://localhost:8000/ on your browser
