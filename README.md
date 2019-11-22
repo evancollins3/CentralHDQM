@@ -59,4 +59,4 @@ python3 -m http.server 8000 &>/dev/null &
 Now visit http://localhost:8000/ on your browser!
 
 **VERY IMPORTANT:**
-OMS data will not yet be present because authentication certificate is required! All features of the whole tool work properly nevertheless. Bellow are the instruction on how to 
+OMS data will not yet be present because authentication certificate is required! All features of the whole tool work properly nevertheless.
