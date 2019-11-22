@@ -14,6 +14,6 @@ for arg; do
     esac
 done
 
-source ../extractor/cmsenv
-CMD="python3 app.py $DEBUG"
-$CMD;
+source ../cmsenv
+CMD="PYTHONPATH=$(cd ../; pwd)/.python_packages python3 app.py $DEBUG"
+eval $CMD;
