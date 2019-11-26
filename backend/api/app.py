@@ -15,6 +15,7 @@ PROCESSING_LEVELS = ['PromptReco', 'UltraLegacy', 'StreamExpress']
 CERT='private/usercert.pem'
 KEY='private/userkey.pem'
 CACERT='etc/cern_cacert.pem'
+PREMADE_COOKIE='etc/sso_cookie.txt'
 
 app = Flask(__name__)
 
@@ -91,7 +92,7 @@ def data():
 
   sql = '''
   -- Group by (run, lumi, subsystem, name) and MAX the dataset name.
-  -- Thiw will filter out each group and give us correct datasets to be used
+  -- This will filter out each group and give us correct datasets to be used
   -- but not the values. Join it with the original table to get the remianing values.
   SELECT original.*, 
          mes.gui_url AS main_gui_url, 
@@ -111,7 +112,7 @@ def data():
             subsystem,
             name,
             MAX(dataset) AS max_dataset
-    FROM historic_data
+    FROM historic_data_points
 
     WHERE subsystem = :subsystem
     AND lumi = '0'
@@ -123,7 +124,7 @@ def data():
               lumi,
               subsystem,
               name) AS grouped
-  JOIN historic_data original ON original.run = grouped.run
+  JOIN historic_data_points original ON original.run = grouped.run
     AND original.lumi = grouped.lumi
     AND original.subsystem = grouped.subsystem
     AND original.name = grouped.name
@@ -267,7 +268,8 @@ def get_oms_info_from_api(run):
   runs_url = 'https://cmsoms.cern.ch/agg/api/v1/runs?filter[run_number][eq]=%s&fields=start_time,end_time,b_field,energy,delivered_lumi,end_lumi,recorded_lumi,l1_key,hlt_key,l1_rate,hlt_physics_rate,duration,fill_number' % run
   
   try:
-    cookies = get_cookies(runs_url, usercert=CERT, userkey=KEY, verify=CACERT)
+    # cookies = get_cookies(runs_url, usercert=CERT, userkey=KEY, verify=CACERT)
+    cookies = get_sso_cookie(runs_url)
     oms_runs_json = json.loads(requests.get(runs_url, cookies=cookies, verify=CACERT).text)
 
     fills_url = 'https://cmsoms.cern.ch/agg/api/v1/fills?filter[fill_number][eq]=%s&fields=injection_scheme,era' % oms_runs_json['data'][0]['attributes']['fill_number']
@@ -323,6 +325,15 @@ def get_oms_info_from_api(run):
     return { run: result }
   except Exception as e:
     print(e)
+
+
+def get_sso_cookie(url):
+  if os.path.isfile(CERT) and os.path.isfile(KEY) and os.path.isfile(CACERT):
+    return get_cookies(url, usercert=CERT, userkey=KEY, verify=CACERT)
+  elif os.path.isfile(PREMADE_COOKIE):
+    with open(PREMADE_COOKIE, 'r') as file:
+      return file.read()
+  return None
 
 
 @app.after_request

@@ -36,11 +36,11 @@ python3 -m pip install -r requirements.txt -t .python_packages
 
 cd extractor/
 
-# Extract few DQM histograms. Using only one process because we are on the SQLite
-./hdqmextract.py -c cfg/PixelPhase1/trendPlotsPixelPhase1_tracks.ini -r 325684 325688 325698 -j 1
+# Extract few DQM histograms. Using only one process because we are on SQLite
+./hdqmextract.py -c cfg/PixelPhase1/trendPlotsPixelPhase1_tracks.ini -r 324999 325000 325001 -j 1
 
 # Calculate HDQM values from DQM histograms stored in the DB
-./calculate.py -c cfg/PixelPhase1/trendPlotsPixelPhase1_tracks.ini -r 325684 325688 325698 -j 1
+./calculate.py -c cfg/PixelPhase1/trendPlotsPixelPhase1_tracks.ini -r 324999 325000 325001 -j 1
 
 cd ../api/
 # Run the API
@@ -56,7 +56,7 @@ python3 -m http.server 8000 &>/dev/null &
 # ps awwx | grep python
 ```
 
-Now visit http://localhost:8000/ on your browser!
+That's it! Now visit http://localhost:8000/ on your browser.
 
 **VERY IMPORTANT:**
-OMS data will not yet be present because authentication certificate is required! All features of the whole tool work properly nevertheless.
+OMS data will not yet be present because authentication certificate is required! All features of the entire tool work properly nevertheless.

@@ -23,8 +23,8 @@ db = create_engine(db_string)
 base = declarative_base()
 
 
-class HistoricData(base):
-  __tablename__ = 'historic_data'
+class HistoricDataPoint(base):
+  __tablename__ = 'historic_data_points'
 
   id = Column(Integer, primary_key=True, nullable=False)
   run = Column(Integer, nullable=False)
@@ -49,8 +49,9 @@ class HistoricData(base):
   reference_me = relationship("MonitorElement", foreign_keys=[reference_me_id])
 
   __table_args__ = (
-    Index('_run_lumi_subsystem_name_dataset_uindex', 'run', 'lumi', 'subsystem', 'name', 'dataset', unique=True),
-    Index('_run_lumi_subsystem_index', 'run', 'lumi', 'subsystem')
+    Index('_historic_data_points_subsystem_name_main_me_id', 'subsystem', 'name', 'main_me_id', unique=True),
+    # Index('_run_lumi_subsystem_name_dataset_uindex', 'run', 'lumi', 'subsystem', 'name', 'dataset', unique=True),
+    # Index('_run_lumi_subsystem_index', 'run', 'lumi', 'subsystem')
   )
 
 
@@ -71,46 +72,6 @@ class MonitorElement(base):
     Index('_monitor_element_me_path_index', 'me_path'),
     Index('_monitor_element_me_path_eos_path_uindex', 'me_path', 'eos_path', unique=True)
   )
-
-
-class ExistingMEPath(base):
-  __tablename__ = 'existing_me_paths'
-
-  me_path = Column(String, primary_key=True, nullable=False)
-
-  __table_args__ = (Index('_existing_me_paths_me_path_uindex', 'me_path', unique=True),)
-
-
-class ExistingEOSPath(base):
-  __tablename__ = 'existing_eos_paths'
-
-  eos_path = Column(String, primary_key=True, nullable=False)
-
-  __table_args__ = (Index('_existing_eos_paths_eos_path_uindex', 'eos_path', unique=True),)
-
-
-class NewMEPath(base):
-  __tablename__ = 'new_me_paths'
-
-  me_path = Column(String, primary_key=True, nullable=False)
-
-  __table_args__ = (Index('_new_me_paths_me_path_uindex', 'me_path', unique=True),)
-
-
-class NewEOSPath(base):
-  __tablename__ = 'new_eos_paths'
-
-  eos_path = Column(String, primary_key=True, nullable=False)
-
-  __table_args__ = (Index('_new_eos_paths_eos_path_uindex', 'eos_path', unique=True),)
-
-
-class QueueToExtract(base):
-  __tablename__ = 'queue_to_extract'
-
-  id = Column(Integer, primary_key=True, nullable=False)
-  eos_path = Column(String, nullable=False)
-  me_path = Column(String, nullable=False)
 
 
 class OMSDataCache(base):
@@ -136,6 +97,63 @@ class OMSDataCache(base):
   fill_number = Column(Integer, nullable=False)
   injection_scheme = Column(String)
   era = Column(String, nullable=False)
+
+
+# ============== Tables for tracking the progress of monitor element extraction ============== #
+
+class TrackedMEPathForMEExtraction(base):
+  __tablename__ = 'tracked_me_paths_for_me_extraction'
+
+  me_path = Column(String, primary_key=True, nullable=False)
+
+  __table_args__ = (Index('_tracked_me_paths_for_me_extraction_me_path_uindex', 'me_path', unique=True),)
+
+
+class TrackedEOSPathForMEExtraction(base):
+  __tablename__ = 'tracked_eos_paths_for_me_extraction'
+
+  eos_path = Column(String, primary_key=True, nullable=False)
+
+  __table_args__ = (Index('_tracked_eos_paths_for_me_extraction_eos_path_uindex', 'eos_path', unique=True),)
+
+
+class NewMEPathForMEExtraction(base):
+  __tablename__ = 'new_me_paths_for_me_extraction'
+
+  me_path = Column(String, primary_key=True, nullable=False)
+
+  __table_args__ = (Index('_new_me_paths_for_me_extraction_me_path_uindex', 'me_path', unique=True),)
+
+
+class NewEOSPathForMEExtraction(base):
+  __tablename__ = 'new_eos_paths_for_me_extraction'
+
+  eos_path = Column(String, primary_key=True, nullable=False)
+
+  __table_args__ = (Index('_new_eos_paths_for_me_extraction_eos_path_uindex', 'eos_path', unique=True),)
+
+
+class QueueToExtract(base):
+  __tablename__ = 'queue_to_extract'
+
+  id = Column(Integer, primary_key=True, nullable=False)
+  eos_path = Column(String, nullable=False)
+  me_path = Column(String, nullable=False)
+
+
+# ================= Tables for tracking the progress of the trend calculation ================ #
+
+class QueueToCalculate(base):
+  __tablename__ = 'queue_to_calculate'
+
+  id = Column(Integer, primary_key=True, nullable=False)
+
+  # Foreign keys
+  me_id = Column(Integer, ForeignKey('monitor_elements.id'), nullable=False)
+  me = relationship("MonitorElement", foreign_keys=[me_id])
+
+
+# ====================================== Helper functions ==================================== #
 
 def setup_db():
   base.metadata.create_all(db)

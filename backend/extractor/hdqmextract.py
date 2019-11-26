@@ -20,6 +20,7 @@ import os, sys
 # Insert parent dir to sys.path to import db_access
 sys.path.insert(1, os.path.realpath(os.path.pardir))
 import db_access
+from helpers import batch_iterable, exec_transaction
 
 CFGFILES = 'cfg/*/*.ini'
 ROOTFILES = '/eos/cms/store/group/comm_dqm/DQMGUI_data/*/*/*/DQM*.root'
@@ -36,16 +37,6 @@ DQMGUI = 'https://cmsweb.cern.ch/dqm/offline/'
 def get_full_path(relativePath, run):
   parts = relativePath.split('/')
   return str('DQMData/Run %s/%s/Run summary/%s' % (run, parts[0], '/'.join(parts[1:])))
-
-
-def batch_iterable(iterable, chunksize=100):
-  queue=[]
-  for value in iterable:
-    if len(queue) >= chunksize:
-      yield queue
-      queue = []
-    queue.append(value)
-  yield queue
 
 
 def remove_old_versions(all_files):
@@ -72,7 +63,7 @@ def remove_old_versions(all_files):
 
   # Sort every group by version and select the latest one
   files = map(lambda x: sorted(groups[x], key=lambda elem: elem['version'], reverse=True)[0]['fullpath'], groups)
-  
+
   return files
 
 
@@ -115,7 +106,7 @@ def extract_all_mes(cfg_files, runs, nprocs):
       parser.read(unicode(cfg_file))
       for section in parser:
         if not section.startswith('plot:'):
-          if(section != 'DEFAULT'):
+          if section != 'DEFAULT':
             print('Invalid configuration section: %s:%s, skipping.' % (cfg_file, section))
           continue
         if not PLOTNAMEPATTERN.match(section.lstrip('plot:')):
@@ -129,13 +120,13 @@ def extract_all_mes(cfg_files, runs, nprocs):
           mes_set.update(get_all_me_names(parser[section]['histo2Path']))
         if 'reference' in parser[section]:
           mes_set.update(get_all_me_names(parser[section]['reference']))
-      good_files+=1
+      good_files += 1
     except:
       print('Could not read %s, skipping...' % cfg_file)
-  
+
   print('Read %d configuration files.' % good_files)
   print('Read %d distinct ME paths.' % len(mes_set))
-  
+
   print('Listing files on EOS, this can take a while...')
   all_files = glob(ROOTFILES)
   print('Done.')
@@ -147,7 +138,7 @@ def extract_all_mes(cfg_files, runs, nprocs):
       run_match = RUNPATTERN.findall(file)
       if not len(run_match) == 0:
         run = run_match[0]
-        if(int(run) in runs):
+        if int(run) in runs:
           filtered.append(file)
     all_files = filtered
 
@@ -164,8 +155,8 @@ def extract_all_mes(cfg_files, runs, nprocs):
   # Get lists of existing mes and eos files.
   # Existing means that ME was extracted or is in the extraction queue.
   session = db_access.get_session()
-  existing_me_paths = set(x.me_path for x in session.query(db_access.ExistingMEPath).all())
-  existing_eos_paths = set(x.eos_path for x in session.query(db_access.ExistingEOSPath).all())
+  existing_me_paths = set(x.me_path for x in session.query(db_access.TrackedMEPathForMEExtraction).all())
+  existing_eos_paths = set(x.eos_path for x in session.query(db_access.TrackedEOSPathForMEExtraction).all())
   session.close()
 
   # -------------------- Update the ME paths in the extraction queue -------------------- #
@@ -175,34 +166,34 @@ def extract_all_mes(cfg_files, runs, nprocs):
   print('New MEs: %s, deleted MEs: %s' % (len(new_mes), len(deleted_mes)))
 
   # Remove deleted MEs from the extraction queue
-  if(len(deleted_mes) > 0):
+  if len(deleted_mes) > 0:
     sql = 'DELETE FROM queue_to_extract WHERE me_path = :me_path;'
     exec_transaction(sql, [{'me_path': x} for x in deleted_mes])
 
-    sql = 'DELETE FROM existing_me_paths WHERE me_path = :me_path;'
+    sql = 'DELETE FROM tracked_me_paths_for_me_extraction WHERE me_path = :me_path;'
     exec_transaction(sql, [{'me_path': x} for x in deleted_mes])
 
   # Refresh new MEs table
-  sql = 'DELETE FROM new_me_paths;'
+  sql = 'DELETE FROM new_me_paths_for_me_extraction;'
   exec_transaction(sql)
 
   # Insert new ME paths
-  if(len(new_mes) > 0):
-    sql = 'INSERT INTO new_me_paths (me_path) VALUES (:me_path);'
+  if len(new_mes) > 0:
+    sql = 'INSERT INTO new_me_paths_for_me_extraction (me_path) VALUES (:me_path);'
     exec_transaction(sql, [{'me_path': x} for x in new_mes])
 
-  # Will have to extract new MEs for every existing file 
+  # Will have to extract new MEs for every existing file
   sql_update_queue = '''
   INSERT INTO queue_to_extract (eos_path, me_path)
   SELECT eos_path, me_path
-  FROM existing_eos_paths, new_me_paths
+  FROM tracked_eos_paths_for_me_extraction, new_me_paths_for_me_extraction
   ;
   '''
 
   sql_update_existing = '''
-  INSERT INTO existing_me_paths (me_path)
+  INSERT INTO tracked_me_paths_for_me_extraction (me_path)
   SELECT me_path
-  FROM new_me_paths
+  FROM new_me_paths_for_me_extraction
   ;
   '''
   exec_transaction([sql_update_queue, sql_update_existing])
@@ -215,34 +206,34 @@ def extract_all_mes(cfg_files, runs, nprocs):
   print('New files: %s, deleted files: %s' % (len(new_files), len(deleted_files)))
 
   # Remove deleted files from the extraction queue
-  if(len(deleted_files) > 0):
+  if len(deleted_files) > 0:
     sql = 'DELETE FROM queue_to_extract WHERE eos_path = :eos_path;'
     exec_transaction(sql, [{'eos_path': x} for x in deleted_files])
 
-    sql = 'DELETE FROM existing_eos_paths WHERE eos_path = :eos_path;'
+    sql = 'DELETE FROM tracked_eos_paths_for_me_extraction WHERE eos_path = :eos_path;'
     exec_transaction(sql, [{'eos_path': x} for x in deleted_files])
 
   # Refresh new files table
-  sql = 'DELETE FROM new_eos_paths;'
+  sql = 'DELETE FROM new_eos_paths_for_me_extraction;'
   exec_transaction(sql)
 
   # Insert new eos paths
-  if(len(new_files) > 0):
-    sql = 'INSERT INTO new_eos_paths (eos_path) VALUES (:eos_path);'
+  if len(new_files) > 0:
+    sql = 'INSERT INTO new_eos_paths_for_me_extraction (eos_path) VALUES (:eos_path);'
     exec_transaction(sql, [{'eos_path': x} for x in new_files])
 
   # Will have to extract all existing MEs for newly added files
   sql_update_queue = '''
   INSERT INTO queue_to_extract (eos_path, me_path)
   SELECT eos_path, me_path
-  FROM new_eos_paths, existing_me_paths
+  FROM new_eos_paths_for_me_extraction, tracked_me_paths_for_me_extraction
   ;
   '''
 
   sql_update_existing = '''
-  INSERT INTO existing_eos_paths (eos_path)
+  INSERT INTO tracked_eos_paths_for_me_extraction (eos_path)
   SELECT eos_path
-  FROM new_eos_paths
+  FROM new_eos_paths_for_me_extraction
   ;
   '''
   exec_transaction([sql_update_queue, sql_update_existing])
@@ -264,9 +255,9 @@ def extract_all_mes(cfg_files, runs, nprocs):
       rows = list(rows)
       session.close()
       print('Fetched.')
-      if(len(rows) == 0):
+      if len(rows) == 0:
         break
-      
+
       pool.map(extract_mes, batch_iterable(rows, chunksize=2000))
     except Exception as e:
       print(e)
@@ -285,7 +276,7 @@ def extract_mes(rows):
     id = row['id']
     eos_path = row['eos_path']
     me_path = row['me_path']
-    
+
     pd_match = PDPATTERN.findall(eos_path)
     if len(pd_match) == 0:
       dataset = ''
@@ -300,7 +291,7 @@ def extract_mes(rows):
       print('Skipping a malformatted DQM file that does not contain a run number: %s' % eos_path)
       exec_transaction('DELETE FROM queue_to_extract WHERE id = :id', {'id': id})
       continue
-    
+
     # Open root file only if it's different from the last one
     if eos_path != last_eos_path or tdirectory == None:
       if tdirectory != None:
@@ -323,21 +314,23 @@ def extract_mes(rows):
     gui_url = '%sstart?runnr=%s;dataset=%s;workspace=Everything;root=%s;focus=%s;zoom=yes;' % (DQMGUI, run, dataset, plot_folder, me_path)
     image_url = '%splotfairy/archive/%s%s/%s?v=1510330581101995531;w=1906;h=933' % (DQMGUI, run, dataset, me_path)
     monitor_element = db_access.MonitorElement(
-          run = run,
-          lumi = 0,
-          eos_path = eos_path,
-          me_path = me_path,
-          dataset = dataset,
-          me_blob = get_binary(plot),
-          gui_url = gui_url,
-          image_url = image_url)
+      run = run,
+      lumi = 0,
+      eos_path = eos_path,
+      me_path = me_path,
+      dataset = dataset,
+      me_blob = get_binary(plot),
+      gui_url = gui_url,
+      image_url = image_url)
 
     session = db_access.get_session()
     try:
       session.add(monitor_element)
+      session.flush()
       session.execute('DELETE FROM queue_to_extract WHERE id = :id', {'id': id})
+      session.execute('INSERT INTO queue_to_calculate (me_id) VALUES (:me_id)', {'me_id': monitor_element.id})
       session.commit()
-      print('Added ME to DB')
+      print('Added ME to DB: %s:%s' % (eos_path, me_path))
     except Exception as e:
       print('Insert ME error: %s' % e)
       session.rollback()
@@ -346,24 +339,6 @@ def extract_mes(rows):
 
   if tdirectory != None:
     tdirectory.Close()
-
-
-# Executes a SQL transaction
-def exec_transaction(sql, params=None):
-  session = db_access.get_session()
-  try:
-    if type(sql) == list:
-      for query in sql:
-        session.execute(query, params)
-    else:
-      session.execute(sql, params)
-    session.commit()
-    return True
-  except Exception as e:
-    print(e)
-    return False
-  finally:
-    session.close()
 
 
 if __name__ == '__main__':
@@ -390,5 +365,5 @@ if __name__ == '__main__':
       print('Invalid configuration file: %s' % cfg_file)
       print('Configuration files must come from here: cfg/*/*.ini')
       exit()
-  
+
   extract_all_mes(config, runs, nprocs)

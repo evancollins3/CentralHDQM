@@ -1,8 +1,8 @@
 ## Before running
 
 Before running the API server there should be a `private/` folder inside `api/` containing these files:
-* `private/cert.key` - GRID certificate key file
-* `private/cert.pem` - GRID certificate file
+* `private/userkey.pem` - GRID certificate key file
+* `private/usercert.pem` - GRID certificate file
 
 ### Instructions:
 
