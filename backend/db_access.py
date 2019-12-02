@@ -29,16 +29,18 @@ class HistoricDataPoint(base):
   id = Column(Integer, primary_key=True, nullable=False)
   run = Column(Integer, nullable=False)
   lumi = Column(Integer, nullable=False)
-  subsystem = Column(String, nullable=False)
-  name = Column(String, nullable=False)
+  # subsystem = Column(String, nullable=False)
+  # name = Column(String, nullable=False)
   dataset = Column(String, nullable=False)
   pd = Column(String, nullable=False)
-  y_title = Column(String, nullable=False)
-  plot_title = Column(String, nullable=False)
+  # y_title = Column(String, nullable=False)
+  # plot_title = Column(String, nullable=False)
   value = Column(Float, nullable=False)
   error = Column(Float, nullable=False)
 
   # Foreign keys
+  config_id = Column(Integer, ForeignKey('last_calculated_configs.id'), nullable=False)
+  config = relationship("LastCalculatedConfig", foreign_keys=[config_id])
   main_me_id = Column(Integer, ForeignKey('monitor_elements.id'), nullable=False)
   main_me = relationship("MonitorElement", foreign_keys=[main_me_id])
   optional_me1_id = Column(Integer, ForeignKey('monitor_elements.id'))
@@ -49,7 +51,9 @@ class HistoricDataPoint(base):
   reference_me = relationship("MonitorElement", foreign_keys=[reference_me_id])
 
   __table_args__ = (
-    Index('_historic_data_points_subsystem_name_main_me_id', 'subsystem', 'name', 'main_me_id', unique=True),
+    Index('_historic_data_points_config_id_main_me_id', 'config_id', 'main_me_id', unique=True),
+    # Index('_historic_data_points_subsystem_name_main_me_id', 'subsystem', 'name', 'main_me_id', unique=True),
+    
     # Index('_run_lumi_subsystem_name_dataset_uindex', 'run', 'lumi', 'subsystem', 'name', 'dataset', unique=True),
     # Index('_run_lumi_subsystem_index', 'run', 'lumi', 'subsystem')
   )
@@ -153,7 +157,38 @@ class QueueToCalculate(base):
   me = relationship("MonitorElement", foreign_keys=[me_id])
 
 
+class QueueToCalculateLater(base):
+  __tablename__ = 'queue_to_calculate_later'
+
+  id = Column(Integer, primary_key=True, nullable=False)
+
+  # Foreign keys
+  me_id = Column(Integer, ForeignKey('monitor_elements.id'), nullable=False)
+  me = relationship("MonitorElement", foreign_keys=[me_id])
+
+
+class LastCalculatedConfig(base):
+  __tablename__ = 'last_calculated_configs'
+
+  id = Column(Integer, primary_key=True, nullable=False)
+  subsystem = Column(String, nullable=False)
+  name = Column(String, nullable=False)
+  metric = Column(String, nullable=False)
+  plot_title = Column(String, nullable=False)
+  y_title = Column(String, nullable=False)
+  relative_path = Column(String, nullable=False)
+  histo1_path = Column(String)
+  histo2_path = Column(String)
+  reference_path = Column(String)
+  threshold = Column(Integer)
+
+  __table_args__ = (
+    Index('_last_calculated_configs_subsystem_name_uindex', 'subsystem', 'name', unique=True),
+  )
+
+
 # ====================================== Helper functions ==================================== #
+
 
 def setup_db():
   base.metadata.create_all(db)

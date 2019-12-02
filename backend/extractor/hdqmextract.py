@@ -4,7 +4,7 @@ from __future__ import print_function
 from glob import glob
 from multiprocessing import Pool
 from collections import defaultdict
-from configparser import ConfigParser
+from configparser import RawConfigParser
 from tempfile import NamedTemporaryFile
 from sqlalchemy.exc import IntegrityError
 
@@ -20,7 +20,7 @@ import os, sys
 # Insert parent dir to sys.path to import db_access
 sys.path.insert(1, os.path.realpath(os.path.pardir))
 import db_access
-from helpers import batch_iterable, exec_transaction
+from helpers import batch_iterable, exec_transaction, get_all_me_names
 
 CFGFILES = 'cfg/*/*.ini'
 ROOTFILES = '/eos/cms/store/group/comm_dqm/DQMGUI_data/*/*/*/DQM*.root'
@@ -30,7 +30,7 @@ ROOTFILES = '/eos/cms/store/group/comm_dqm/DQMGUI_data/*/*/*/DQM*.root'
 PDPATTERN = re.compile('DQM_V\d+_R\d+__(.+__.+__.+)[.]root') # PD inside the file name
 VERSIONPATTERN = re.compile('(DQM_V)(\d+)(.+[.]root)')
 RUNPATTERN = re.compile('DQM_V\d+_R0+(\d+)__.+[.]root')
-PLOTNAMEPATTERN = re.compile('^(\w+-*\+*)+$')
+PLOTNAMEPATTERN = re.compile('^[a-zA-Z0-9_+-]*$')
 DQMGUI = 'https://cmsweb.cern.ch/dqm/offline/'
 
 
@@ -90,19 +90,13 @@ def get_all_available_runs():
   return list(runs)
 
 
-# Returns file names as a list from comma separated string
-def get_all_me_names(names):
-  names = names.split(',')
-  names = [x.strip() for x in names if x]
-  return names
-
 def extract_all_mes(cfg_files, runs, nprocs):
   print('Processing %d configuration files...' % len(cfg_files))
   mes_set = set()
   good_files = 0
   for cfg_file in cfg_files:
     try:
-      parser = ConfigParser()
+      parser = RawConfigParser()
       parser.read(unicode(cfg_file))
       for section in parser:
         if not section.startswith('plot:'):
@@ -110,7 +104,7 @@ def extract_all_mes(cfg_files, runs, nprocs):
             print('Invalid configuration section: %s:%s, skipping.' % (cfg_file, section))
           continue
         if not PLOTNAMEPATTERN.match(section.lstrip('plot:')):
-          print("Invalid plot name: '%s:%s' Plot names can contain only alphanumeric characters or [_, +, -]" % (cfg_file, section.lstrip('plot:')))
+          print("Invalid plot name: '%s:%s' Plot names can contain only: [a-zA-Z0-9_+-]" % (cfg_file, section.lstrip('plot:')))
           continue
 
         mes_set.update(get_all_me_names(parser[section]['relativePath']))
@@ -247,14 +241,14 @@ def extract_all_mes(cfg_files, runs, nprocs):
   pool = Pool(nprocs)
 
   while True:
+    db_access.dispose_engine()
+    session = db_access.get_session()
     try:
-      db_access.dispose_engine()
       print('Fetching not processed MEs from DB...')
-      session = db_access.get_session()
       rows = session.execute(sql)
       rows = list(rows)
       session.close()
-      print('Fetched.')
+      print('Fetched: %s' % len(rows))
       if len(rows) == 0:
         break
 
@@ -337,7 +331,7 @@ def extract_mes(rows):
     finally:
       session.close()
 
-  if tdirectory != None:
+  if tdirectory:
     tdirectory.Close()
 
 

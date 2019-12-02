@@ -27,3 +27,9 @@ def exec_transaction(sql, params=None):
     return False
   finally:
     session.close()
+
+# Returns file names as a list from comma separated string
+def get_all_me_names(names):
+  names = names.split(',')
+  names = [x.strip() for x in names if x]
+  return names
