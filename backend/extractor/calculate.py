@@ -12,6 +12,7 @@ from sqlalchemy.exc import IntegrityError
 import re
 import math
 import ROOT
+import errno
 import tempfile
 import argparse
 
@@ -23,6 +24,7 @@ import os, sys
 # Insert parent dir to sys.path to import db_access
 sys.path.insert(1, os.path.realpath(os.path.pardir))
 import db_access
+from ForkPool import ForkPool
 from helpers import batch_iterable, exec_transaction, get_all_me_names
 
 PLOTNAMEPATTERN = re.compile('^[a-zA-Z0-9_+-]*$')
@@ -69,20 +71,6 @@ def get_me_by_id(id):
   return me[0]['me_blob']
 
 
-# def get_queue_length():
-#   count = 0
-#   session = db_access.get_session()
-#   try:
-#     count = session.execute('SELECT COUNT(*) FROM queue_to_calculate;')
-#     count = list(count)
-#     count = count[0][0]
-#   except Exception as e:
-#     print(e)
-#   finally:
-#     session.close()
-#   return count
-
-
 def move_to_second_queue(me_id, queue_id):
   session = db_access.get_session()
   try:
@@ -98,7 +86,7 @@ def move_to_second_queue(me_id, queue_id):
 
 # Returns a ROOT plot from binary file
 def get_plot_from_blob(me_blob):
-  with tempfile.NamedTemporaryFile() as temp_file:
+  with tempfile.NamedTemporaryFile(dir='/dev/shm/') as temp_file:
     with open(temp_file.name, 'w+b') as fd:
       fd.write(me_blob)
     tdirectory = ROOT.TFile(temp_file.name, 'read')
@@ -264,7 +252,7 @@ def calculate_all_trends(cfg_files, runs, nprocs):
   else:
     runs_filter = 'WHERE monitor_elements.run IN (%s)' % ', '.join(str(x) for x in runs)
 
-  limit = 10
+  limit = 100000
   sql = '''
   SELECT queue_to_calculate.id, monitor_elements.id as me_id, monitor_elements.run, monitor_elements.lumi, monitor_elements.eos_path, monitor_elements.me_path, monitor_elements.dataset FROM monitor_elements
   JOIN queue_to_calculate ON monitor_elements.id=queue_to_calculate.me_id
@@ -272,26 +260,32 @@ def calculate_all_trends(cfg_files, runs, nprocs):
   LIMIT %s;
   ''' % (runs_filter, limit)
 
-  pool = Pool(nprocs)
-  # count = get_queue_length()
-
-  # for _ in range(max(int(math.ceil(count/limit)), 1)):
+  # pool = Pool(nprocs)
+  pool = ForkPool(nprocs)
+  
   while True:
     db_access.dispose_engine()
     session = db_access.get_session()
+
     try:
       print('Fetching not processed data points from DB...')
       rows = session.execute(sql)
       rows = list(rows)
       print('Fetched: %s' % len(rows))
       if len(rows) == 0:
+        print('Queue to calculate is empty. Exiting.')
         break
 
-      pool.map(calculate_trends, batch_iterable(rows, chunksize=5))
-      print('FINISHED CALCULATING A BATCH OF TRENDS!!!!')
+      pool.map(calculate_trends, batch_iterable(rows, chunksize=4000))
+      
+      print('Finished calculating a batch of trends.')
+    except IOError as e:
+      if e.errno != errno.EINTR:
+        raise
+      else:
+        print('[Errno 4] occurred. Continueing.')
     except Exception as e:
       print('Exception fetching elements from the calculation queue: %s' % e)
-      session.close()
       break
     finally:
       session.close()
@@ -453,7 +447,7 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='HDQM trend calculation.')
   parser.add_argument('-r', dest='runs', type=int, nargs='+', help='Runs to process. If none were given, will process all available runs.')
   parser.add_argument('-c', dest='config', nargs='+', help='Configuration files to process. If none were given, will process all available configuration files. Files must come from here: cfg/*/*.ini')
-  parser.add_argument('-j', dest='nprocs', type=int, default=50, help='Number of processes to use for extraction.')
+  parser.add_argument('-j', dest='nprocs', type=int, default=25, help='Number of processes to use for extraction.')
   args = parser.parse_args()
 
   runs = args.runs

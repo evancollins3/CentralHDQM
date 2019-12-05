@@ -70,7 +70,7 @@ def remove_old_versions(all_files):
 # Write an me to a tempfile and read binary from it.
 # This is to keep the compatibility with future ROOT versions.
 def get_binary(me):
-  with NamedTemporaryFile() as temp_file:
+  with NamedTemporaryFile(dir='/dev/shm/') as temp_file:
     result_file = ROOT.TFile(temp_file.name, 'recreate')
     me.Write()
     result_file.Close()
