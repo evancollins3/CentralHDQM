@@ -185,14 +185,18 @@ def data():
 
 @app.route('/subsystems', methods=['GET'])
 def subsystems():
-  # raise Exception
   db_access.setup_db()
-  session = db_access.get_session()
 
-  subsystems = [{'subsystem': h.subsystem, 'processing_levels': PROCESSING_LEVELS} 
-    for h in session.query(db_access.HistoricData.subsystem).distinct()]
-  session.close()
-  return jsonify(subsystems)
+  session = db_access.get_session()
+  try:
+    subsystems = list(session.execute('SELECT DISTINCT(subsystem) FROM selection_params;'))
+    pds = list(session.execute('SELECT DISTINCT(pd) FROM selection_params;'))
+    processing_strings = list(session.execute('SELECT DISTINCT(processing_string) FROM selection_params;'))
+
+    obj = { 'subsystems': [x[0] for x in subsystems], 'pds': [x[0] for x in pds], 'processing_strings': [x[0] for x in processing_strings] }
+    return jsonify(obj)
+  finally:
+    session.close()
 
 
 @app.route('/runs', methods=['GET'])
@@ -343,4 +347,7 @@ def add_ua_compat(response):
 
 
 if __name__ == '__main__':
-  app.run(host='127.0.0.1', port=5000)
+  port=5000
+  if len(sys.argv) >= 2:
+    port=int(sys.argv[1])
+  app.run(host='127.0.0.1', port=port)

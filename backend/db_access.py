@@ -51,11 +51,24 @@ class HistoricDataPoint(base):
   reference_me = relationship("MonitorElement", foreign_keys=[reference_me_id])
 
   __table_args__ = (
-    Index('_historic_data_points_config_id_main_me_id', 'config_id', 'main_me_id', unique=True),
+    Index('_historic_data_points_config_id_main_me_id_uindex', 'config_id', 'main_me_id', unique=True),
     # Index('_historic_data_points_subsystem_name_main_me_id', 'subsystem', 'name', 'main_me_id', unique=True),
     
     # Index('_run_lumi_subsystem_name_dataset_uindex', 'run', 'lumi', 'subsystem', 'name', 'dataset', unique=True),
     # Index('_run_lumi_subsystem_index', 'run', 'lumi', 'subsystem')
+  )
+
+
+class SelectionParams(base):
+  __tablename__ = 'selection_params'
+
+  id = Column(Integer, primary_key=True, nullable=False)
+  subsystem = Column(String, nullable=False)
+  pd = Column(String, nullable=False)
+  processing_string = Column(String, nullable=False)
+
+  __table_args__ = (
+    Index('_selection_params_subsystem_pd_processing_string_uindex', 'subsystem', 'pd', 'processing_string', unique=True),
   )
 
 

@@ -109,6 +109,13 @@ def section_to_config_object(section):
   )
 
 
+def get_processing_string(dataset):
+  try:
+    return dataset.split('-')[1]
+  except:
+    return 'unknown'
+
+
 def calculate_all_trends(cfg_files, runs, nprocs):
   print('Processing %d configuration files...' % len(cfg_files))
   db_access.setup_db()
@@ -403,6 +410,9 @@ def calculate_trends(rows):
         try:
           session.add(historic_data_point)
           session.execute('DELETE FROM queue_to_calculate WHERE id=:id;', {'id': row['id']})
+          session.execute('INSERT INTO selection_params (subsystem, pd, processing_string) VALUES (:subsystem, :pd, :ps) ON CONFLICT DO NOTHING;', 
+            {'subsystem': config['subsystem'], 'pd': historic_data_point.pd, 'ps': get_processing_string(historic_data_point.dataset)}
+          )
           session.commit()
         except IntegrityError as e:
           print('Insert HistoricDataPoint error: %s' % e)
