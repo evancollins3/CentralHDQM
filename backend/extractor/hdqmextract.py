@@ -10,6 +10,7 @@ from sqlalchemy.exc import IntegrityError
 
 import re
 import ROOT
+import errno
 import argparse
 
 import metrics
@@ -253,6 +254,11 @@ def extract_all_mes(cfg_files, runs, nprocs):
         break
 
       pool.map(extract_mes, batch_iterable(rows, chunksize=2000))
+    except IOError as e:
+      if e.errno != errno.EINTR:
+        raise
+      else:
+        print('[Errno 4] occurred. Continueing.')
     except Exception as e:
       print(e)
       session.close()
