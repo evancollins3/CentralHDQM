@@ -69,3 +69,6 @@ And open them using SELinux: `sudo semanage port -m -t http_port_t -p tcp 8081`
 Also important:
 `sudo firewall-cmd --zone=public --add-port=81/tcp --permanent`
 `sudo firewall-cmd --reload`
+Make sure to make root directory accessible in SELinux:
+`chcon -Rt httpd_sys_content_t /data/hdqmTest/CentralHDQM/frontend/`
+

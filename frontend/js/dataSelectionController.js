@@ -4,41 +4,48 @@ const selectionController = (function() {
         dataIndex: {},
         setupSelects: function(dataIndex) {
             this.dataIndex = dataIndex
-            const select = document.getElementById("subsystem-select")
-            
-            const option = document.createElement("option")
-            option.text = "Select a subsystem"
-            option.disabled = true
-            select.add(option)
 
-            this.dataIndex.forEach(element => {
-                const option = document.createElement("option")
-                option.text = element.subsystem
-                select.add(option)
-            })
-            this.selectionChanged(select)
-        },
+            const subsystemSelect = document.getElementById("subsystem-select")
+            const pdSelect = document.getElementById("pd-select")
+            const processingStringSelect = document.getElementById("processing-string-select")
 
-        selectionChanged: function(select1) {
-            const item = this.dataIndex.find(element => element.subsystem === select1.value)
-            
-            $("#processing-level-select").empty()
-            const select2 = document.getElementById("processing-level-select")
+            const option1 = document.createElement("option")
+            option1.text = "Select a subsystem"
+            option1.disabled = true
+            subsystemSelect.add(option1)
 
-            const option = document.createElement("option")
-            option.text = "Select processing level"
-            option.disabled = true
-            select2.add(option)
+            option2 = document.createElement("option")
+            option2.text = "Select a primary dataset"
+            option2.disabled = true
+            pdSelect.add(option2)
 
-            item.processing_levels.forEach(element => {
+            option3 = document.createElement("option")
+            option3.text = "Select a processing string"
+            option3.disabled = true
+            processingStringSelect.add(option3)
+
+            this.dataIndex.subsystems.forEach(element => {
                 const option = document.createElement("option")
                 option.text = element
-                select2.add(option)
+                subsystemSelect.add(option)
+            })
+
+            this.dataIndex.pds.forEach(element => {
+                const option = document.createElement("option")
+                option.text = element
+                pdSelect.add(option)
+            })
+
+            this.dataIndex.processing_strings.forEach(element => {
+                const option = document.createElement("option")
+                option.text = element
+                processingStringSelect.add(option)
             })
         },
 
         selectedSubsystem() { return document.getElementById("subsystem-select").value },
-        selectedProcessingLevel() { return document.getElementById("processing-level-select").value },
+        selectedPD() { return document.getElementById("pd-select").value },
+        selectedProcessingString() { return document.getElementById("processing-string-select").value },
 
         documentReady: async function() {
             try {

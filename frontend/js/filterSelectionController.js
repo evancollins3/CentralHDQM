@@ -103,18 +103,19 @@ const filterController = (function(){
             const base = config.getAPIUrl()
 
             const value = $("#filter-select").val()
+            const selectedData = `subsystem=${selectionController.selectedSubsystem()}&pd=${selectionController.selectedPD()}&processing_string=${selectionController.selectedProcessingString()}`
 
             if(value == "latest")
             {
-                return `${base}/data?subsystem=${selectionController.selectedSubsystem()}&processing_level=${selectionController.selectedProcessingLevel()}&latest=${$("#filter-input-latest").val()}`
+                return `${base}/data?${selectedData}&latest=${$("#filter-input-latest").val()}`
             }
             else if(value == "range")
             {
-                return `${base}/data?subsystem=${selectionController.selectedSubsystem()}&processing_level=${selectionController.selectedProcessingLevel()}&from_run=${$("#filter-input-range-low").val()}&to_run=${$("#filter-input-range-high").val()}`
+                return `${base}/data?${selectedData}&from_run=${$("#filter-input-range-low").val()}&to_run=${$("#filter-input-range-high").val()}`
             }
             else if(value == "list")
             {
-                return `${base}/data?subsystem=${selectionController.selectedSubsystem()}&processing_level=${selectionController.selectedProcessingLevel()}&runs=${$("#filter-input-list").val()}`
+                return `${base}/data?${selectedData}&runs=${$("#filter-input-list").val()}`
             }
             else if(value == "json")
             {
@@ -126,7 +127,7 @@ const filterController = (function(){
                     const goldenJson = JSON.parse(fileContents)
                     const runs = Object.keys(goldenJson).map(x => parseInt(x)).join()
                     
-                    return `${base}/data?subsystem=${selectionController.selectedSubsystem()}&processing_level=${selectionController.selectedProcessingLevel()}&runs=${runs}`
+                    return `${base}/data?${selectedData}&runs=${runs}`
                 }
                 catch (e)
                 {
@@ -136,7 +137,7 @@ const filterController = (function(){
             }
             else if(value == "rr")
             {
-                return `${base}/data?subsystem=${selectionController.selectedSubsystem()}&processing_level=${selectionController.selectedProcessingLevel()}}`
+                return `${base}/data?${selectedData}`
             }
         },
 

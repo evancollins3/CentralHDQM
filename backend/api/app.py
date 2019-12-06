@@ -11,7 +11,6 @@ from multiprocessing import Pool
 from cern_sso import get_cookies
 from collections import defaultdict
 
-PROCESSING_LEVELS = ['PromptReco', 'UltraLegacy', 'StreamExpress']
 CERT='private/usercert.pem'
 KEY='private/userkey.pem'
 CACERT='etc/cern_cacert.pem'
@@ -23,7 +22,8 @@ app = Flask(__name__)
 def data():
   # raise Exception
   subsystem = request.args.get('subsystem')
-  processing_level = request.args.get('processing_level', default=PROCESSING_LEVELS[0])
+  pd = request.args.get('pd')
+  processing_string = request.args.get('processing_string')
   from_run = request.args.get('from_run', type=int)
   to_run = request.args.get('to_run', type=int)
   runs = request.args.get('runs')
@@ -33,8 +33,11 @@ def data():
   if subsystem == None:
     return jsonify({'message': 'Please provide a subsystem parameter.'}), 400
 
-  if processing_level not in PROCESSING_LEVELS:
-    return jsonify({'message': 'Please provide a valid processing_level parameter. Allowed values: %s' % ', '.join(PROCESSING_LEVELS)}), 400
+  if pd == None:
+    return jsonify({'message': 'Please provide a pd parameter.'}), 400
+
+  if processing_string == None:
+    return jsonify({'message': 'Please provide a processing_string parameter.'}), 400
 
   modes = 0
   if from_run != None and to_run != None: modes += 1
@@ -58,23 +61,32 @@ def data():
     if latest == None:
       latest = 50
     
-    query = session.query(db_access.HistoricData.run)\
-      .distinct()\
-      .order_by(db_access.HistoricData.run.desc())\
-      .limit(latest)
-    latest_runs = list(query)
-    if len(latest_runs) > 0:
-      from_run = latest_runs[-1][0]
-      to_run = latest_runs[0][0]
-    else:
-      from_run = to_run = 0
+    # Get latest runs for specific user selection
+    sql = '''
+    SELECT DISTINCT(run) FROM historic_data_points
+    JOIN last_calculated_configs ON historic_data_points.config_id = last_calculated_configs.id 
+    WHERE subsystem=:subsystem
+    AND pd=:pd
+    AND processing_string=:processing_string
+    ORDER BY run DESC
+    LIMIT %s
+    ;
+    ''' % latest
+
+    rows = session.execute(sql, { 'subsystem': subsystem, 'pd': pd, 'processing_string': processing_string })
+    rows = list(rows)
+
+    from_run = to_run = 0
+    if len(rows) >= 2:
+      from_run = rows[-1][0]
+      to_run = rows[0][0]
 
   # Construct SQL query
-  query_params  = {'subsystem': subsystem, 'processing_level': '%' + processing_level + '%'}
+  query_params  = { 'subsystem': subsystem, 'pd': pd, 'processing_string': processing_string }
 
-  run_selection_sql = 'AND run BETWEEN :from_run AND :to_run'
+  run_selection_sql = 'AND historic_data_points.run BETWEEN :from_run AND :to_run'
   if runs != None:
-    run_selection_sql = 'AND run IN (%s)' % ', '.join(str(x) for x in runs)
+    run_selection_sql = 'AND historic_data_points.run IN (%s)' % ', '.join(str(x) for x in runs)
     query_params['runs'] = runs
   else:
     query_params['from_run'] = from_run
@@ -82,7 +94,7 @@ def data():
 
   series_filter_sql = ''
   if series != None:
-    series_filter_sql = 'AND name IN ('
+    series_filter_sql = 'AND last_calculated_configs.name IN ('
     series = series.split(',')
     for i in range(len(series)):
       key = 'series_%i' % i
@@ -91,51 +103,46 @@ def data():
     series_filter_sql = series_filter_sql.rstrip(',') + ')'
 
   sql = '''
-  -- Group by (run, lumi, subsystem, name) and MAX the dataset name.
-  -- This will filter out each group and give us correct datasets to be used
-  -- but not the values. Join it with the original table to get the remianing values.
-  SELECT original.*, 
-         mes.gui_url AS main_gui_url, 
-         mes.image_url AS main_image_url, 
-         mes.me_path AS main_me_path,
+  SELECT 
+	historic_data_points.run, 
+	historic_data_points.lumi, 
+	historic_data_points.value, 
+	historic_data_points.error, 
+	last_calculated_configs.subsystem, 
+	last_calculated_configs.name, 
+	last_calculated_configs.plot_title, 
+	last_calculated_configs.y_title, 
+	last_calculated_configs.relative_path AS main_me_path,
+	last_calculated_configs.histo1_path AS optional1_me_path, 
+	last_calculated_configs.histo2_path AS optional2_me_path, 
+	last_calculated_configs.reference_path, 
+	mes.gui_url AS main_gui_url,
+	mes.image_url AS main_image_url,
+	optional_mes_1.gui_url AS optional1_gui_url,
+	optional_mes_1.image_url AS optional1_image_url,
+	optional_mes_2.gui_url AS optional2_gui_url,
+	optional_mes_2.image_url AS optional2_image_url,
+	reference_mes.gui_url AS reference_gui_url,
+	reference_mes.image_url AS reference_image_url
+  FROM historic_data_points
 
-         optional_mes_1.gui_url AS optional1_gui_url,
-         optional_mes_1.image_url AS optional1_image_url,
-         optional_mes_1.me_path AS optional1_me_path,
+  -- Join the shared config values
+  JOIN last_calculated_configs ON historic_data_points.config_id = last_calculated_configs.id
 
-         optional_mes_2.gui_url AS optional2_gui_url,
-         optional_mes_2.image_url AS optional2_image_url,
-         optional_mes_2.me_path AS optional2_me_path
-  FROM
-    (SELECT run,
-            lumi,
-            subsystem,
-            name,
-            MAX(dataset) AS max_dataset
-    FROM historic_data_points
+  -- join ME data
+  JOIN monitor_elements AS mes ON historic_data_points.main_me_id = mes.id
+  LEFT OUTER JOIN monitor_elements AS optional_mes_1 ON historic_data_points.optional_me1_id = optional_mes_1.id
+  LEFT OUTER JOIN monitor_elements AS optional_mes_2 ON historic_data_points.optional_me2_id = optional_mes_2.id
+  LEFT OUTER JOIN monitor_elements AS reference_mes ON historic_data_points.reference_me_id = reference_mes.id
 
-    WHERE subsystem = :subsystem
-    AND lumi = '0'
-    AND LOWER(dataset) LIKE LOWER(:processing_level)
-    %s
-    %s
+  WHERE subsystem=:subsystem
+  AND pd=:pd
+  AND processing_string=:processing_string
 
-    GROUP BY run,
-              lumi,
-              subsystem,
-              name) AS grouped
-  JOIN historic_data_points original ON original.run = grouped.run
-    AND original.lumi = grouped.lumi
-    AND original.subsystem = grouped.subsystem
-    AND original.name = grouped.name
-    AND original.dataset = grouped.max_dataset 
+  %s
+  %s
 
-  -- Get the me info
-  JOIN monitor_elements AS mes ON original.main_me_id = mes.id
-  LEFT OUTER JOIN monitor_elements AS optional_mes_1 ON original.optional_me1_id = optional_mes_1.id
-  LEFT OUTER JOIN monitor_elements AS optional_mes_2 ON original.optional_me2_id = optional_mes_2.id
-
-  ORDER BY original.run ASC
+  ORDER BY historic_data_points.run ASC
   ;
   ''' % (run_selection_sql, series_filter_sql)
   
@@ -189,9 +196,9 @@ def subsystems():
 
   session = db_access.get_session()
   try:
-    subsystems = list(session.execute('SELECT DISTINCT(subsystem) FROM selection_params;'))
-    pds = list(session.execute('SELECT DISTINCT(pd) FROM selection_params;'))
-    processing_strings = list(session.execute('SELECT DISTINCT(processing_string) FROM selection_params;'))
+    subsystems = list(session.execute('SELECT DISTINCT(subsystem) FROM selection_params ORDER BY subsystem;'))
+    pds = list(session.execute('SELECT DISTINCT(pd) FROM selection_params ORDER BY pd;'))
+    processing_strings = list(session.execute('SELECT DISTINCT(processing_string) FROM selection_params ORDER BY processing_string;'))
 
     obj = { 'subsystems': [x[0] for x in subsystems], 'pds': [x[0] for x in pds], 'processing_strings': [x[0] for x in processing_strings] }
     return jsonify(obj)
@@ -204,7 +211,7 @@ def runs():
   db_access.setup_db()
   session = db_access.get_session()
 
-  runs = [h.run for h in session.query(db_access.HistoricData.run).distinct().order_by(db_access.HistoricData.run.asc())]
+  runs = [h.run for h in session.query(db_access.HistoricDataPoint.run).distinct().order_by(db_access.HistoricDataPoint.run.asc())]
   session.close()
   return jsonify(runs)
 
@@ -221,6 +228,7 @@ def add_oms_info_to_result(result):
       runs.add(trend['run'])
   runs = list(runs)
 
+  db_access.dispose_engine()
   session = db_access.get_session()
     
   query = session.query(db_access.OMSDataCache)\
@@ -253,7 +261,7 @@ def add_oms_info_to_result(result):
   runs = [run for run in runs if run not in oms_data_dict]
 
   # Fetch in a multithreaded manner
-  pool = Pool(max(len(runs), 1))
+  pool = Pool(50)
   api_oms_data = pool.map(get_oms_info_from_api, runs)
 
   for row in api_oms_data:
@@ -269,6 +277,7 @@ def add_oms_info_to_result(result):
 
 
 def get_oms_info_from_api(run):
+  db_access.dispose_engine()
   runs_url = 'https://cmsoms.cern.ch/agg/api/v1/runs?filter[run_number][eq]=%s&fields=start_time,end_time,b_field,energy,delivered_lumi,end_lumi,recorded_lumi,l1_key,hlt_key,l1_rate,hlt_physics_rate,duration,fill_number' % run
   
   try:
@@ -342,8 +351,8 @@ def get_sso_cookie(url):
 
 @app.after_request
 def add_ua_compat(response):
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    return response
+  response.headers['Access-Control-Allow-Origin'] = '*'
+  return response
 
 
 if __name__ == '__main__':

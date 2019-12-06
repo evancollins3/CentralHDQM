@@ -253,6 +253,8 @@ def calculate_all_trends(cfg_files, runs, nprocs):
     finally:
       session.close()
 
+  print('Configuration updated.')
+
   # Start calculating trends
   if runs == None:
     runs_filter = ''
@@ -397,6 +399,7 @@ def calculate_trends(rows):
           lumi = row['lumi'],
           dataset = row['dataset'],
           pd = row['dataset'].split('/')[1],
+          processing_string = get_processing_string(row['dataset']),
           value = value,
           error = error,
           main_me_id = row['me_id'],
@@ -411,7 +414,7 @@ def calculate_trends(rows):
           session.add(historic_data_point)
           session.execute('DELETE FROM queue_to_calculate WHERE id=:id;', {'id': row['id']})
           session.execute('INSERT INTO selection_params (subsystem, pd, processing_string) VALUES (:subsystem, :pd, :ps) ON CONFLICT DO NOTHING;', 
-            {'subsystem': config['subsystem'], 'pd': historic_data_point.pd, 'ps': get_processing_string(historic_data_point.dataset)}
+            {'subsystem': config['subsystem'], 'pd': historic_data_point.pd, 'ps': historic_data_point.processing_string}
           )
           session.commit()
         except IntegrityError as e:
@@ -429,6 +432,7 @@ def calculate_trends(rows):
               historic_data_point_existing.lumi = historic_data_point.lumi
               historic_data_point_existing.dataset = historic_data_point.dataset
               historic_data_point_existing.pd = historic_data_point.pd
+              historic_data_point_existing.processing_string = historic_data_point.processing_string
               historic_data_point_existing.value = historic_data_point.value
               historic_data_point_existing.error = historic_data_point.error
               historic_data_point_existing.optional_me1_id = historic_data_point.optional_me1_id,
@@ -451,6 +455,32 @@ def calculate_trends(rows):
         for tdirectory in tdirectories:
           if tdirectory:
             tdirectory.Close()
+
+
+
+import signal
+import traceback
+
+def receiveSignal(signalNumber, frame):
+  print('Received:', signalNumber)
+  traceback.print_stack(frame)
+  return
+
+signal.signal(signal.SIGHUP, receiveSignal)
+signal.signal(signal.SIGINT, receiveSignal)
+signal.signal(signal.SIGQUIT, receiveSignal)
+signal.signal(signal.SIGILL, receiveSignal)
+signal.signal(signal.SIGTRAP, receiveSignal)
+signal.signal(signal.SIGABRT, receiveSignal)
+signal.signal(signal.SIGBUS, receiveSignal)
+signal.signal(signal.SIGFPE, receiveSignal)
+# signal.signal(signal.SIGKILL, receiveSignal)
+signal.signal(signal.SIGUSR1, receiveSignal)
+signal.signal(signal.SIGSEGV, receiveSignal)
+signal.signal(signal.SIGUSR2, receiveSignal)
+signal.signal(signal.SIGPIPE, receiveSignal)
+signal.signal(signal.SIGALRM, receiveSignal)
+signal.signal(signal.SIGTERM, receiveSignal)
 
 
 if __name__ == '__main__':

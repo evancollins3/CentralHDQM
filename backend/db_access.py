@@ -33,6 +33,7 @@ class HistoricDataPoint(base):
   # name = Column(String, nullable=False)
   dataset = Column(String, nullable=False)
   pd = Column(String, nullable=False)
+  processing_string = Column(String, nullable=False)
   # y_title = Column(String, nullable=False)
   # plot_title = Column(String, nullable=False)
   value = Column(Float, nullable=False)
@@ -52,10 +53,8 @@ class HistoricDataPoint(base):
 
   __table_args__ = (
     Index('_historic_data_points_config_id_main_me_id_uindex', 'config_id', 'main_me_id', unique=True),
-    # Index('_historic_data_points_subsystem_name_main_me_id', 'subsystem', 'name', 'main_me_id', unique=True),
-    
-    # Index('_run_lumi_subsystem_name_dataset_uindex', 'run', 'lumi', 'subsystem', 'name', 'dataset', unique=True),
-    # Index('_run_lumi_subsystem_index', 'run', 'lumi', 'subsystem')
+    # TODO: Add this index:
+    # Index('_historic_data_points_subsystem_pd_processing_string_index', 'subsystem', 'pd', 'processing_string')
   )
 
 

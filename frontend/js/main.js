@@ -200,7 +200,8 @@ const main = (function() {
         {
             // Data selection argument
             urlController.set("subsystem", $("#subsystem-select").val())
-            urlController.set("pl", $("#processing-level-select").val())
+            urlController.set("pd", $("#pd-select").val())
+            urlController.set("ps", $("#processing-string-select").val())
 
             // Filter
             urlController.set("filter", $("#filter-select").val())
@@ -309,13 +310,14 @@ $(document).ready(async function()
     optionsController.documentReady()
     fullScreenController.documentReady()
 
-    if(urlController.has("subsystem") && urlController.has("pl"))
+    if(urlController.has("subsystem") && urlController.has("pd") && urlController.has("ps"))
     {
         if(urlController.has("page"))
             main.currentPage = urlController.get("page")
 
         $("#subsystem-select").val(urlController.get("subsystem"))
-        $("#processing-level-select").val(urlController.get("pl"))
+        $("#pd-select").val(urlController.get("pd"))
+        $("#processing-string-select").val(urlController.get("ps"))
         
         await main.submit(main.currentPage)
     }
