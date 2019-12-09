@@ -32,12 +32,20 @@ const fullScreenController = (function(){
             $("#main-content").hide(0)
             $("#full-screen-content").fadeIn(duration)
 
+            $("#subsystem-select").prop('disabled', true)
+            $("#pd-select").prop('disabled', true)
+            $("#processing-string-select").prop('disabled', true)
+
             this.isFullScreen = true
         },
 
         exitFullScreen: function() {
             $("#full-screen-content").hide()
             $("#main-content").fadeIn(300)
+
+            $("#subsystem-select").prop('disabled', false)
+            $("#pd-select").prop('disabled', false)
+            $("#processing-string-select").prop('disabled', false)
 
             urlController.delete("fsPlot")
             $("#fs-gui-plot-image").attr("src", "")
@@ -100,7 +108,7 @@ const fullScreenController = (function(){
                     $("#modal-submit-button-spinner").show()
                     const series = this.plotData.series.map(x => x.metadata.name)
                     const base = config.getAPIUrl()
-                    const url = `${base}/data?subsystem=${selectionController.selectedSubsystem()}&processing_level=${selectionController.selectedProcessingLevel()}&from_run=${newStartX}&to_run=${newEndX}&series=${series}`
+                    const url = `${base}/data?subsystem=${selectionController.selectedSubsystem()}&pd=${selectionController.selectedPD()}&processing_string=${selectionController.selectedProcessingString()}&from_run=${newStartX}&to_run=${newEndX}&series=${series}`
                     const response = await fetch(url, {
                         credentials: "same-origin"
                     })

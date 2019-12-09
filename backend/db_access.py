@@ -29,13 +29,10 @@ class HistoricDataPoint(base):
   id = Column(Integer, primary_key=True, nullable=False)
   run = Column(Integer, nullable=False)
   lumi = Column(Integer, nullable=False)
-  # subsystem = Column(String, nullable=False)
-  # name = Column(String, nullable=False)
   dataset = Column(String, nullable=False)
+  subsystem = Column(String, nullable=False)
   pd = Column(String, nullable=False)
   processing_string = Column(String, nullable=False)
-  # y_title = Column(String, nullable=False)
-  # plot_title = Column(String, nullable=False)
   value = Column(Float, nullable=False)
   error = Column(Float, nullable=False)
 
@@ -53,8 +50,7 @@ class HistoricDataPoint(base):
 
   __table_args__ = (
     Index('_historic_data_points_config_id_main_me_id_uindex', 'config_id', 'main_me_id', unique=True),
-    # TODO: Add this index:
-    # Index('_historic_data_points_subsystem_pd_processing_string_index', 'subsystem', 'pd', 'processing_string')
+    Index('_historic_data_points_subsystem_pd_processing_string_index', 'subsystem', 'pd', 'processing_string')
   )
 
 
@@ -113,6 +109,10 @@ class OMSDataCache(base):
   fill_number = Column(Integer, nullable=False)
   injection_scheme = Column(String)
   era = Column(String, nullable=False)
+
+  __table_args__ = (
+    Index('_oms_data_cache_run_lumi_uindex', 'run', 'lumi', unique=True),
+  )
 
 
 # ============== Tables for tracking the progress of monitor element extraction ============== #

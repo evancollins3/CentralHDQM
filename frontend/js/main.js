@@ -316,7 +316,9 @@ $(document).ready(async function()
             main.currentPage = urlController.get("page")
 
         $("#subsystem-select").val(urlController.get("subsystem"))
+        selectionController.subsystemChanged()
         $("#pd-select").val(urlController.get("pd"))
+        selectionController.pdChanged()
         $("#processing-string-select").val(urlController.get("ps"))
         
         await main.submit(main.currentPage)

@@ -2,13 +2,14 @@ from flask import Flask, jsonify, request
 import os, sys
 import json
 import requests
-# Insert parent dir to sys.path to import db_access
+# Insert parent dir to sys.path to import db_access and cern_sso
 sys.path.insert(1, os.path.realpath(os.path.pardir))
 import db_access
+from cern_sso import get_cookies
+
 from sqlalchemy import text
 from functools import partial
 from multiprocessing import Pool
-from cern_sso import get_cookies
 from collections import defaultdict
 
 CERT='private/usercert.pem'
@@ -64,7 +65,6 @@ def data():
     # Get latest runs for specific user selection
     sql = '''
     SELECT DISTINCT(run) FROM historic_data_points
-    JOIN last_calculated_configs ON historic_data_points.config_id = last_calculated_configs.id 
     WHERE subsystem=:subsystem
     AND pd=:pd
     AND processing_string=:processing_string
@@ -80,6 +80,8 @@ def data():
     if len(rows) >= 2:
       from_run = rows[-1][0]
       to_run = rows[0][0]
+    elif len(rows) == 1:
+      from_run = to_run = rows[0][0]
 
   # Construct SQL query
   query_params  = { 'subsystem': subsystem, 'pd': pd, 'processing_string': processing_string }
@@ -108,7 +110,7 @@ def data():
 	historic_data_points.lumi, 
 	historic_data_points.value, 
 	historic_data_points.error, 
-	last_calculated_configs.subsystem, 
+	historic_data_points.subsystem, 
 	last_calculated_configs.name, 
 	last_calculated_configs.plot_title, 
 	last_calculated_configs.y_title, 
@@ -135,9 +137,9 @@ def data():
   LEFT OUTER JOIN monitor_elements AS optional_mes_2 ON historic_data_points.optional_me2_id = optional_mes_2.id
   LEFT OUTER JOIN monitor_elements AS reference_mes ON historic_data_points.reference_me_id = reference_mes.id
 
-  WHERE subsystem=:subsystem
-  AND pd=:pd
-  AND processing_string=:processing_string
+  WHERE historic_data_points.subsystem=:subsystem
+  AND historic_data_points.pd=:pd
+  AND historic_data_points.processing_string=:processing_string
 
   %s
   %s
@@ -183,24 +185,24 @@ def data():
     })
 
   # Transform result to array
-  result = [result[key] for key in result.keys()]
+  result = [result[key] for key in sorted(result.keys())]
 
-  result = add_oms_info_to_result(result)
+  # result = add_oms_info_to_result(result)
 
   return jsonify(result)
 
 
-@app.route('/subsystems', methods=['GET'])
-def subsystems():
+@app.route('/selection', methods=['GET'])
+def selection():
   db_access.setup_db()
 
   session = db_access.get_session()
   try:
-    subsystems = list(session.execute('SELECT DISTINCT(subsystem) FROM selection_params ORDER BY subsystem;'))
-    pds = list(session.execute('SELECT DISTINCT(pd) FROM selection_params ORDER BY pd;'))
-    processing_strings = list(session.execute('SELECT DISTINCT(processing_string) FROM selection_params ORDER BY processing_string;'))
+    obj = defaultdict(lambda: defaultdict(list))
+    flat = list(session.execute('SELECT subsystem, pd, processing_string FROM selection_params ORDER BY subsystem, pd, processing_string;'))
+    for row in flat:
+      obj[row['subsystem']][row['pd']].append(row['processing_string'])
 
-    obj = { 'subsystems': [x[0] for x in subsystems], 'pds': [x[0] for x in pds], 'processing_strings': [x[0] for x in processing_strings] }
     return jsonify(obj)
   finally:
     session.close()
@@ -261,7 +263,7 @@ def add_oms_info_to_result(result):
   runs = [run for run in runs if run not in oms_data_dict]
 
   # Fetch in a multithreaded manner
-  pool = Pool(50)
+  pool = Pool(20)
   api_oms_data = pool.map(get_oms_info_from_api, runs)
 
   for row in api_oms_data:

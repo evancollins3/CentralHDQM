@@ -240,18 +240,20 @@ def calculate_all_trends(cfg_files, runs, nprocs):
     finally:
       session.close()
     print('Calculation queue is ready.')
-  else:
-    # Move things from queue_to_calculate_later back to queue_to_calculate
-    session = db_access.get_session()
-    try:
-      session.execute('INSERT INTO queue_to_calculate (me_id) SELECT me_id FROM queue_to_calculate_later;')
-      session.execute('DELETE FROM queue_to_calculate_later;')
-      session.commit()
-    except Exception as e:
-      print('Exception moving items from the second calculation queue to the first: %s' % e)
-      session.rollback()
-    finally:
-      session.close()
+  # else:
+  #   # Move things from queue_to_calculate_later back to queue_to_calculate
+  #   print('Moving items from second queue to the main one...')
+  #   session = db_access.get_session()
+  #   try:
+  #     session.execute('INSERT INTO queue_to_calculate (me_id) SELECT me_id FROM queue_to_calculate_later;')
+  #     session.execute('DELETE FROM queue_to_calculate_later;')
+  #     session.commit()
+  #   except Exception as e:
+  #     print('Exception moving items from the second calculation queue to the first: %s' % e)
+  #     session.rollback()
+  #   finally:
+  #     session.close()
+  #   print('Calculation queue is ready.')
 
   print('Configuration updated.')
 
@@ -311,6 +313,7 @@ def calculate_trends(rows):
     if not configs:
       print('ME not used is any config')
       move_to_second_queue(row['me_id'], row['id'])
+      continue
 
     for config in configs:
       tdirectories=[]
@@ -398,6 +401,7 @@ def calculate_trends(rows):
           run = row['run'],
           lumi = row['lumi'],
           dataset = row['dataset'],
+          subsystem = config['subsystem'],
           pd = row['dataset'].split('/')[1],
           processing_string = get_processing_string(row['dataset']),
           value = value,
@@ -431,6 +435,7 @@ def calculate_trends(rows):
               historic_data_point_existing.run = historic_data_point.run
               historic_data_point_existing.lumi = historic_data_point.lumi
               historic_data_point_existing.dataset = historic_data_point.dataset
+              historic_data_point_existing.subsystem = historic_data_point.subsystem
               historic_data_point_existing.pd = historic_data_point.pd
               historic_data_point_existing.processing_string = historic_data_point.processing_string
               historic_data_point_existing.value = historic_data_point.value
@@ -438,6 +443,8 @@ def calculate_trends(rows):
               historic_data_point_existing.optional_me1_id = historic_data_point.optional_me1_id,
               historic_data_point_existing.optional_me2_id = historic_data_point.optional_me2_id,
               historic_data_point_existing.reference_me_id = historic_data_point.reference_me_id
+
+              session.execute('DELETE FROM queue_to_calculate WHERE id=:id;', {'id': row['id']})
               session.commit()
               print('Updated.')
           except Exception as e:
