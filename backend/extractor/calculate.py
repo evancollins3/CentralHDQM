@@ -240,20 +240,20 @@ def calculate_all_trends(cfg_files, runs, nprocs):
     finally:
       session.close()
     print('Calculation queue is ready.')
-  # else:
-  #   # Move things from queue_to_calculate_later back to queue_to_calculate
-  #   print('Moving items from second queue to the main one...')
-  #   session = db_access.get_session()
-  #   try:
-  #     session.execute('INSERT INTO queue_to_calculate (me_id) SELECT me_id FROM queue_to_calculate_later;')
-  #     session.execute('DELETE FROM queue_to_calculate_later;')
-  #     session.commit()
-  #   except Exception as e:
-  #     print('Exception moving items from the second calculation queue to the first: %s' % e)
-  #     session.rollback()
-  #   finally:
-  #     session.close()
-  #   print('Calculation queue is ready.')
+  else:
+    # Move things from queue_to_calculate_later back to queue_to_calculate
+    print('Moving items from second queue to the main one...')
+    session = db_access.get_session()
+    try:
+      session.execute('INSERT INTO queue_to_calculate (me_id) SELECT me_id FROM queue_to_calculate_later;')
+      session.execute('DELETE FROM queue_to_calculate_later;')
+      session.commit()
+    except Exception as e:
+      print('Exception moving items from the second calculation queue to the first: %s' % e)
+      session.rollback()
+    finally:
+      session.close()
+    print('Calculation queue is ready.')
 
   print('Configuration updated.')
 
