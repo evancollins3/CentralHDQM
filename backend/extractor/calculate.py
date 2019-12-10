@@ -290,14 +290,14 @@ def calculate_all_trends(cfg_files, runs, nprocs):
       pool.map(calculate_trends, batch_iterable(rows, chunksize=4000))
       
       print('Finished calculating a batch of trends.')
-    except IOError as e:
+    except OSError as e:
       if e.errno != errno.EINTR:
         raise
       else:
         print('[Errno 4] occurred. Continueing.')
     except Exception as e:
       print('Exception fetching elements from the calculation queue: %s' % e)
-      break
+      raise
     finally:
       session.close()
 
@@ -324,7 +324,7 @@ def calculate_trends(rows):
         except Exception as e:
           print('Unable to load the metric: %s. %s' % (config['metric'], e))
           move_to_second_queue(row['me_id'], row['id'])
-          continue
+          break
         
         histo1_id=None
         histo2_id=None
@@ -335,7 +335,7 @@ def calculate_trends(rows):
           if not histo1:
             print('Unable to get an optional monitor element 1: %s:%s' % (row['eos_path'], config['histo1Path']))
             move_to_second_queue(row['me_id'], row['id'])
-            continue
+            break
           plot, tdir = get_plot_from_blob(histo1)
           tdirectories.append(tdir)
           metric.setOptionalHisto1(plot)
@@ -345,7 +345,7 @@ def calculate_trends(rows):
           if not histo2:
             print('Unable to get an optional monitor element 2: %s:%s' % (row['eos_path'], config['histo2Path']))
             move_to_second_queue(row['me_id'], row['id'])
-            continue
+            break
           plot, tdir = get_plot_from_blob(histo2)
           tdirectories.append(tdir)
           metric.setOptionalHisto2(plot)
@@ -355,7 +355,7 @@ def calculate_trends(rows):
           if not reference:
             print('Unable to get an optional reference monitor element: %s:%s' % (row['eos_path'], config['reference']))
             move_to_second_queue(row['me_id'], row['id'])
-            continue
+            break
           plot, tdir = get_plot_from_blob(reference)
           tdirectories.append(tdir)
           metric.setReference(plot)
@@ -369,7 +369,7 @@ def calculate_trends(rows):
         if not main_me_blob:
           print('Unable to get me_blob %s from the DB.' % row['me_id'])
           move_to_second_queue(row['me_id'], row['id'])
-          continue
+          break
 
         main_plot, tdir = get_plot_from_blob(main_me_blob)
         tdirectories.append(tdir)
@@ -384,7 +384,7 @@ def calculate_trends(rows):
         except Exception as e:
           print('Unable to get config id from the DB: %s' % e)
           move_to_second_queue(row['me_id'], row['id'])
-          continue
+          break
         finally:
           session.close()
 
@@ -394,7 +394,7 @@ def calculate_trends(rows):
         except Exception as e:
           print('Unable to calculate the metric: %s. %s' % (config['metric'], e))
           move_to_second_queue(row['me_id'], row['id'])
-          continue
+          break
 
         # Write results to the DB
         historic_data_point = db_access.HistoricDataPoint(
@@ -456,7 +456,7 @@ def calculate_trends(rows):
       except Exception as e:
         print('Exception calculating trend: %s' % e)
         move_to_second_queue(row['me_id'], row['id'])
-        continue
+        break
       finally:
         # Close all open TDirectories
         for tdirectory in tdirectories:

@@ -15,11 +15,11 @@ class ForkPool:
         if pid == 0:
           # We are in the child process
           try:
-            # f = open(os.devnull, 'w')
-            # sys.stdout = f
-            # sys.stderr = f
-            # gROOT.ProcessLine( "gErrorIgnoreLevel = 6001;")
-            # gSystem.RedirectOutput("/dev/null", "a")
+            f = open(os.devnull, 'w')
+            sys.stdout = f
+            sys.stderr = f
+            gROOT.ProcessLine( "gErrorIgnoreLevel = 6001;")
+            gSystem.RedirectOutput("/dev/null", "a")
 
             function(i)
           finally:

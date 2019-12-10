@@ -254,7 +254,7 @@ def extract_all_mes(cfg_files, runs, nprocs):
         break
 
       pool.map(extract_mes, batch_iterable(rows, chunksize=2000))
-    except IOError as e:
+    except OSError as e:
       if e.errno != errno.EINTR:
         raise
       else:
