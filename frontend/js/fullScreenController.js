@@ -107,7 +107,7 @@ const fullScreenController = (function(){
                 try {
                     $("#modal-submit-button-spinner").show()
                     const series = this.plotData.series.map(x => x.metadata.name)
-                    const base = config.getAPIUrl()
+                    const base = config.getBaseAPIUrl()
                     const url = `${base}/data?subsystem=${selectionController.selectedSubsystem()}&pd=${selectionController.selectedPD()}&processing_string=${selectionController.selectedProcessingString()}&from_run=${newStartX}&to_run=${newEndX}&series=${series}`
                     const response = await fetch(url, {
                         credentials: "same-origin"

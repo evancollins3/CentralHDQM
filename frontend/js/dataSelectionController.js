@@ -100,7 +100,7 @@ const selectionController = (function() {
 
         documentReady: async function() {
             try {
-                const base = config.getAPIUrl()
+                const base = config.getBaseAPIUrl()
                 const response = await fetch(`${base}/selection`, {
                     credentials: "same-origin"
                 })

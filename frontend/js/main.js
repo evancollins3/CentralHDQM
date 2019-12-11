@@ -13,6 +13,7 @@ const main = (function() {
         },
 
         submit: async function(page){
+            this.hideAlert()
             if($("#filter-select").val() == "json") {
                 if($("#filter-input-file")[0].files.length == 0)
                     return
@@ -55,7 +56,7 @@ const main = (function() {
                 filteredBySearchQuery = []
                 this.data.forEach(plotData => {
                     if(plotData.plot_title.toLowerCase().includes(searchQuery.toLowerCase()))
-                    filteredBySearchQuery.push(plotData)
+                        filteredBySearchQuery.push(plotData)
                 })
                 this.data = filteredBySearchQuery
             }
@@ -108,7 +109,6 @@ const main = (function() {
                     data.push(plotData)
                 }
             })
-
             return data
         },
 

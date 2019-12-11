@@ -100,7 +100,7 @@ const filterController = (function(){
 
         getApiUrl: async function()
         {
-            const base = config.getAPIUrl()
+            const base = config.getBaseAPIUrl()
 
             const value = $("#filter-select").val()
             const selectedData = `subsystem=${selectionController.selectedSubsystem()}&pd=${selectionController.selectedPD()}&processing_string=${selectionController.selectedProcessingString()}`
