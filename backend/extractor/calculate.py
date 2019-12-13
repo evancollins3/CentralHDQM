@@ -35,7 +35,7 @@ CONFIG=[]
 
 
 def get_optional_me(eos_path, me_paths):
-  sql = 'SELECT id, me_blob FROM monitor_elements WHERE eos_path=:eos_path AND me_path=:me_path;'
+  sql = 'SELECT monitor_elements.id, me_blob FROM monitor_elements JOIN me_blobs ON monitor_elements.me_blob_id= me_blobs.id WHERE eos_path=:eos_path AND me_path=:me_path;'
   for me_path in me_paths:
     session = db_access.get_session()
     me=None
@@ -54,8 +54,8 @@ def get_optional_me(eos_path, me_paths):
   return None, None
 
 
-def get_me_by_id(id):
-  sql = 'SELECT me_blob FROM monitor_elements WHERE id=:id;'
+def get_me_blob_by_me_id(id):
+  sql = 'SELECT me_blob FROM monitor_elements JOIN me_blobs ON monitor_elements.me_blob_id= me_blobs.id WHERE monitor_elements.id=:id;'
   session = db_access.get_session()
   me=None
   try:
@@ -166,7 +166,6 @@ def calculate_all_trends(cfg_files, runs, nprocs):
     session.close()
 
   new_configs=[]
-  changed_configs=[]
 
   for current in CONFIG:
     # Find by subsystem and name of trend
@@ -182,34 +181,9 @@ def calculate_all_trends(cfg_files, runs, nprocs):
         not last['reference_path'] == obj.reference_path or\
         not last['threshold'] == int(obj.threshold):
         # Changed!
-        changed_configs.append(obj)
+        new_configs.append(obj)
     else:
       new_configs.append(section_to_config_object(current))
-
-  # Update changed configs
-  session = db_access.get_session()
-  try:
-    for changed in changed_configs:
-      existing = session.query(db_access.LastCalculatedConfig).\
-        filter(db_access.LastCalculatedConfig.subsystem == changed.subsystem).\
-        filter(db_access.LastCalculatedConfig.name == changed.name).one_or_none()
-
-      existing.metric = changed.metric
-      existing.plot_title = changed.plot_title
-      existing.y_title = changed.y_title
-      existing.relative_path = changed.relative_path
-      existing.histo1_path = changed.histo1_path
-      existing.histo2_path = changed.histo2_path
-      existing.reference_path = changed.reference_path
-      existing.threshold = changed.threshold
-      session.flush()
-
-    session.commit()
-  except Exception as e:
-    print('Exception updating changed configs in the DB: %s' % e)
-    session.rollback()
-  finally:
-    session.close()
 
   # Add new configs
   session = db_access.get_session()
@@ -225,7 +199,7 @@ def calculate_all_trends(cfg_files, runs, nprocs):
     session.close()
 
   # Recalculate everything if the configuration changed
-  if len(new_configs) + len(changed_configs) > 0:
+  if len(new_configs) > 0:
     print('Configuration changed, reseting the calculation queue...')
     session = db_access.get_session()
     try:
@@ -410,7 +384,23 @@ def calculate_trends(rows):
           optional_me1_id = histo1_id,
           optional_me2_id = histo2_id,
           reference_me_id = reference_id,
-          config_id = config_id
+          config_id = config_id,
+          
+          # Get all these properties:
+          # plot_title, 
+          # y_title,
+          # main_me_path,
+          # optional1_me_path, 
+          # optional2_me_path,
+          # reference_path,
+          # main_gui_url,
+          # main_image_url,
+          # optional1_gui_url,
+          # optional1_image_url,
+          # optional2_gui_url,
+          # optional2_image_url,
+          # reference_gui_url,
+          # reference_image_url
         )
 
         session = db_access.get_session()

@@ -76,6 +76,8 @@ def data():
     rows = session.execute(sql, { 'subsystem': subsystem, 'pd': pd, 'processing_string': processing_string })
     rows = list(rows)
 
+    runs = [x[0] for x in rows]
+
     from_run = to_run = 0
     if len(rows) >= 2:
       from_run = rows[-1][0]
@@ -96,7 +98,7 @@ def data():
 
   series_filter_sql = ''
   if series != None:
-    series_filter_sql = 'AND last_calculated_configs.name IN ('
+    series_filter_sql = 'AND historic_data_points.name IN ('
     series = series.split(',')
     for i in range(len(series)):
       key = 'series_%i' % i
@@ -109,33 +111,28 @@ def data():
 	historic_data_points.run, 
 	historic_data_points.lumi, 
 	historic_data_points.value, 
-	historic_data_points.error, 
-	historic_data_points.subsystem, 
-	last_calculated_configs.name, 
-	last_calculated_configs.plot_title, 
-	last_calculated_configs.y_title, 
-	last_calculated_configs.relative_path AS main_me_path,
-	last_calculated_configs.histo1_path AS optional1_me_path, 
-	last_calculated_configs.histo2_path AS optional2_me_path, 
-	last_calculated_configs.reference_path, 
-	mes.gui_url AS main_gui_url,
-	mes.image_url AS main_image_url,
-	optional_mes_1.gui_url AS optional1_gui_url,
-	optional_mes_1.image_url AS optional1_image_url,
-	optional_mes_2.gui_url AS optional2_gui_url,
-	optional_mes_2.image_url AS optional2_image_url,
-	reference_mes.gui_url AS reference_gui_url,
-	reference_mes.image_url AS reference_image_url
+	historic_data_points.error,
+	historic_data_points.name, 
+	
+	historic_data_points.dataset, 
+	historic_data_points.pd, 
+	historic_data_points.subsystem,
+	
+	historic_data_points.plot_title, 
+	historic_data_points.y_title,
+	historic_data_points.main_me_path,
+	historic_data_points.optional1_me_path, 
+	historic_data_points.optional2_me_path,
+	historic_data_points.reference_path,
+	historic_data_points.main_gui_url,
+	historic_data_points.main_image_url,
+	historic_data_points.optional1_gui_url,
+	historic_data_points.optional1_image_url,
+	historic_data_points.optional2_gui_url,
+	historic_data_points.optional2_image_url,
+	historic_data_points.reference_gui_url,
+	historic_data_points.reference_image_url
   FROM historic_data_points
-
-  -- Join the shared config values
-  JOIN last_calculated_configs ON historic_data_points.config_id = last_calculated_configs.id
-
-  -- join ME data
-  JOIN monitor_elements AS mes ON historic_data_points.main_me_id = mes.id
-  LEFT OUTER JOIN monitor_elements AS optional_mes_1 ON historic_data_points.optional_me1_id = optional_mes_1.id
-  LEFT OUTER JOIN monitor_elements AS optional_mes_2 ON historic_data_points.optional_me2_id = optional_mes_2.id
-  LEFT OUTER JOIN monitor_elements AS reference_mes ON historic_data_points.reference_me_id = reference_mes.id
 
   WHERE historic_data_points.subsystem=:subsystem
   AND historic_data_points.pd=:pd

@@ -13,7 +13,7 @@ db_string = 'sqlite:///' + os.path.join(dir_path, 'hdqm.db')
 prod_db_string_file = os.path.join(dir_path, 'connection_string.txt')
 if os.path.isfile(prod_db_string_file):
   with open(prod_db_string_file, 'r') as file:
-    db_string = file.read().replace('\n', '')
+    db_string = file.readline()
 
 is_postgres = True
 if not db_string.startswith('postgres://'):
@@ -35,6 +35,21 @@ class HistoricDataPoint(base):
   processing_string = Column(String, nullable=False)
   value = Column(Float, nullable=False)
   error = Column(Float, nullable=False)
+  name = Column(String, nullable=False)
+  plot_title = Column(String, nullable=False)
+  y_title = Column(String, nullable=False)
+  main_me_path = Column(String, nullable=False)
+  optional1_me_path = Column(String, nullable=False) 
+  optional2_me_path = Column(String, nullable=False)
+  reference_path = Column(String, nullable=False)
+  main_gui_url = Column(String, nullable=False)
+  main_image_url = Column(String, nullable=False)
+  optional1_gui_url = Column(String, nullable=False)
+  optional1_image_url = Column(String, nullable=False)
+  optional2_gui_url = Column(String, nullable=False)
+  optional2_image_url = Column(String, nullable=False)
+  reference_gui_url = Column(String, nullable=False)
+  reference_image_url = Column(String, nullable=False)
 
   # Foreign keys
   config_id = Column(Integer, ForeignKey('last_calculated_configs.id'), nullable=False)
@@ -50,7 +65,11 @@ class HistoricDataPoint(base):
 
   __table_args__ = (
     Index('_historic_data_points_config_id_main_me_id_uindex', 'config_id', 'main_me_id', unique=True),
-    Index('_historic_data_points_subsystem_pd_processing_string_index', 'subsystem', 'pd', 'processing_string')
+    # Index('_historic_data_points_subsystem_pd_processing_string_index', 'subsystem', 'pd', 'processing_string')
+    Index('_historic_data_points_covering_index', 'subsystem', 'pd', 'processing_string', 'run', 'lumi', 'value', 'error', 'name', 'dataset', 
+      'plot_title', 'y_title', 'main_me_path', 'optional1_me_path', 'optional2_me_path', 'reference_path', 'main_gui_url', 'main_image_url', 
+      'optional1_gui_url', 'optional1_image_url', 'optional2_gui_url', 'optional2_image_url', 'reference_gui_url', 'reference_image_url'
+    )
   )
 
 
@@ -76,14 +95,23 @@ class MonitorElement(base):
   me_path = Column(String, nullable=False)
   dataset = Column(String, nullable=False)
   eos_path = Column(String, nullable=False)
-  me_blob = Column(Binary, nullable=False)
   gui_url = Column(String, nullable=False)
   image_url = Column(String, nullable=False)
+
+  # Foreign keys
+  me_blob_id = Column(Integer, ForeignKey('me_blobs.id'), nullable=False)
+  me_blob = relationship("MeBlob", foreign_keys=[me_blob_id])
 
   __table_args__ = (
     Index('_monitor_element_me_path_index', 'me_path'),
     Index('_monitor_element_me_path_eos_path_uindex', 'me_path', 'eos_path', unique=True)
   )
+
+class MeBlob(base):
+  __tablename__ = 'me_blobs'
+
+  id = Column(Integer, primary_key=True, nullable=False)
+  me_blob = Column(Binary, nullable=False)
 
 
 class OMSDataCache(base):

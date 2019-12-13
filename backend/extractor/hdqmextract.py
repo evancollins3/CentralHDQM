@@ -319,21 +319,27 @@ def extract_mes(rows):
       eos_path = eos_path,
       me_path = me_path,
       dataset = dataset,
-      me_blob = get_binary(plot),
       gui_url = gui_url,
       image_url = image_url)
 
     session = db_access.get_session()
     try:
+      me_blob = db_access.MeBlob(
+        me_blob = get_binary(plot)
+      )
+      session.add(me_blob)
+      session.flush()
+      monitor_element.me_blob_id = me_blob.id
       session.add(monitor_element)
       session.flush()
-      session.execute('DELETE FROM queue_to_extract WHERE id = :id', {'id': id})
-      session.execute('INSERT INTO queue_to_calculate (me_id) VALUES (:me_id)', {'me_id': monitor_element.id})
+      session.execute('DELETE FROM queue_to_extract WHERE id = :id;', {'id': id})
+      session.execute('INSERT INTO queue_to_calculate (me_id) VALUES (:me_id);', {'me_id': monitor_element.id})
       session.commit()
-      print('Added ME to DB: %s:%s' % (eos_path, me_path))
+      print('Added ME %s to DB: %s:%s' % (monitor_element.id, eos_path, me_path))
     except Exception as e:
       print('Insert ME error: %s' % e)
       session.rollback()
+      raise
     finally:
       session.close()
 
