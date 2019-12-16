@@ -35,7 +35,7 @@ CONFIG=[]
 
 
 def get_optional_me(eos_path, me_paths):
-  sql = 'SELECT monitor_elements.id, me_blob FROM monitor_elements JOIN me_blobs ON monitor_elements.me_blob_id= me_blobs.id WHERE eos_path=:eos_path AND me_path=:me_path;'
+  sql = 'SELECT monitor_elements.id, monitor_elements.gui_url, monitor_elements.image_url, me_blob FROM monitor_elements JOIN me_blobs ON monitor_elements.me_blob_id= me_blobs.id WHERE eos_path=:eos_path AND me_path=:me_path;'
   for me_path in me_paths:
     session = db_access.get_session()
     me=None
@@ -48,14 +48,14 @@ def get_optional_me(eos_path, me_paths):
       session.close()
 
     if me:
-      return me[0]['id'], me[0]['me_blob']
+      return me[0]['id'], me[0]['me_blob'], me[0]['gui_url'], me[0]['image_url']
 
   # None were found
-  return None, None
+  return None, None, None, None
 
 
 def get_me_blob_by_me_id(id):
-  sql = 'SELECT me_blob FROM monitor_elements JOIN me_blobs ON monitor_elements.me_blob_id= me_blobs.id WHERE monitor_elements.id=:id;'
+  sql = 'SELECT monitor_elements.gui_url, monitor_elements.image_url, me_blob FROM monitor_elements JOIN me_blobs ON monitor_elements.me_blob_id= me_blobs.id WHERE monitor_elements.id=:id;'
   session = db_access.get_session()
   me=None
   try:
@@ -67,8 +67,8 @@ def get_me_blob_by_me_id(id):
     session.close()
 
   if not me:
-    return None
-  return me[0]['me_blob']
+    return None, None, None
+  return me[0]['me_blob'], me[0]['gui_url'], me[0]['image_url']
 
 
 def move_to_second_queue(me_id, queue_id):
@@ -304,8 +304,16 @@ def calculate_trends(rows):
         histo2_id=None
         reference_id=None
 
+        histo1_gui_url=None
+        histo2_gui_url=None
+        reference_gui_url=None
+
+        histo1_image_url=None
+        histo2_image_url=None
+        reference_image_url=None
+
         if 'histo1Path' in config:
-          histo1_id, histo1 = get_optional_me(row['eos_path'], get_all_me_names(config['histo1Path']))
+          histo1_id, histo1, histo1_gui_url, histo1_image_url = get_optional_me(row['eos_path'], get_all_me_names(config['histo1Path']))
           if not histo1:
             print('Unable to get an optional monitor element 1: %s:%s' % (row['eos_path'], config['histo1Path']))
             move_to_second_queue(row['me_id'], row['id'])
@@ -315,7 +323,7 @@ def calculate_trends(rows):
           metric.setOptionalHisto1(plot)
 
         if 'histo2Path' in config:
-          histo2_id, histo2 = get_optional_me(row['eos_path'], get_all_me_names(config['histo2Path']))
+          histo2_id, histo2, histo2_gui_url, histo2_image_url = get_optional_me(row['eos_path'], get_all_me_names(config['histo2Path']))
           if not histo2:
             print('Unable to get an optional monitor element 2: %s:%s' % (row['eos_path'], config['histo2Path']))
             move_to_second_queue(row['me_id'], row['id'])
@@ -325,7 +333,7 @@ def calculate_trends(rows):
           metric.setOptionalHisto2(plot)
 
         if 'reference' in config:
-          reference_id, reference = get_optional_me(row['eos_path'], get_all_me_names(config['reference']))
+          reference_id, reference, reference_gui_url, reference_image_url = get_optional_me(row['eos_path'], get_all_me_names(config['reference']))
           if not reference:
             print('Unable to get an optional reference monitor element: %s:%s' % (row['eos_path'], config['reference']))
             move_to_second_queue(row['me_id'], row['id'])
@@ -338,7 +346,7 @@ def calculate_trends(rows):
           metric.setThreshold(config['threshold'])
 
         # Get main plot blob from db
-        main_me_blob = get_me_by_id(row['me_id'])
+        main_me_blob, main_gui_url, main_image_url = get_me_blob_by_me_id(row['me_id'])
 
         if not main_me_blob:
           print('Unable to get me_blob %s from the DB.' % row['me_id'])
@@ -385,22 +393,22 @@ def calculate_trends(rows):
           optional_me2_id = histo2_id,
           reference_me_id = reference_id,
           config_id = config_id,
-          
-          # Get all these properties:
-          # plot_title, 
-          # y_title,
-          # main_me_path,
-          # optional1_me_path, 
-          # optional2_me_path,
-          # reference_path,
-          # main_gui_url,
-          # main_image_url,
-          # optional1_gui_url,
-          # optional1_image_url,
-          # optional2_gui_url,
-          # optional2_image_url,
-          # reference_gui_url,
-          # reference_image_url
+
+          name = config['name'],
+          plot_title = config.get('plotTitle') or config['yTitle'],
+          y_title = config['yTitle'],
+          main_me_path = config['relativePath'],
+          optional1_me_path = config.get('histo1Path'),
+          optional2_me_path = config.get('histo2Path'),
+          reference_path = config.get('reference'),
+          main_gui_url = main_gui_url,
+          main_image_url = main_image_url,
+          optional1_gui_url = histo1_gui_url,
+          optional1_image_url = histo1_image_url,
+          optional2_gui_url = histo2_gui_url,
+          optional2_image_url = histo2_image_url,
+          reference_gui_url = reference_gui_url,
+          reference_image_url = reference_image_url,
         )
 
         session = db_access.get_session()
@@ -430,9 +438,25 @@ def calculate_trends(rows):
               historic_data_point_existing.processing_string = historic_data_point.processing_string
               historic_data_point_existing.value = historic_data_point.value
               historic_data_point_existing.error = historic_data_point.error
-              historic_data_point_existing.optional_me1_id = historic_data_point.optional_me1_id,
-              historic_data_point_existing.optional_me2_id = historic_data_point.optional_me2_id,
+              historic_data_point_existing.optional_me1_id = historic_data_point.optional_me1_id
+              historic_data_point_existing.optional_me2_id = historic_data_point.optional_me2_id
               historic_data_point_existing.reference_me_id = historic_data_point.reference_me_id
+
+              historic_data_point_existing.name = historic_data_point.name
+              historic_data_point_existing.plot_title = historic_data_point.plot_title
+              historic_data_point_existing.y_title = historic_data_point.y_title
+              historic_data_point_existing.main_me_path = historic_data_point.main_me_path
+              historic_data_point_existing.optional1_me_path = historic_data_point.optional1_me_path
+              historic_data_point_existing.optional2_me_path = historic_data_point.optional2_me_path
+              historic_data_point_existing.reference_path = historic_data_point.reference_path
+              historic_data_point_existing.main_gui_url = historic_data_point.main_gui_url
+              historic_data_point_existing.main_image_url = historic_data_point.main_image_url
+              historic_data_point_existing.optional1_gui_url = historic_data_point.optional1_gui_url
+              historic_data_point_existing.optional1_image_url = historic_data_point.optional1_image_url
+              historic_data_point_existing.optional2_gui_url = historic_data_point.optional2_gui_url
+              historic_data_point_existing.optional2_image_url = historic_data_point.optional2_image_url
+              historic_data_point_existing.reference_gui_url = historic_data_point.reference_gui_url
+              historic_data_point_existing.reference_image_url = historic_data_point.reference_image_url
 
               session.execute('DELETE FROM queue_to_calculate WHERE id=:id;', {'id': row['id']})
               session.commit()

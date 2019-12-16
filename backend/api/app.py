@@ -280,8 +280,8 @@ def get_oms_info_from_api(run):
   runs_url = 'https://cmsoms.cern.ch/agg/api/v1/runs?filter[run_number][eq]=%s&fields=start_time,end_time,b_field,energy,delivered_lumi,end_lumi,recorded_lumi,l1_key,hlt_key,l1_rate,hlt_physics_rate,duration,fill_number' % run
   
   try:
-    # cookies = get_cookies(runs_url, usercert=CERT, userkey=KEY, verify=CACERT)
-    cookies = get_sso_cookie(runs_url)
+    cookies = get_cookies(runs_url, usercert=CERT, userkey=KEY, verify=CACERT)
+    # cookies = get_sso_cookie(runs_url)
     oms_runs_json = json.loads(requests.get(runs_url, cookies=cookies, verify=CACERT).text)
 
     fills_url = 'https://cmsoms.cern.ch/agg/api/v1/fills?filter[fill_number][eq]=%s&fields=injection_scheme,era' % oms_runs_json['data'][0]['attributes']['fill_number']
