@@ -5,43 +5,6 @@ const selectionController = (function() {
         setupSelects: function(dataIndex) {
             this.dataIndex = dataIndex
 
-            // const subsystemSelect = document.getElementById("subsystem-select")
-            // const pdSelect = document.getElementById("pd-select")
-            // const processingStringSelect = document.getElementById("processing-string-select")
-
-            // const option1 = document.createElement("option")
-            // option1.text = "Select a subsystem"
-            // option1.disabled = true
-            // subsystemSelect.add(option1)
-
-            // option2 = document.createElement("option")
-            // option2.text = "Select a primary dataset"
-            // option2.disabled = true
-            // pdSelect.add(option2)
-
-            // option3 = document.createElement("option")
-            // option3.text = "Select a processing string"
-            // option3.disabled = true
-            // processingStringSelect.add(option3)
-
-            // this.dataIndex.subsystems.forEach(element => {
-            //     const option = document.createElement("option")
-            //     option.text = element
-            //     subsystemSelect.add(option)
-            // })
-
-            // this.dataIndex.pds.forEach(element => {
-            //     const option = document.createElement("option")
-            //     option.text = element
-            //     pdSelect.add(option)
-            // })
-
-            // this.dataIndex.processing_strings.forEach(element => {
-            //     const option = document.createElement("option")
-            //     option.text = element
-            //     processingStringSelect.add(option)
-            // })
-
             const subsystemSelect = document.getElementById("subsystem-select")
             const placeholder = document.createElement("option")
             placeholder.text = "Select a subsystem"
@@ -67,12 +30,17 @@ const selectionController = (function() {
             placeholder.disabled = true
             placeholder.selected = true
             pdSelect.add(placeholder)
+            
+            const elements = this.dataIndex[subsystem]
+            if(elements !== undefined) {
+                Object.keys(elements).forEach(element => {
+                    const option = document.createElement("option")
+                    option.text = element
+                    pdSelect.add(option)
+                })
+            }
 
-            Object.keys(this.dataIndex[subsystem]).forEach(element => {
-                const option = document.createElement("option")
-                option.text = element
-                pdSelect.add(option)
-            })
+            this.pdChanged()
         },
 
         pdChanged: function() {
@@ -87,11 +55,14 @@ const selectionController = (function() {
             placeholder.selected = true
             processingStringSelect.add(placeholder)
 
-            this.dataIndex[subsystem][pd].forEach(element => {
-                const option = document.createElement("option")
-                option.text = element
-                processingStringSelect.add(option)
-            })
+            const elements = this.dataIndex[subsystem][pd]
+            if(elements !== undefined) {
+                elements.forEach(element => {
+                    const option = document.createElement("option")
+                    option.text = element
+                    processingStringSelect.add(option)
+                })
+            }
         },
 
         selectedSubsystem() { return document.getElementById("subsystem-select").value },

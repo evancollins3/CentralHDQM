@@ -181,9 +181,9 @@ const fullScreenController = (function(){
             $("#fs-gui-opt1-plot-image").attr("src", dataPoint.optional1_image_url)
             $("#fs-gui-opt2-plot-image").attr("src", dataPoint.optional2_image_url)
             
-            $("#main-plot-gui-url").attr("href", `https://cmsrunregistry.web.cern.ch/offline/workspaces/global?run_number=${dataPoint.main_gui_url}`)
-            $("#opt1-plot-gui-url").attr("href", `https://cmsrunregistry.web.cern.ch/offline/workspaces/global?run_number=${dataPoint.opt1_gui_url}`)
-            $("#opt2-plot-gui-url").attr("href", `https://cmsrunregistry.web.cern.ch/offline/workspaces/global?run_number=${dataPoint.opt2_gui_url}`)
+            $("#main-plot-gui-url").attr("href", String(dataPoint.main_gui_url))
+            $("#opt1-plot-gui-url").attr("href", String(dataPoint.opt1_gui_url))
+            $("#opt2-plot-gui-url").attr("href", String(dataPoint.opt2_gui_url))
 
             $("#gui-main-plot-modal-image").attr("src", dataPoint.main_image_url)
             $("#gui-opt1-plot-modal-image").attr("src", dataPoint.optional1_image_url)

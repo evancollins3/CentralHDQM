@@ -184,7 +184,7 @@ def data():
   # Transform result to array
   result = [result[key] for key in sorted(result.keys())]
 
-  # result = add_oms_info_to_result(result)
+  result = add_oms_info_to_result(result)
 
   return jsonify(result)
 

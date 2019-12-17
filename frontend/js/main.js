@@ -29,10 +29,12 @@ const main = (function() {
             
             $("#submit-button-spinner").show()
             $("#submit-button-title").hide()
+            $("#plot-area").fadeTo(100, 0.3)
             
             let allSeries = {}
 
             try {
+                await sleep(2000)
                 const url = await filterController.getApiUrl()
                 const response = await fetch(url, {
                     credentials: "same-origin"
@@ -46,6 +48,11 @@ const main = (function() {
 
             $("#submit-button-spinner").hide()
             $("#submit-button-title").show()
+            $("#plot-area").fadeTo(200, 1)
+
+            function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+              }
             
             this.data = this.transformAPIResponseToData(allSeries)
 
