@@ -37,6 +37,8 @@ const fullScreenController = (function(){
             $("#processing-string-select").prop('disabled', true)
 
             this.isFullScreen = true
+            seriesListComponent.enterFullScreen()
+            seriesListComponent.setup(this.plotData.series)
         },
 
         exitFullScreen: function() {
@@ -57,6 +59,7 @@ const fullScreenController = (function(){
         changeRangesClicked: async function(plotIndex, animated=true)
         {
             this.plotData = main.plotDatas[plotIndex]
+            console.log(this.plotData)
             const renderTo = 'fs-plot-container'
 
             if(this.chartObject !== undefined) {
@@ -152,12 +155,12 @@ const fullScreenController = (function(){
         {
             const dataPoint = this.plotData.series[this.seriesIndex].trends[this.xIndex]
 
-            $("#fs-value-series").html(String(this.plotData.series[this.seriesIndex].metadata.y_title))
+            $("#fs-value-series").html(String(this.plotData.series[this.seriesIndex].metadata.plot_title))
             $("#fs-value-value").html(String(dataPoint.value))
             $("#fs-value-error").html(String(dataPoint.error))
 			$("#fs-value-run").html(String(dataPoint.run))
 			$("#fs-value-fill").html(String(dataPoint.oms_info.fill_number))
-			$("#fs-value-duration").html(String(dataPoint.oms_info.duration))
+            $("#fs-value-duration").html(String(dataPoint.oms_info.duration))
 			$("#fs-value-delivered-lumi").html(String(dataPoint.oms_info.delivered_lumi))
 			$("#fs-value-b-field").html(String(dataPoint.oms_info.b_field))
 			$("#fs-value-end-lumi").html(String(dataPoint.oms_info.end_lumi))
@@ -182,8 +185,8 @@ const fullScreenController = (function(){
             $("#fs-gui-opt2-plot-image").attr("src", dataPoint.optional2_image_url)
             
             $("#main-plot-gui-url").attr("href", String(dataPoint.main_gui_url))
-            $("#opt1-plot-gui-url").attr("href", String(dataPoint.opt1_gui_url))
-            $("#opt2-plot-gui-url").attr("href", String(dataPoint.opt2_gui_url))
+            $("#opt1-plot-gui-url").attr("href", String(dataPoint.optional1_gui_url))
+            $("#opt2-plot-gui-url").attr("href", String(dataPoint.optional2_gui_url))
 
             $("#gui-main-plot-modal-image").attr("src", dataPoint.main_image_url)
             $("#gui-opt1-plot-modal-image").attr("src", dataPoint.optional1_image_url)
@@ -242,7 +245,7 @@ const fullScreenController = (function(){
         },
 
         selectPointInPlot: function() {
-            const series = this.chartObject.series.find(x => x.name === this.plotData.series[this.seriesIndex].metadata.y_title)
+            const series = this.chartObject.series.find(x => x.name === this.plotData.series[this.seriesIndex].metadata.plot_title)
             if(series !== undefined)
                 series.data[this.xIndex].select()
         },

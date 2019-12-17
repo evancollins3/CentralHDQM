@@ -99,7 +99,7 @@ def section_to_config_object(section):
     subsystem = section['subsystem'],
     name = section['name'],
     metric = section['metric'],
-    plot_title = section.get('plotTitle') or section['yTitle'],
+    plot_title = section.get('plotTitle') or section['name'],
     y_title = section['yTitle'],
     relative_path = section['relativePath'],
     histo1_path = section.get('histo1Path'),
@@ -237,7 +237,7 @@ def calculate_all_trends(cfg_files, runs, nprocs):
   else:
     runs_filter = 'WHERE monitor_elements.run IN (%s)' % ', '.join(str(x) for x in runs)
 
-  limit = 100000
+  limit = 10000
   sql = '''
   SELECT queue_to_calculate.id, monitor_elements.id as me_id, monitor_elements.run, monitor_elements.lumi, monitor_elements.eos_path, monitor_elements.me_path, monitor_elements.dataset FROM monitor_elements
   JOIN queue_to_calculate ON monitor_elements.id=queue_to_calculate.me_id
@@ -261,7 +261,7 @@ def calculate_all_trends(cfg_files, runs, nprocs):
         print('Queue to calculate is empty. Exiting.')
         break
 
-      pool.map(calculate_trends, batch_iterable(rows, chunksize=4000))
+      pool.map(calculate_trends, batch_iterable(rows, chunksize=400))
       
       print('Finished calculating a batch of trends.')
     except OSError as e:
@@ -395,7 +395,7 @@ def calculate_trends(rows):
           config_id = config_id,
 
           name = config['name'],
-          plot_title = config.get('plotTitle') or config['yTitle'],
+          plot_title = config.get('plotTitle') or config['name'],
           y_title = config['yTitle'],
           main_me_path = config['relativePath'],
           optional1_me_path = config.get('histo1Path'),
@@ -415,8 +415,8 @@ def calculate_trends(rows):
         try:
           session.add(historic_data_point)
           session.execute('DELETE FROM queue_to_calculate WHERE id=:id;', {'id': row['id']})
-          session.execute('INSERT INTO selection_params (subsystem, pd, processing_string) VALUES (:subsystem, :pd, :ps) ON CONFLICT DO NOTHING;', 
-            {'subsystem': config['subsystem'], 'pd': historic_data_point.pd, 'ps': historic_data_point.processing_string}
+          session.execute('INSERT INTO selection_params (subsystem, pd, processing_string, config_id) VALUES (:subsystem, :pd, :ps, :config_id) ON CONFLICT DO NOTHING;', 
+            {'subsystem': config['subsystem'], 'pd': historic_data_point.pd, 'ps': historic_data_point.processing_string, 'config_id': config_id}
           )
           session.commit()
         except IntegrityError as e:

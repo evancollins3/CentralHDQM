@@ -12,6 +12,7 @@
 	<link href="https://code.highcharts.com/css/highcharts.css" rel="stylesheet">
 
 	<link rel="shortcut icon" type="image/png" href="static/favicon.ico"/>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 </head>
 
 <body class="bg-light">
@@ -45,12 +46,10 @@
 			<div class="col-12 col-md-auto" style="width: calc(100% - 180px);">
 				<div class="row mt-0 mt-md-3 mb-2" id="data-selection-container">
 					<div class="col-12 col-md mt-2 mt-md-0">
-						<!-- <select class="form-control form-control-sm" id="subsystem-select" onchange="selectionController.selectionChanged(this)"></select> -->
-						<select class="form-control form-control-sm" id="subsystem-select" onchange="selectionController.subsystemChanged()"></select>
+						<select class="form-control form-control-sm" id="subsystem-select"></select>
 					</div>
 					<div class="col-12 col-md mt-2 mt-md-0">
-						<!-- <select class="form-control form-control-sm" id="processing-level-select"></select> -->
-						<select class="form-control form-control-sm" id="pd-select" onchange="selectionController.pdChanged()"></select>
+						<select class="form-control form-control-sm" id="pd-select"></select>
 					</div>
 					<div class="col-12 col-md mt-2 mt-md-0">
 						<select class="form-control form-control-sm" id="processing-string-select"></select>
@@ -295,6 +294,40 @@
 
 			<div class="col-12 col-lg-4 overflow-non-lg-scroll">
 				<div class="h-non-lg-100">
+					<div class="card mb-2">
+						<div class="card-header">
+							<a data-toggle="collapse" href="#fs-series-collapse" role="button" aria-expanded="false" aria-controls="fs-series-collapse">Add series to this plot <i class="fa fa-chevron-down"></i></a>
+						</div>
+						<ul class="list-group list-group-flush collapse multi-collapse" id="fs-series-collapse">
+							<div id="fs-series-list-container">
+							</div>
+
+							<li class="list-group-item">
+								<div class="row">
+									<div class="col pl-1 pr-1">
+										<select class="form-control form-control-sm" id="fs-subsystem-select"></select>
+									</div>
+
+									<div class="col pl-1 pr-1">
+										<select class="form-control form-control-sm" id="fs-pd-select"></select>
+									</div>
+
+									<div class="col pl-1 pr-1">
+										<select class="form-control form-control-sm" id="fs-processing-string-select"></select>
+									</div>
+
+									<div class="col pl-1 pr-1">
+										<select class="form-control form-control-sm" id="fs-plot-select"></select>
+									</div>
+
+									<div class="col-auto pl-1 pr-1">
+										<button class="btn btn-sm btn-outline-success">Add</button>
+									</div>
+								</div>
+							</li>
+						</ul>
+					</div>
+
 					<table class="table table-striped table-sm">
 						<thead>
 							<tr>
@@ -566,10 +599,12 @@
 	<script src="js/filterSelectionController.js"></script>
 	<script src="js/optionsController.js"></script>
 	<script src="js/fullScreenController.js"></script>
+	<script src="js/seriesListComponent.js"></script>
 	<script src="js/helpers.js"></script>
 	<script src="js/draw.js"></script>
 	<script src="js/asyncFileReader.js"></script>
 	<script src="js/displayConfig.js"></script>
+	<script src="js/selectComponent.js"></script>
 
 </body>
 

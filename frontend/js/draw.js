@@ -25,7 +25,7 @@ const plotter = (function() {
             const plotName = plotData.plot_title
             const xValues = plotData.series[0].trends.map(x => x.run)
             const yValues = plotData.series.map(x => x.trends.map(y => y.value))
-            const seriesTitles = plotData.series.map(x => x.metadata.y_title)
+            const seriesTitles = plotData.series.map(x => x.metadata.plot_title)
 
             // First array contains x values and second array contains y values
             const values = yValues[0].map((v, i) => ({
@@ -127,7 +127,7 @@ const plotter = (function() {
             const yErr = plotData.series.map(x => x.trends.map(y => y.error))
             const fills = plotData.series[0].trends.map(x => x.oms_info.fill_number)
             const durations = plotData.series[0].trends.map(x => x.oms_info.duration)
-            const seriesTitles = plotData.series.map(x => x.metadata.y_title)
+            const seriesTitles = plotData.series.map(x => x.metadata.plot_title)
 
             const meanAndRms = helpers.calculateMeanAndRMS(yValues)
             const mean = meanAndRms[0]
@@ -350,7 +350,7 @@ const plotter = (function() {
             const fills = plotData.series[0].trends.map(x => x.oms_info.fill_number)
             const durations = plotData.series[0].trends.map(x => x.oms_info.duration)
             const intLumis = plotData.series[0].trends.map(x => x.oms_info.init_lumi)
-            const seriesTitles = plotData.series.map(x => x.metadata.y_title)
+            const seriesTitles = plotData.series.map(x => x.metadata.plot_title)
 
             const meanAndRms = helpers.calculateMeanAndRMS(yValues)
             const mean = meanAndRms[0]
@@ -603,7 +603,7 @@ const plotter = (function() {
             const yErr = plotData.series.map(x => x.trends.map(y => y.error))
             const fills = plotData.series[0].trends.map(x => x.oms_info.fill_number)
             const times = plotData.series[0].trends.map(x => [x.oms_info.start_time, x.oms_info.end_time])
-            const seriesTitles = plotData.series.map(x => x.metadata.y_title)
+            const seriesTitles = plotData.series.map(x => x.metadata.plot_title)
 
             const meanAndRms = helpers.calculateMeanAndRMS(yValues)
             const mean = meanAndRms[0]

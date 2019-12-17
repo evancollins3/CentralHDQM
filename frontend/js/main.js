@@ -34,7 +34,6 @@ const main = (function() {
             let allSeries = {}
 
             try {
-                await sleep(2000)
                 const url = await filterController.getApiUrl()
                 const response = await fetch(url, {
                     credentials: "same-origin"
@@ -322,11 +321,15 @@ $(document).ready(async function()
         if(urlController.has("page"))
             main.currentPage = urlController.get("page")
 
-        $("#subsystem-select").val(urlController.get("subsystem"))
-        selectionController.subsystemChanged()
-        $("#pd-select").val(urlController.get("pd"))
-        selectionController.pdChanged()
-        $("#processing-string-select").val(urlController.get("ps"))
+        $("#subsystem-select")
+            .val(urlController.get("subsystem"))
+            .trigger('change')
+        $("#pd-select")
+            .val(urlController.get("pd"))
+            .trigger('change')
+        $("#processing-string-select")
+            .val(urlController.get("ps"))
+            .trigger('change')
         
         await main.submit(main.currentPage)
     }

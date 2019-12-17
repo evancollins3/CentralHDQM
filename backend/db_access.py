@@ -81,8 +81,12 @@ class SelectionParams(base):
   pd = Column(String, nullable=False)
   processing_string = Column(String, nullable=False)
 
+  # Foreign keys
+  config_id = Column(Integer, ForeignKey('last_calculated_configs.id'), nullable=False)
+  config = relationship("LastCalculatedConfig", foreign_keys=[config_id])
+
   __table_args__ = (
-    Index('_selection_params_subsystem_pd_processing_string_uindex', 'subsystem', 'pd', 'processing_string', unique=True),
+    Index('_selection_params_subsystem_pd_ps_config_id_uindex', 'subsystem', 'pd', 'processing_string', 'config_id', unique=True),
   )
 
 
@@ -124,15 +128,15 @@ class OMSDataCache(base):
   end_time = Column(DateTime, nullable=False)
   
   b_field = Column(Float, nullable=False)
-  energy = Column(Float, nullable=False)
+  energy = Column(Float)
   
-  delivered_lumi = Column(Float, nullable=False)
+  delivered_lumi = Column(Float)
   end_lumi = Column(Float, nullable=False)
-  recorded_lumi = Column(Float, nullable=False)
+  recorded_lumi = Column(Float)
   l1_key = Column(String, nullable=False)
   hlt_key = Column(String, nullable=False)
   l1_rate = Column(Float, nullable=False)
-  hlt_physics_rate = Column(Float, nullable=False)
+  hlt_physics_rate = Column(Float)
   duration = Column(Integer, nullable=False)
   fill_number = Column(Integer, nullable=False)
   injection_scheme = Column(String)
@@ -221,10 +225,6 @@ class LastCalculatedConfig(base):
   histo2_path = Column(String)
   reference_path = Column(String)
   threshold = Column(Integer)
-
-  __table_args__ = (
-    Index('_last_calculated_configs_subsystem_name_uindex', 'subsystem', 'name', unique=True),
-  )
 
 
 # ====================================== Helper functions ==================================== #

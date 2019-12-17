@@ -21,7 +21,6 @@ app = Flask(__name__)
 
 @app.route('/data', methods=['GET'])
 def data():
-  # raise Exception
   subsystem = request.args.get('subsystem')
   pd = request.args.get('pd')
   processing_string = request.args.get('processing_string')
@@ -144,7 +143,7 @@ def data():
   ORDER BY historic_data_points.run ASC
   ;
   ''' % (run_selection_sql, series_filter_sql)
-  
+
   rows = session.execute(sql, query_params)
   rows = list(rows)
   session.close()
@@ -196,9 +195,30 @@ def selection():
   session = db_access.get_session()
   try:
     obj = defaultdict(lambda: defaultdict(list))
-    flat = list(session.execute('SELECT subsystem, pd, processing_string FROM selection_params ORDER BY subsystem, pd, processing_string;'))
+    flat = list(session.execute('SELECT DISTINCT subsystem, pd, processing_string FROM selection_params ORDER BY subsystem, pd, processing_string;'))
     for row in flat:
       obj[row['subsystem']][row['pd']].append(row['processing_string'])
+
+    return jsonify(obj)
+  finally:
+    session.close()
+
+
+@app.route('/plot_selection', methods=['GET'])
+def plot_selection():
+  db_access.setup_db()
+
+  session = db_access.get_session()
+  try:
+    obj = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+    flat = list(session.execute('''
+    SELECT selection_params.subsystem, selection_params.pd, selection_params.processing_string, last_calculated_configs.name 
+    FROM selection_params 
+    JOIN last_calculated_configs ON config_id = last_calculated_configs.id 
+    ORDER BY subsystem, pd, processing_string, name;
+    '''))
+    for row in flat:
+      obj[row['subsystem']][row['pd']][row['processing_string']].append(row['name'])
 
     return jsonify(obj)
   finally:
