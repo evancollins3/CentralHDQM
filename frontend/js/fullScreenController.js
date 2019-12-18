@@ -59,7 +59,6 @@ const fullScreenController = (function(){
         changeRangesClicked: async function(plotIndex, animated=true)
         {
             this.plotData = main.plotDatas[plotIndex]
-            console.log(this.plotData)
             const renderTo = 'fs-plot-container'
 
             if(this.chartObject !== undefined) {
@@ -137,7 +136,7 @@ const fullScreenController = (function(){
             this.chartObject.yAxis[0].update(
             {
                 min: newStartY,
-                max: newEndY
+                max: newEndY,
             })
 
             $("#start-y").val(this.chartObject.yAxis[0].min)

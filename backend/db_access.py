@@ -229,7 +229,6 @@ class LastCalculatedConfig(base):
 
 # ====================================== Helper functions ==================================== #
 
-
 def setup_db():
   base.metadata.create_all(db)
 

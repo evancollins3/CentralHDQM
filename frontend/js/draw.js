@@ -173,7 +173,7 @@ const plotter = (function() {
                         },
                         min: min_y,
                         max: max_y,
-                        tickPixelInterval: 60
+                        tickPixelInterval: 60,
                     },
                     {
                         zoomEnabled: false,

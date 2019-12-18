@@ -29,15 +29,17 @@ def data():
   runs = request.args.get('runs')
   latest = request.args.get('latest', type=int)
   series = request.args.get('series')
+  series_id = request.args.get('series_id', type=int)
 
-  if subsystem == None:
-    return jsonify({'message': 'Please provide a subsystem parameter.'}), 400
+  if series_id == None:
+    if subsystem == None:
+      return jsonify({'message': 'Please provide a subsystem parameter.'}), 400
 
-  if pd == None:
-    return jsonify({'message': 'Please provide a pd parameter.'}), 400
+    if pd == None:
+      return jsonify({'message': 'Please provide a pd parameter.'}), 400
 
-  if processing_string == None:
-    return jsonify({'message': 'Please provide a processing_string parameter.'}), 400
+    if processing_string == None:
+      return jsonify({'message': 'Please provide a processing_string parameter.'}), 400
 
   modes = 0
   if from_run != None and to_run != None: modes += 1
@@ -54,8 +56,29 @@ def data():
     except:
       return jsonify({'message': 'runs parameter is not valid. It has to be a comma separated list of integers.'}), 400
 
+  if series and series_id:
+    return jsonify({'message': 'series and series_id can not be defined at the same time.'}), 400
+
   db_access.setup_db()
   session = db_access.get_session()
+
+  # Get series data by series_id
+  if series_id:
+    sql = '''
+    SELECT selection_params.subsystem, selection_params.pd, selection_params.processing_string, last_calculated_configs.name
+    FROM selection_params
+    JOIN last_calculated_configs ON config_id = last_calculated_configs.id
+    WHERE selection_params.id = :id;
+    ;
+    '''
+
+    rows = session.execute(sql, { 'id': series_id })
+    rows = list(rows)
+
+    subsystem = rows[0]['subsystem']
+    pd = rows[0]['pd']
+    processing_string = rows[0]['processing_string']
+    series = rows[0]['name']
   
   if (from_run == None or to_run == None) and runs == None:
     if latest == None:
@@ -212,13 +235,13 @@ def plot_selection():
   try:
     obj = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
     flat = list(session.execute('''
-    SELECT selection_params.subsystem, selection_params.pd, selection_params.processing_string, last_calculated_configs.name 
+    SELECT selection_params.id, selection_params.subsystem, selection_params.pd, selection_params.processing_string, last_calculated_configs.name 
     FROM selection_params 
     JOIN last_calculated_configs ON config_id = last_calculated_configs.id 
     ORDER BY subsystem, pd, processing_string, name;
     '''))
     for row in flat:
-      obj[row['subsystem']][row['pd']][row['processing_string']].append(row['name'])
+      obj[row['subsystem']][row['pd']][row['processing_string']].append({'name': row['name'], 'id': row['id']})
 
     return jsonify(obj)
   finally:
@@ -279,7 +302,7 @@ def add_oms_info_to_result(result):
   # Keep runs that need to be fetched from OMS API
   runs = [run for run in runs if run not in oms_data_dict]
 
-  # Fetch in a multithreaded manner
+  # Fetch in a multitprocessed manner
   pool = Pool(20)
   api_oms_data = pool.map(get_oms_info_from_api, runs)
 
