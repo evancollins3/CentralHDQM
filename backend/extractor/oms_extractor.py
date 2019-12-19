@@ -28,6 +28,7 @@ def fetch(update, nproc):
 
   session = db_access.get_session()
   try:
+    print('Getting missing runs...')
     all_runs = list(session.execute('SELECT DISTINCT(run) FROM historic_data_points;'))
     all_runs = [x[0] for x in all_runs]
     extracted_runs = list(session.execute('SELECT DISTINCT(run) FROM oms_data_cache;'))
@@ -40,6 +41,8 @@ def fetch(update, nproc):
     diff = all_runs
   else:
     diff = [x for x in all_runs if x not in extracted_runs]
+
+  print('Number of runs to be fetched: %s' % len(diff))
 
   db_access.dispose_engine()
   pool = Pool(nproc)
@@ -131,3 +134,5 @@ if __name__ == '__main__':
   update = args.update
   nproc = args.nproc
   fetch(update, nproc)
+  # 296220
+  

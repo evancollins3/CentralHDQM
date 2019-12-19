@@ -301,6 +301,7 @@ def add_oms_info_to_result(result):
 
   # Keep runs that need to be fetched from OMS API
   runs = [run for run in runs if run not in oms_data_dict]
+  print('Number of runs that will be fetched from the OMS API: %s' %len(runs))
 
   # Fetch in a multitprocessed manner
   pool = Pool(20)

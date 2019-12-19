@@ -8,11 +8,9 @@
 
 	<link href="css/bootstrap/bootstrap.min.css" rel="stylesheet">
 	<link href="css/style.css" rel="stylesheet">
-
 	<link href="https://code.highcharts.com/css/highcharts.css" rel="stylesheet">
 
 	<link rel="shortcut icon" type="image/png" href="static/favicon.ico"/>
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 </head>
 
 <body class="bg-light">
@@ -22,7 +20,7 @@
 				<div class="row">
 					<div class="col-auto col-md-8">
 						<a class="navbar-brand text-white" href="/">
-							<img src="static/logo.png" width="105" height="56" alt="CMS logo" class="mr-1">
+							<img src="static/logo_xmas.png" width="105" height="56" alt="CMS logo" class="mr-1">
 						</a>
 					</div>
 					<div class="col-auto col-md-4">
@@ -296,7 +294,15 @@
 				<div class="h-non-lg-100">
 					<div class="card mb-2">
 						<div class="card-header">
-							<a data-toggle="collapse" href="#fs-series-collapse" role="button" aria-expanded="false" aria-controls="fs-series-collapse">Add series to this plot <i class="fa fa-chevron-down"></i></a>
+							<a data-toggle="collapse" href="#fs-series-collapse" role="button" aria-expanded="false" aria-controls="fs-series-collapse">
+								<span class="pr-1">Add series to this plot</span>
+								<svg height="9" width="16" id="fs-collapse-show-icon">
+									<polyline points="0,0 8,7 16,0" stroke="#007bff" fill="none" stroke-width="3" />
+								</svg>
+								<svg height="9" width="16" id="fs-collapse-hide-icon" style="display: none;">
+									<polyline points="0,9 8,2 16,9" stroke="#007bff" fill="none" stroke-width="3" />
+								</svg>
+							</a>
 						</div>
 						<ul class="list-group list-group-flush collapse multi-collapse" id="fs-series-collapse">
 							<div id="fs-series-list-container">
@@ -321,13 +327,21 @@
 									</div>
 
 									<div class="col-auto pl-1 pr-1">
-										<button class="btn btn-sm btn-outline-success" onclick="seriesListComponent.addClicked()">Add</button>
+										<button class="btn btn-sm btn-outline-success" onclick="seriesListComponent.addClicked()" style="min-height: 31px; min-width: 43px;">
+											<div class="spinner-border spinner-border-sm" id="fs-add-series-button-spinner" role="status" style="display: none;">
+												<span class="sr-only"></span>
+											</div>
+											<span id="fs-add-series-button-text">Add</span>
+										</button>
 									</div>
 								</div>
 								<div class="row">
 									<div class="col-auto ml-2 mt-2">
 										<input type="checkbox" class="form-check-input" id="fs-correlation-checkbox">
 										<label class="form-check-label" for="fs-correlation-checkbox">Correlation plot</label>
+										<div class="invalid-feedback" id="fs-add-series-error">
+											Please provide a valid city.
+										</div>
 									</div>
 								</div>
 							</li>

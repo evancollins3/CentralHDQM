@@ -48,7 +48,7 @@ const plotter = (function() {
                     animation: false
                 },
                 lang: {
-                    noData: "No data found for given runs"
+                    noData: "No data found"
                 },
                 title: {
                     text: plotName
@@ -148,7 +148,7 @@ const plotter = (function() {
                     animation: false,
                 },
                 lang: {
-                    noData: "No data found for given runs"
+                    noData: "No data found"
                 },
                 title: {
                     text: plotName
@@ -371,7 +371,7 @@ const plotter = (function() {
                     animation: false
                 },
                 lang: {
-                    noData: "No data found for given runs"
+                    noData: "No data found"
                 },
                 title: {
                     text: plotName
@@ -623,7 +623,7 @@ const plotter = (function() {
                     animation: false
                 },
                 lang: {
-                    noData: "No data found for given runs"
+                    noData: "No data found"
                 },
                 title: {
                     text: plotName

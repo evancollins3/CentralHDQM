@@ -315,6 +315,7 @@ $(document).ready(async function()
     filterController.documentReady()
     optionsController.documentReady()
     fullScreenController.documentReady()
+    seriesListComponent.documentReady()
 
     if(urlController.has("subsystem") && urlController.has("pd") && urlController.has("ps"))
     {

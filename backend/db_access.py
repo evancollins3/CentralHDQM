@@ -133,7 +133,7 @@ class OMSDataCache(base):
   delivered_lumi = Column(Float)
   end_lumi = Column(Float, nullable=False)
   recorded_lumi = Column(Float)
-  l1_key = Column(String, nullable=False)
+  l1_key = Column(String)
   hlt_key = Column(String, nullable=False)
   l1_rate = Column(Float, nullable=False)
   hlt_physics_rate = Column(Float)

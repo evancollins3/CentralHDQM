@@ -59,18 +59,7 @@ const fullScreenController = (function(){
         changeRangesClicked: async function(plotIndex, animated=true)
         {
             this.plotData = main.plotDatas[plotIndex]
-            const renderTo = 'fs-plot-container'
-
-            if(this.chartObject !== undefined) {
-                try {
-                    this.chartObject.destroy()
-                }
-                catch(error) {
-                    console.error(error)
-                }
-            }
-
-            this.chartObject = await plotter.draw(this.plotData, renderTo)
+            await this.redrawPlot()
 
             const initialStartX = this.plotData.series[0].trends[0].run
             const initialEndX = this.plotData.series[0].trends[this.plotData.series[0].trends.length - 1].run
@@ -93,7 +82,7 @@ const fullScreenController = (function(){
 
         submitClicked: async function()
         {
-            const renderTo = 'fs-plot-container'
+            // const renderTo = 'fs-plot-container'
             const initialStartX = this.plotData.series[0].trends[0].run
             const initialEndX = this.plotData.series[0].trends[this.plotData.series[0].trends.length - 1].run
 
@@ -122,15 +111,7 @@ const fullScreenController = (function(){
                 $("#modal-submit-button-spinner").hide()
 
                 this.plotData = main.transformAPIResponseToData(allSeries).find(x => x.name == this.plotData.name)
-                if(this.chartObject !== undefined) {
-                    try {
-                        this.chartObject.destroy()
-                    }
-                    catch(error) {
-                        console.error(error)
-                    }
-                }
-                this.chartObject = await plotter.draw(this.plotData, renderTo)
+                await this.redrawPlot()
             }
             
             this.chartObject.yAxis[0].update(
@@ -247,6 +228,20 @@ const fullScreenController = (function(){
             const series = this.chartObject.series.find(x => x.name === this.plotData.series[this.seriesIndex].metadata.plot_title)
             if(series !== undefined)
                 series.data[this.xIndex].select()
+        },
+
+        redrawPlot: async function() {
+            const renderTo = 'fs-plot-container'
+            if(this.chartObject !== undefined && this.chartObject !== null) {
+                try {
+                    this.chartObject.destroy()
+                }
+                catch(error) {
+                    console.error(error)
+                }
+            }
+
+            this.chartObject = await plotter.draw(this.plotData, renderTo)
         },
 
         documentReady: function() {
