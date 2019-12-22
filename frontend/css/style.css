@@ -16,3 +16,9 @@
         overflow: auto;
     }
 }
+
+@-moz-document url-prefix() {
+  .h-100-ff {
+    height: 100%;
+  }
+}
