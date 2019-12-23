@@ -230,7 +230,11 @@ class LastCalculatedConfig(base):
 # ====================================== Helper functions ==================================== #
 
 def setup_db():
-  base.metadata.create_all(db)
+  try:
+    base.metadata.create_all(db)
+  except Exception as e:
+    print(e)
+    base.metadata.create_all(db)
 
 def get_session():
   Session = sessionmaker(db)
