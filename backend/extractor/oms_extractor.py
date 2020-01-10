@@ -80,9 +80,15 @@ def fetch_run(run):
         hlt_physics_rate = oms_runs_json['data'][0]['attributes']['hlt_physics_rate'],
         duration = oms_runs_json['data'][0]['attributes']['duration'],
         fill_number = oms_runs_json['data'][0]['attributes']['fill_number'],
-        injection_scheme = oms_fills_json['data'][0]['attributes']['injection_scheme'],
-        era = oms_fills_json['data'][0]['attributes']['era'],
       )
+
+      try:
+        oms_item.injection_scheme = oms_fills_json['data'][0]['attributes']['injection_scheme']
+        oms_item.era = oms_fills_json['data'][0]['attributes']['era']
+      except:
+        oms_item.injection_scheme = None
+        oms_item.era = None
+
       session.add(oms_item)
       session.commit()
     except IntegrityError as e:

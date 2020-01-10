@@ -1,10 +1,12 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, redirect
 import os, sys
 import json
+import timeit
 import requests
 # Insert parent dir to sys.path to import db_access and cern_sso
 sys.path.insert(1, os.path.realpath(os.path.pardir))
 import db_access
+import decorators
 from cern_sso import get_cookies
 
 from sqlalchemy import text
@@ -19,7 +21,8 @@ PREMADE_COOKIE='etc/sso_cookie.txt'
 
 app = Flask(__name__)
 
-@app.route('/data', methods=['GET'])
+@app.route('/api/data', methods=['GET'])
+# @decorators.diff_mem_snapshots
 def data():
   subsystem = request.args.get('subsystem')
   pd = request.args.get('pd')
@@ -72,7 +75,7 @@ def data():
     ;
     '''
 
-    rows = session.execute(sql, { 'id': series_id })
+    rows = execute_with_retry(session, sql, { 'id': series_id })
     rows = list(rows)
 
     subsystem = rows[0]['subsystem']
@@ -94,18 +97,31 @@ def data():
     LIMIT %s
     ;
     ''' % latest
+    # sql = '''
+    # SELECT run FROM oms_data_cache
+    # WHERE run <= 
+    # (
+    #   SELECT MAX(run) FROM historic_data_points
+    #   WHERE subsystem=:subsystem
+    #   AND pd=:pd
+    #   AND processing_string=:processing_string
+    # )
+    # ORDER BY run DESC
+    # LIMIT %s
+    # ;
+    # ''' % latest
 
-    rows = session.execute(sql, { 'subsystem': subsystem, 'pd': pd, 'processing_string': processing_string })
+    print('Getting the list of runs...')
+    start = timeit.default_timer() 
+
+    rows = execute_with_retry(session, sql, { 'subsystem': subsystem, 'pd': pd, 'processing_string': processing_string })
     rows = list(rows)
+    print(rows)
+
+    stop = timeit.default_timer()
+    print('Runs retrieved in: ', stop - start)
 
     runs = [x[0] for x in rows]
-
-    from_run = to_run = 0
-    if len(rows) >= 2:
-      from_run = rows[-1][0]
-      to_run = rows[0][0]
-    elif len(rows) == 1:
-      from_run = to_run = rows[0][0]
 
   # Construct SQL query
   query_params  = { 'subsystem': subsystem, 'pd': pd, 'processing_string': processing_string }
@@ -130,6 +146,7 @@ def data():
 
   sql = '''
   SELECT 
+  historic_data_points.id,
 	historic_data_points.run, 
 	historic_data_points.lumi, 
 	historic_data_points.value, 
@@ -141,19 +158,7 @@ def data():
 	historic_data_points.subsystem,
 	
 	historic_data_points.plot_title, 
-	historic_data_points.y_title,
-	historic_data_points.main_me_path,
-	historic_data_points.optional1_me_path, 
-	historic_data_points.optional2_me_path,
-	historic_data_points.reference_path,
-	historic_data_points.main_gui_url,
-	historic_data_points.main_image_url,
-	historic_data_points.optional1_gui_url,
-	historic_data_points.optional1_image_url,
-	historic_data_points.optional2_gui_url,
-	historic_data_points.optional2_image_url,
-	historic_data_points.reference_gui_url,
-	historic_data_points.reference_image_url
+	historic_data_points.y_title
   FROM historic_data_points
 
   WHERE historic_data_points.subsystem=:subsystem
@@ -167,9 +172,15 @@ def data():
   ;
   ''' % (run_selection_sql, series_filter_sql)
 
-  rows = session.execute(sql, query_params)
+  print('Getting the data...')
+  start = timeit.default_timer() 
+
+  rows = execute_with_retry(session, sql, query_params)
   rows = list(rows)
   session.close()
+
+  stop = timeit.default_timer()
+  print('Data retrieved in: ', stop - start)
 
   result = {}
   for row in rows:
@@ -182,9 +193,6 @@ def data():
           'plot_title': row['plot_title'], 
           'name': row['name'], 
           'subsystem': row['subsystem'], 
-          'main_me_path': row['main_me_path'],
-          'optional1_me_path': row['optional1_me_path'],
-          'optional2_me_path': row['optional2_me_path'],
         },
         'trends': []
       }
@@ -194,53 +202,52 @@ def data():
       'lumi': row['lumi'],
       'value': row['value'],
       'error': row['error'],
-      'main_gui_url': row['main_gui_url'],
-      'main_image_url': row['main_image_url'],
-      'optional1_gui_url': row['optional1_gui_url'],
-      'optional1_image_url': row['optional1_image_url'],
-      'optional2_gui_url': row['optional2_gui_url'],
-      'optional2_image_url': row['optional2_image_url'],
+      'id': row['id'],
       'oms_info': {},
     })
 
   # Transform result to array
   result = [result[key] for key in sorted(result.keys())]
-
   result = add_oms_info_to_result(result)
 
   return jsonify(result)
 
 
-@app.route('/selection', methods=['GET'])
+@app.route('/api/selection', methods=['GET'])
 def selection():
   db_access.setup_db()
 
   session = db_access.get_session()
   try:
     obj = defaultdict(lambda: defaultdict(list))
-    flat = list(session.execute('SELECT DISTINCT subsystem, pd, processing_string FROM selection_params ORDER BY subsystem, pd, processing_string;'))
-    for row in flat:
-      obj[row['subsystem']][row['pd']].append(row['processing_string'])
+    rows = execute_with_retry(session, 'SELECT DISTINCT subsystem, pd, processing_string FROM selection_params ORDER BY subsystem, pd, processing_string;')
+    rows = list(rows)
+    for row in rows:
+      if(row['processing_string'] in ['PromptReco', '09Aug2019_UL2017', 'Express', 'ExpressCosmics']):
+        obj[row['subsystem']][row['pd']].append(row['processing_string'])
 
     return jsonify(obj)
   finally:
     session.close()
 
 
-@app.route('/plot_selection', methods=['GET'])
+@app.route('/api/plot_selection', methods=['GET'])
 def plot_selection():
   db_access.setup_db()
 
   session = db_access.get_session()
   try:
     obj = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
-    flat = list(session.execute('''
+
+    rows = execute_with_retry(session, '''
     SELECT selection_params.id, selection_params.subsystem, selection_params.pd, selection_params.processing_string, last_calculated_configs.name 
     FROM selection_params 
     JOIN last_calculated_configs ON config_id = last_calculated_configs.id 
     ORDER BY subsystem, pd, processing_string, name;
-    '''))
-    for row in flat:
+    ''')
+    rows = list(rows)
+
+    for row in rows:
       obj[row['subsystem']][row['pd']][row['processing_string']].append({'name': row['name'], 'id': row['id']})
 
     return jsonify(obj)
@@ -248,7 +255,7 @@ def plot_selection():
     session.close()
 
 
-@app.route('/runs', methods=['GET'])
+@app.route('/api/runs', methods=['GET'])
 def runs():
   db_access.setup_db()
   session = db_access.get_session()
@@ -258,7 +265,53 @@ def runs():
   return jsonify(runs)
 
 
-@app.route('/')
+@app.route('/api/expand_url', methods=['GET'])
+def expand_url():
+  valid_url_types = [
+    'main_gui_url', 'main_image_url', 
+    'optional1_gui_url', 'optional1_image_url', 
+    'optional2_gui_url', 'optional2_image_url', 
+    'reference_gui_url', 'reference_image_url'
+  ]
+
+  data_point_id = request.args.get('data_point_id', type=int)
+  url_type = request.args.get('url_type')
+
+  if data_point_id == None:
+    return jsonify({'message': 'Please provide a data_point_id parameter.'}), 400
+
+  if url_type not in valid_url_types:
+    return jsonify({
+      'message': 'Please provide a valid url_type parameter. Accepted values are: %s' % ','.join(valid_url_types)
+    }), 400
+
+  db_access.setup_db()
+  session = db_access.get_session()
+
+  try:
+    sql = '''
+    SELECT %s 
+    FROM historic_data_points 
+    WHERE id = :id
+    ;
+    ''' % url_type
+
+    rows = list(execute_with_retry(session, sql, {'id': data_point_id}))
+    url = rows[0][url_type]
+
+    if url:
+      return redirect(url, code=302)
+    else:
+      return jsonify({'message': 'Requested URL type is not found.'}), 404
+  except Exception as e:
+    print(e)
+  finally:
+    session.close()
+
+  return jsonify({'message': 'Error getting the url from the DB.'}), 500
+
+
+@app.route('/api/')
 def index():
   return jsonify('HDQM REST API')
 
@@ -306,6 +359,7 @@ def add_oms_info_to_result(result):
   # Fetch in a multitprocessed manner
   pool = Pool(20)
   api_oms_data = pool.map(get_oms_info_from_api, runs)
+  pool.close()
 
   for row in api_oms_data:
     if row:
@@ -345,9 +399,14 @@ def get_oms_info_from_api(run):
       'hlt_physics_rate': oms_runs_json['data'][0]['attributes']['hlt_physics_rate'],
       'duration': oms_runs_json['data'][0]['attributes']['duration'],
       'fill_number': oms_runs_json['data'][0]['attributes']['fill_number'],
-      'injection_scheme': oms_fills_json['data'][0]['attributes']['injection_scheme'],
-      'era': oms_fills_json['data'][0]['attributes']['era'],
     }
+
+    try:
+      result['injection_scheme'] = oms_fills_json['data'][0]['attributes']['injection_scheme']
+      result['era'] = oms_fills_json['data'][0]['attributes']['era']
+    except:
+      result['injection_scheme'] = None
+      result['era'] = None
 
     # Add to cache
     try:
@@ -390,6 +449,17 @@ def get_sso_cookie(url):
     with open(PREMADE_COOKIE, 'r') as file:
       return file.read()
   return None
+
+
+def execute_with_retry(session, sql, params=None):
+  try:
+    result = session.execute(sql, params)
+  except psycopg2.OperationalError as e:
+    print('Retrying:')
+    print(e)
+    session = db_access.get_session()
+    result = session.execute(sql)
+  return result
 
 
 @app.after_request

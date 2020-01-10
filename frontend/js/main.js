@@ -12,7 +12,13 @@ const main = (function() {
             await this.submit(1)
         },
 
-        submit: async function(page){
+        submit: async function(page) {
+
+            if(!selectionController.isSubsystemSelected() || !selectionController.isPDSelected() || !selectionController.isProcessingStringSelected()) {
+                main.showAlert("Please select a subsystem, primary dataset and a processing string.")
+                return
+            }
+
             this.hideAlert()
             if($("#filter-select").val() == "json") {
                 if($("#filter-input-file")[0].files.length == 0)
@@ -48,10 +54,6 @@ const main = (function() {
             $("#submit-button-spinner").hide()
             $("#submit-button-title").show()
             $("#plot-area").fadeTo(200, 1)
-
-            function sleep(ms) {
-                return new Promise(resolve => setTimeout(resolve, ms));
-              }
             
             this.data = this.transformAPIResponseToData(allSeries)
 
@@ -276,12 +278,11 @@ const main = (function() {
             
             omsLink.attr("href", "https://cmsoms.cern.ch/cms/runs/report?cms_run=" + dataPoint.run)
             rrLink.attr("href", "https://cmsrunregistry.web.cern.ch/offline/workspaces/global?run_number=" + dataPoint.run)
-            guiLink.attr("href", dataPoint.main_gui_url)
+            guiLink.attr("href", `${config.getBaseAPIUrl()}/expand_url?data_point_id=${String(dataPoint.id)}&url_type=main_gui_url`)
 
-            $("#main-plot-gui-url").attr("href", dataPoint.main_gui_url)
-            $("#gui-main-plot-modal-image").attr("src", dataPoint.main_image_url)
+            $("#main-plot-gui-url").attr("href", `${config.getBaseAPIUrl()}/expand_url?data_point_id=${String(dataPoint.id)}&url_type=main_gui_url`)
+            $("#gui-main-plot-modal-image").attr("src", `${config.getBaseAPIUrl()}/expand_url?data_point_id=${String(dataPoint.id)}&url_type=main_image_url`)
             $(".fs-run").text(dataPoint.run)
-            $("#gui-main-plot-modal-path").text(plotData.series[seriesIndex].metadata.main_me_path)
         },
 
         clearLinks: function()

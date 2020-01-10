@@ -5,6 +5,10 @@ const selectionController = (function() {
         selectedPD() { return document.getElementById("pd-select").value },
         selectedProcessingString() { return document.getElementById("processing-string-select").value },
 
+        isSubsystemSelected() { return document.getElementById("subsystem-select").selectedIndex !== 0 },
+        isPDSelected() { return document.getElementById("pd-select").selectedIndex !== 0 },
+        isProcessingStringSelected() { return document.getElementById("processing-string-select").selectedIndex !== 0 },
+
         documentReady: async function() {
             try {
                 const base = config.getBaseAPIUrl()

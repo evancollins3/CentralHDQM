@@ -131,11 +131,11 @@ class OMSDataCache(base):
   energy = Column(Float)
   
   delivered_lumi = Column(Float)
-  end_lumi = Column(Float, nullable=False)
+  end_lumi = Column(Float)
   recorded_lumi = Column(Float)
   l1_key = Column(String)
   hlt_key = Column(String, nullable=False)
-  l1_rate = Column(Float, nullable=False)
+  l1_rate = Column(Float)
   hlt_physics_rate = Column(Float)
   duration = Column(Integer, nullable=False)
   fill_number = Column(Integer, nullable=False)
@@ -233,13 +233,16 @@ def setup_db():
   try:
     base.metadata.create_all(db)
   except Exception as e:
-    print(e)
     base.metadata.create_all(db)
 
 def get_session():
-  Session = sessionmaker(db)
-  session = Session()
-  return session
+  try:
+    Session = sessionmaker(db)
+    session = Session()
+    return session
+  except Exception as e:
+    print('Exception creating session:', e)
+    return None
 
 def dispose_engine():
   db.dispose()

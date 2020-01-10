@@ -156,41 +156,27 @@ const fullScreenController = (function(){
             $("#fs-value-recorded-lumi").html(String(dataPoint.oms_info.recorded_lumi))
 
             $("#fs-value-oms-url").attr("href", `https://cmsoms.cern.ch/cms/runs/report?cms_run=${dataPoint.run}`)
-            $("#fs-value-gui-url").attr("href", String(dataPoint.main_gui_url))
+            $("#fs-value-gui-url").attr("href", `${config.getBaseAPIUrl()}/expand_url?data_point_id=${String(dataPoint.id)}&url_type=main_gui_url`)
             $("#fs-value-rr-url").attr("href", `https://cmsrunregistry.web.cern.ch/offline/workspaces/global?run_number=${dataPoint.run}`)
             
             $(".fs-run").html(String(dataPoint.run))
-            $("#fs-gui-main-plot-image").attr("src", dataPoint.main_image_url)
-            $("#fs-gui-opt1-plot-image").attr("src", dataPoint.optional1_image_url)
-            $("#fs-gui-opt2-plot-image").attr("src", dataPoint.optional2_image_url)
-            
-            $("#main-plot-gui-url").attr("href", String(dataPoint.main_gui_url))
-            $("#opt1-plot-gui-url").attr("href", String(dataPoint.optional1_gui_url))
-            $("#opt2-plot-gui-url").attr("href", String(dataPoint.optional2_gui_url))
 
-            $("#gui-main-plot-modal-image").attr("src", dataPoint.main_image_url)
-            $("#gui-opt1-plot-modal-image").attr("src", dataPoint.optional1_image_url)
-            $("#gui-opt2-plot-modal-image").attr("src", dataPoint.optional2_image_url)
-            
-            $("#gui-main-plot-modal-path").text(this.plotData.series[this.seriesIndex].metadata.main_me_path)
-            $("#gui-opt1-plot-modal-path").text(this.plotData.series[this.seriesIndex].metadata.optional1_me_path)
-            $("#gui-opt2-plot-modal-path").text(this.plotData.series[this.seriesIndex].metadata.optional2_me_path)
+            $("#fs-gui-main-plot-image").attr("src", `${config.getBaseAPIUrl()}/expand_url?data_point_id=${String(dataPoint.id)}&url_type=main_image_url`)
+            $("#fs-gui-opt1-plot-image").attr("src", `${config.getBaseAPIUrl()}/expand_url?data_point_id=${String(dataPoint.id)}&url_type=optional1_image_url`)
+            $("#fs-gui-opt2-plot-image").attr("src", `${config.getBaseAPIUrl()}/expand_url?data_point_id=${String(dataPoint.id)}&url_type=optional2_image_url`)
+            $("#fs-gui-reference-plot-image").attr("src", `${config.getBaseAPIUrl()}/expand_url?data_point_id=${String(dataPoint.id)}&url_type=reference_image_url`)
+
+            $("#main-plot-gui-url").attr("href", `${config.getBaseAPIUrl()}/expand_url?data_point_id=${String(dataPoint.id)}&url_type=main_gui_url`)
+            $("#opt1-plot-gui-url").attr("href", `${config.getBaseAPIUrl()}/expand_url?data_point_id=${String(dataPoint.id)}&url_type=optional1_gui_url`)
+            $("#opt2-plot-gui-url").attr("href", `${config.getBaseAPIUrl()}/expand_url?data_point_id=${String(dataPoint.id)}&url_type=optional2_gui_url`)
+            $("#reference-plot-gui-url").attr("href", `${config.getBaseAPIUrl()}/expand_url?data_point_id=${String(dataPoint.id)}&url_type=reference_gui_url`)
+
+            $("#gui-main-plot-modal-image").attr("src", `${config.getBaseAPIUrl()}/expand_url?data_point_id=${String(dataPoint.id)}&url_type=main_image_url`)
+            $("#gui-opt1-plot-modal-image").attr("src", `${config.getBaseAPIUrl()}/expand_url?data_point_id=${String(dataPoint.id)}&url_type=optional1_image_url`)
+            $("#gui-opt2-plot-modal-image").attr("src", `${config.getBaseAPIUrl()}/expand_url?data_point_id=${String(dataPoint.id)}&url_type=optional2_image_url`)
+            $("#gui-reference-plot-modal-image").attr("src", `${config.getBaseAPIUrl()}/expand_url?data_point_id=${String(dataPoint.id)}&url_type=reference_image_url`)
 
             $("#gui-plot-modal-run").text(dataPoint.run)
-
-            if(this.plotData.series[this.seriesIndex].metadata.optional1_me_path === null) {
-                $("#opt1-plot-container").hide()
-            }
-            else {
-                $("#opt1-plot-container").show()
-            }
-
-            if(this.plotData.series[this.seriesIndex].metadata.optional2_me_path === null) {
-                $("#opt2-plot-container").hide()
-            }
-            else {
-                $("#opt2-plot-container").show()
-            }
         },
 
         nextRunClicked: function() {

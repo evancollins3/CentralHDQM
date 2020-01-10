@@ -323,7 +323,7 @@ const plotter = (function() {
                     states: {
                         inactive: {
                             opacity: 1
-                        },
+                        }
                     },
                     point: {
                         events: {
