@@ -15,11 +15,6 @@ from functools import partial
 from multiprocessing import Pool
 from collections import defaultdict
 
-CERT='private/usercert.pem'
-KEY='private/userkey.pem'
-CACERT='etc/cern_cacert.pem'
-PREMADE_COOKIE='etc/sso_cookie.txt'
-
 app = Flask(__name__)
 
 @app.route('/api/data', methods=['GET'])
@@ -243,7 +238,7 @@ def plot_selection():
     SELECT selection_params.id, selection_params.subsystem, selection_params.pd, selection_params.processing_string, last_calculated_configs.name 
     FROM selection_params 
     JOIN last_calculated_configs ON config_id = last_calculated_configs.id 
-    ORDER BY subsystem, pd, processing_string, name;
+    ORDER BY selection_params.subsystem, selection_params.pd, selection_params.processing_string, last_calculated_configs.name;
     ''')
     rows = list(rows)
 
@@ -352,103 +347,12 @@ def add_oms_info_to_result(result):
       'era': row.era,
     }
 
-  # Keep runs that need to be fetched from OMS API
-  runs = [run for run in runs if run not in oms_data_dict]
-  print('Number of runs that will be fetched from the OMS API: %s' %len(runs))
-
-  # Fetch in a multitprocessed manner
-  pool = Pool(20)
-  api_oms_data = pool.map(get_oms_info_from_api, runs)
-  pool.close()
-
-  for row in api_oms_data:
-    if row:
-      oms_data_dict.update(row)
-
   # Add oms_info to the respose
   for item in result:
     for trend in item['trends']:
       trend['oms_info'] = oms_data_dict[trend['run']]
 
   return result
-
-
-def get_oms_info_from_api(run):
-  db_access.dispose_engine()
-  runs_url = 'https://cmsoms.cern.ch/agg/api/v1/runs?filter[run_number][eq]=%s&fields=start_time,end_time,b_field,energy,delivered_lumi,end_lumi,recorded_lumi,l1_key,hlt_key,l1_rate,hlt_physics_rate,duration,fill_number' % run
-  
-  try:
-    cookies = get_cookies(runs_url, usercert=CERT, userkey=KEY, verify=CACERT)
-    # cookies = get_sso_cookie(runs_url)
-    oms_runs_json = json.loads(requests.get(runs_url, cookies=cookies, verify=CACERT).text)
-
-    fills_url = 'https://cmsoms.cern.ch/agg/api/v1/fills?filter[fill_number][eq]=%s&fields=injection_scheme,era' % oms_runs_json['data'][0]['attributes']['fill_number']
-    oms_fills_json = json.loads(requests.get(fills_url, cookies=cookies, verify=CACERT).text)
-
-    result = {
-      'start_time': oms_runs_json['data'][0]['attributes']['start_time'],
-      'end_time': oms_runs_json['data'][0]['attributes']['end_time'],
-      'b_field': oms_runs_json['data'][0]['attributes']['b_field'],
-      'energy': oms_runs_json['data'][0]['attributes']['energy'],
-      'delivered_lumi': oms_runs_json['data'][0]['attributes']['delivered_lumi'],
-      'end_lumi': oms_runs_json['data'][0]['attributes']['end_lumi'],
-      'recorded_lumi': oms_runs_json['data'][0]['attributes']['recorded_lumi'],
-      'l1_key': oms_runs_json['data'][0]['attributes']['l1_key'],
-      'l1_rate': oms_runs_json['data'][0]['attributes']['l1_rate'],
-      'hlt_key': oms_runs_json['data'][0]['attributes']['hlt_key'],
-      'hlt_physics_rate': oms_runs_json['data'][0]['attributes']['hlt_physics_rate'],
-      'duration': oms_runs_json['data'][0]['attributes']['duration'],
-      'fill_number': oms_runs_json['data'][0]['attributes']['fill_number'],
-    }
-
-    try:
-      result['injection_scheme'] = oms_fills_json['data'][0]['attributes']['injection_scheme']
-      result['era'] = oms_fills_json['data'][0]['attributes']['era']
-    except:
-      result['injection_scheme'] = None
-      result['era'] = None
-
-    # Add to cache
-    try:
-      session = db_access.get_session()
-      session.add(db_access.OMSDataCache(
-        run = run,
-        lumi = 0,
-        start_time = oms_runs_json['data'][0]['attributes']['start_time'],
-        end_time = oms_runs_json['data'][0]['attributes']['end_time'],
-        b_field = oms_runs_json['data'][0]['attributes']['b_field'],
-        energy = oms_runs_json['data'][0]['attributes']['energy'],
-        delivered_lumi = oms_runs_json['data'][0]['attributes']['delivered_lumi'],
-        end_lumi = oms_runs_json['data'][0]['attributes']['end_lumi'],
-        recorded_lumi = oms_runs_json['data'][0]['attributes']['recorded_lumi'],
-        l1_key = oms_runs_json['data'][0]['attributes']['l1_key'],
-        l1_rate = oms_runs_json['data'][0]['attributes']['l1_rate'],
-        hlt_key = oms_runs_json['data'][0]['attributes']['hlt_key'],
-        hlt_physics_rate = oms_runs_json['data'][0]['attributes']['hlt_physics_rate'],
-        duration = oms_runs_json['data'][0]['attributes']['duration'],
-        fill_number = oms_runs_json['data'][0]['attributes']['fill_number'],
-        injection_scheme = oms_fills_json['data'][0]['attributes']['injection_scheme'],
-        era = oms_fills_json['data'][0]['attributes']['era'],
-      ))
-      session.commit()
-    except Exception as e:
-      print(e)
-      session.rollback()
-    finally:
-      session.close()
-
-    return { run: result }
-  except Exception as e:
-    print(e)
-
-
-def get_sso_cookie(url):
-  if os.path.isfile(CERT) and os.path.isfile(KEY) and os.path.isfile(CACERT):
-    return get_cookies(url, usercert=CERT, userkey=KEY, verify=CACERT)
-  elif os.path.isfile(PREMADE_COOKIE):
-    with open(PREMADE_COOKIE, 'r') as file:
-      return file.read()
-  return None
 
 
 def execute_with_retry(session, sql, params=None):

@@ -237,6 +237,7 @@ def setup_db():
   except Exception as e:
     base.metadata.create_all(db)
 
+
 def get_session():
   try:
     Session = sessionmaker(db)
@@ -246,8 +247,10 @@ def get_session():
     print('Exception creating session:', e)
     return None
 
+
 def dispose_engine():
   db.dispose()
+
 
 def vacuum_processed_mes():
   if is_postgres:
@@ -259,6 +262,16 @@ def vacuum_processed_mes():
       print(e)
     finally:
       connection.close()
+
+# Transforms INSERT into a insert or ignore based on current Database backend. 
+# SQLite and Postgres are supported
+# Query has to begin with INSERT and end with a ;
+def insert_or_ignore_crossdb(query):
+  if is_postgres:
+    return query.rstrip(';') + ' ON CONFLICT DO NOTHING;'
+  else:
+    return 'INSERT OR IGNORE' + query.lstrip('INSERT')
+
 
 if __name__ == '__main__':
   setup_db()

@@ -415,7 +415,7 @@ def calculate_trends(rows):
         try:
           session.add(historic_data_point)
           session.execute('DELETE FROM queue_to_calculate WHERE id=:id;', {'id': row['id']})
-          session.execute('INSERT INTO selection_params (subsystem, pd, processing_string, config_id) VALUES (:subsystem, :pd, :ps, :config_id) ON CONFLICT DO NOTHING;', 
+          session.execute(db_access.insert_or_ignore_crossdb('INSERT INTO selection_params (subsystem, pd, processing_string, config_id) VALUES (:subsystem, :pd, :ps, :config_id);'), 
             {'subsystem': config['subsystem'], 'pd': historic_data_point.pd, 'ps': historic_data_point.processing_string, 'config_id': config_id}
           )
           session.commit()

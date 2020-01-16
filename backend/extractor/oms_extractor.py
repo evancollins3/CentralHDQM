@@ -6,6 +6,7 @@ from multiprocessing import Pool
 from sqlalchemy.exc import IntegrityError
 
 import json
+import datetime
 import requests
 import argparse
 
@@ -18,6 +19,7 @@ from cern_sso import get_cookies
 CERT='../api/private/usercert.pem'
 KEY='../api/private/userkey.pem'
 CACERT='../api/etc/cern_cacert.pem'
+PREMADE_COOKIE='../api/etc/oms_sso_cookie.txt'
 
 
 def fetch(update, nproc):
@@ -53,9 +55,9 @@ def fetch_run(run):
   print('Fetching run %s...' % run)
   db_access.dispose_engine()
   runs_url = 'https://cmsoms.cern.ch/agg/api/v1/runs?filter[run_number][eq]=%s&fields=start_time,end_time,b_field,energy,delivered_lumi,end_lumi,recorded_lumi,l1_key,hlt_key,l1_rate,hlt_physics_rate,duration,fill_number' % run
-    
+
   try:
-    cookies = get_cookies(runs_url, usercert=CERT, userkey=KEY, verify=CACERT)
+    cookies = get_sso_cookie(runs_url)
     oms_runs_json = json.loads(requests.get(runs_url, cookies=cookies, verify=CACERT).text)
 
     fills_url = 'https://cmsoms.cern.ch/agg/api/v1/fills?filter[fill_number][eq]=%s&fields=injection_scheme,era' % oms_runs_json['data'][0]['attributes']['fill_number']
@@ -67,8 +69,8 @@ def fetch_run(run):
       oms_item = db_access.OMSDataCache(
         run = run,
         lumi = 0,
-        start_time = oms_runs_json['data'][0]['attributes']['start_time'],
-        end_time = oms_runs_json['data'][0]['attributes']['end_time'],
+        start_time = datetime.datetime.strptime(oms_runs_json['data'][0]['attributes']['start_time'], "%Y-%m-%dT%H:%M:%SZ"),
+        end_time = datetime.datetime.strptime(oms_runs_json['data'][0]['attributes']['end_time'], "%Y-%m-%dT%H:%M:%SZ"),
         b_field = oms_runs_json['data'][0]['attributes']['b_field'],
         energy = oms_runs_json['data'][0]['attributes']['energy'],
         delivered_lumi = oms_runs_json['data'][0]['attributes']['delivered_lumi'],
@@ -102,8 +104,8 @@ def fetch_run(run):
         ).one_or_none()
 
         if oms_item_existing:
-          oms_item_existing.start_time = oms_item.start_time,
-          oms_item_existing.end_time = oms_item.end_time,
+          oms_item_existing.start_time = datetime.datetime.strptime(oms_item.start_time, "%Y-%m-%dT%H:%M:%SZ"),
+          oms_item_existing.end_time = datetime.datetime.strptime(oms_item.end_time, "%Y-%m-%dT%H:%M:%SZ"),
           oms_item_existing.b_field = oms_item.b_field,
           oms_item_existing.energy = oms_item.energy,
           oms_item_existing.delivered_lumi = oms_item.delivered_lumi,
@@ -129,6 +131,20 @@ def fetch_run(run):
       session.close()
   except Exception as e:
     print(e)
+
+
+def get_sso_cookie(url):
+  if os.path.isfile(CERT) and os.path.isfile(KEY) and os.path.isfile(CACERT):
+    return get_cookies(url, usercert=CERT, userkey=KEY, verify=CACERT)
+  elif os.path.isfile(PREMADE_COOKIE):
+    cookies = {}
+    with open(PREMADE_COOKIE, 'r') as file:
+      for line in file:
+      if line.startswith('#Http'):
+        lineFields = line.strip().split('\t')
+        cookies[lineFields[5]] = lineFields[6]
+    return cookies
+  return None
 
 
 if __name__ == '__main__':

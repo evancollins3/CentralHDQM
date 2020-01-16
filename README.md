@@ -27,6 +27,10 @@ cd /tmp/$USER/hdqm/
 git clone --branch backend-development https://github.com/andrius-k/CentralHDQM
 cd CentralHDQM/
 
+# Get an SSO to access OMS and RR APIs. This has to be done before cmsenv script
+cern-get-sso-cookie -u https://cmsoms.cern.ch/agg/api/v1/runs -o backend/api/etc/oms_sso_cookie.txt
+cern-get-sso-cookie -u https://cmsrunregistry.web.cern.ch/api/json_creation/generate -o backend/api/etc/rr_sso_cookie.txt
+
 cd backend/
 # This will give us a CMSSW environment
 source cmsenv
@@ -42,13 +46,17 @@ cd extractor/
 # Calculate HDQM values from DQM histograms stored in the DB
 ./calculate.py -c cfg/PixelPhase1/trendPlotsPixelPhase1_tracks.ini -r 324999 325000 325001 -j 1
 
+# Get the OMS and RR data about the runs
+./oms_extractor.py
+./rr_extractor.py
+
 cd ../api/
 # Run the API
 ./run.sh &>/dev/null &
 
 cd ../../frontend/
 # Use local API instead of the production one
-sed -i 's/vocms0231.cern.ch/localhost/g' js/config.js
+sed -i 's/\/api/http:\/\/localhost:8080\/api/g' js/config.js
 # Run the static file server
 python3 -m http.server 8000 &>/dev/null &
 
@@ -57,9 +65,6 @@ python3 -m http.server 8000 &>/dev/null &
 ```
 
 That's it! Now visit http://localhost:8000/ on your browser.
-
-**VERY IMPORTANT:**
-OMS data will not yet be present because authentication certificate is required! All features of the entire tool work properly nevertheless.
 
 ## How to install locally
 
