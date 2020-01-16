@@ -62,8 +62,8 @@ def fetch_run(run):
     oms_fills_json = json.loads(requests.get(fills_url, cookies=cookies, verify=CACERT).text)
 
     # Add to cache
+    session = db_access.get_session()
     try:
-      session = db_access.get_session()
       oms_item = db_access.OMSDataCache(
         run = run,
         lumi = 0,

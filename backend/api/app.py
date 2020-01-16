@@ -3,6 +3,7 @@ import os, sys
 import json
 import timeit
 import requests
+import psycopg2
 # Insert parent dir to sys.path to import db_access and cern_sso
 sys.path.insert(1, os.path.realpath(os.path.pardir))
 import db_access
@@ -22,7 +23,6 @@ PREMADE_COOKIE='etc/sso_cookie.txt'
 app = Flask(__name__)
 
 @app.route('/api/data', methods=['GET'])
-# @decorators.diff_mem_snapshots
 def data():
   subsystem = request.args.get('subsystem')
   pd = request.args.get('pd')
@@ -88,35 +88,35 @@ def data():
       latest = 50
     
     # Get latest runs for specific user selection
-    sql = '''
-    SELECT DISTINCT(run) FROM historic_data_points
-    WHERE subsystem=:subsystem
-    AND pd=:pd
-    AND processing_string=:processing_string
-    ORDER BY run DESC
-    LIMIT %s
-    ;
-    ''' % latest
     # sql = '''
-    # SELECT run FROM oms_data_cache
-    # WHERE run <= 
-    # (
-    #   SELECT MAX(run) FROM historic_data_points
-    #   WHERE subsystem=:subsystem
-    #   AND pd=:pd
-    #   AND processing_string=:processing_string
-    # )
+    # SELECT DISTINCT(run) FROM historic_data_points
+    # WHERE subsystem=:subsystem
+    # AND pd=:pd
+    # AND processing_string=:processing_string
     # ORDER BY run DESC
     # LIMIT %s
     # ;
     # ''' % latest
+    sql = '''
+    SELECT run FROM oms_data_cache
+    WHERE run IN 
+    (
+      SELECT run FROM historic_data_points
+      WHERE subsystem=:subsystem
+      AND pd=:pd
+      AND processing_string=:processing_string
+    )
+    AND oms_data_cache.in_dcs_only=TRUE
+    ORDER BY run DESC
+    LIMIT %s
+    ;
+    ''' % latest
 
     print('Getting the list of runs...')
     start = timeit.default_timer() 
 
     rows = execute_with_retry(session, sql, { 'subsystem': subsystem, 'pd': pd, 'processing_string': processing_string })
     rows = list(rows)
-    print(rows)
 
     stop = timeit.default_timer()
     print('Runs retrieved in: ', stop - start)

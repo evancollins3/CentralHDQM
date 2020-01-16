@@ -2,7 +2,7 @@ from __future__ import print_function
 import os
 import enum
 from sqlalchemy import create_engine, text
-from sqlalchemy import Column, String, Integer, Float, DateTime, Binary, ForeignKey, Enum, UniqueConstraint, Index
+from sqlalchemy import Column, String, Integer, Float, DateTime, Binary, Boolean, ForeignKey, Enum, UniqueConstraint, Index
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 
@@ -141,6 +141,8 @@ class OMSDataCache(base):
   fill_number = Column(Integer, nullable=False)
   injection_scheme = Column(String)
   era = Column(String, nullable=False)
+
+  in_dcs_only = Column(Boolean, nullable=False, default=False)
 
   __table_args__ = (
     Index('_oms_data_cache_run_lumi_uindex', 'run', 'lumi', unique=True),
