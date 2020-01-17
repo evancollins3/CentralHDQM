@@ -44,10 +44,10 @@ python3 -m pip install -r requirements.txt -t .python_packages
 cd extractor/
 
 # Extract few DQM histograms. Using only one process because we are on SQLite
-./hdqmextract.py -c cfg/PixelPhase1/trendPlotsPixelPhase1_tracks.ini -r 324999 325000 325001 -j 1
+./hdqmextract.py -c cfg/PixelPhase1/trendPlotsPixelPhase1_tracks.ini -r 325117 325159 325168 325169 325170 325172 325175 325308 325309 325310 -j 1
 
 # Calculate HDQM values from DQM histograms stored in the DB
-./calculate.py -c cfg/PixelPhase1/trendPlotsPixelPhase1_tracks.ini -r 324999 325000 325001 -j 1
+./calculate.py -c cfg/PixelPhase1/trendPlotsPixelPhase1_tracks.ini -r 325117 325159 325168 325169 325170 325172 325175 325308 325309 325310 -j 1
 
 # Get the OMS and RR data about the runs
 ./oms_extractor.py
