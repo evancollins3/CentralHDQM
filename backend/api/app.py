@@ -66,7 +66,7 @@ def data():
     SELECT selection_params.subsystem, selection_params.pd, selection_params.processing_string, last_calculated_configs.name
     FROM selection_params
     JOIN last_calculated_configs ON config_id = last_calculated_configs.id
-    WHERE selection_params.id = :id;
+    WHERE selection_params.id = :id
     ;
     '''
 
@@ -238,7 +238,8 @@ def plot_selection():
     SELECT selection_params.id, selection_params.subsystem, selection_params.pd, selection_params.processing_string, last_calculated_configs.name 
     FROM selection_params 
     JOIN last_calculated_configs ON config_id = last_calculated_configs.id 
-    ORDER BY selection_params.subsystem, selection_params.pd, selection_params.processing_string, last_calculated_configs.name;
+    ORDER BY selection_params.subsystem, selection_params.pd, selection_params.processing_string, last_calculated_configs.name
+    ;
     ''')
     rows = list(rows)
 
