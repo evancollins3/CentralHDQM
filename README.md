@@ -28,8 +28,11 @@ git clone --branch backend-development https://github.com/andrius-k/CentralHDQM
 cd CentralHDQM/
 
 # Get an SSO to access OMS and RR APIs. This has to be done before cmsenv script
-cern-get-sso-cookie -u https://cmsoms.cern.ch/agg/api/v1/runs -o backend/api/etc/oms_sso_cookie.txt
-cern-get-sso-cookie -u https://cmsrunregistry.web.cern.ch/api/json_creation/generate -o backend/api/etc/rr_sso_cookie.txt
+# First check if we are the owner of the folder where we'll be puting the cookie
+if [ $(ls -ld /tmp/$USER/hdqm/CentralHDQM/backend/api/etc | awk '{ print $3 }') == $USER ]; then 
+    cern-get-sso-cookie -u https://cmsoms.cern.ch/agg/api/v1/runs -o backend/api/etc/oms_sso_cookie.txt
+    cern-get-sso-cookie -u https://cmsrunregistry.web.cern.ch/api/json_creation/generate -o backend/api/etc/rr_sso_cookie.txt
+fi
 
 cd backend/
 # This will give us a CMSSW environment

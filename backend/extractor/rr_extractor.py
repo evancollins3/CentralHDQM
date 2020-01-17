@@ -112,9 +112,9 @@ def get_sso_cookie(url):
     cookies = {}
     with open(PREMADE_COOKIE, 'r') as file:
       for line in file:
-      if line.startswith('#Http'):
-        lineFields = line.strip().split('\t')
-        cookies[lineFields[5]] = lineFields[6]
+        fields = line.strip().split('\t')
+        if len(fields) == 7:
+          cookies[fields[5]] = fields[6]
     return cookies
   return None
 
@@ -126,4 +126,3 @@ if __name__ == '__main__':
 
   update = args.update
   fetch(update)
-  
