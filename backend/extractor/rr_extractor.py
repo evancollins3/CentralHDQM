@@ -87,7 +87,7 @@ def fetch_runs(min_run, max_run):
     result_json = json.loads(requests.post(url, json={ 'json_logic': request }, cookies=cookies, verify=CACERT).text)
     runs = result_json['final_json']
 
-    sql = 'UPDATE oms_data_cache SET in_dcs_only=TRUE WHERE run = :run_nr RETURNING id;'
+    sql = 'UPDATE oms_data_cache SET in_dcs_only=%s WHERE run = :run_nr RETURNING id;' % db_access.true_crossdb()
     for run in runs:
       session = db_access.get_session()
       try:

@@ -65,11 +65,11 @@ class HistoricDataPoint(base):
 
   __table_args__ = (
     Index('_historic_data_points_config_id_main_me_id_uindex', 'config_id', 'main_me_id', unique=True),
-    # Index('_historic_data_points_subsystem_pd_processing_string_index', 'subsystem', 'pd', 'processing_string')
+    Index('_historic_data_points_run_subsystem_pd_processing_string_index', 'run', 'subsystem', 'pd', 'processing_string'),
     Index('_historic_data_points_covering_index', 'subsystem', 'pd', 'processing_string', 'run', 'lumi', 'value', 'error', 'name', 'dataset', 
       'plot_title', 'y_title', 'main_me_path', 'optional1_me_path', 'optional2_me_path', 'reference_path', 'main_gui_url', 'main_image_url', 
       'optional1_gui_url', 'optional1_image_url', 'optional2_gui_url', 'optional2_image_url', 'reference_gui_url', 'reference_image_url'
-    )
+    ),
   )
 
 
@@ -271,6 +271,20 @@ def insert_or_ignore_crossdb(query):
     return query.rstrip(';') + ' ON CONFLICT DO NOTHING;'
   else:
     return 'INSERT OR IGNORE' + query.lstrip('INSERT')
+
+
+def true_crossdb():
+  if is_postgres:
+    return 'TRUE'
+  else:
+    return '1'
+
+
+def false_crossdb():
+  if is_postgres:
+    return 'FALSE'
+  else:
+    return '0'
 
 
 if __name__ == '__main__':

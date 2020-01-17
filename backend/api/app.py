@@ -101,11 +101,11 @@ def data():
       AND pd=:pd
       AND processing_string=:processing_string
     )
-    AND oms_data_cache.in_dcs_only=TRUE
+    AND oms_data_cache.in_dcs_only=%s
     ORDER BY run DESC
     LIMIT %s
     ;
-    ''' % latest
+    ''' % (db_access.true_crossdb(), latest)
 
     print('Getting the list of runs...')
     start = timeit.default_timer() 
