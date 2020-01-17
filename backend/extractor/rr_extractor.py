@@ -92,9 +92,10 @@ def fetch_runs(min_run, max_run):
       session = db_access.get_session()
       try:
         result = session.execute(sql, {'run_nr': run})
-        result = list(result)
-        if len(result) == 0:
-          print('Run not present in OMS cache: %s' % run)
+        if result.returns_rows:
+          result = list(result)
+          if len(result) == 0:
+            print('Run not present in OMS cache: %s' % run)
         session.commit()
       except Exception as e:
         print(e)
