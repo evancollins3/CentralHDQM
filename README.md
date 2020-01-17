@@ -71,12 +71,15 @@ That's it! Now visit http://localhost:8000/ on your browser.
 
 ## How to install locally
 
-If nginx colmplains that it can't bind to port, make sure to request the ports to be opened in puppet:
-https://gitlab.cern.ch/ai/it-puppet-hostgroup-vocms/merge_requests/72
-And open them using SELinux: `sudo semanage port -m -t http_port_t -p tcp 8081`
-Also important:
-`sudo firewall-cmd --zone=public --add-port=81/tcp --permanent`
-`sudo firewall-cmd --reload`
-Make sure to make root directory accessible in SELinux:
-`chcon -Rt httpd_sys_content_t /data/hdqmTest/CentralHDQM/frontend/`
+If nginx complains that it can't bind to port, make sure to request the ports to be opened in puppet:  
+https://gitlab.cern.ch/ai/it-puppet-hostgroup-vocms/merge_requests/72  
+
+And open them using SELinux: `sudo semanage port -m -t http_port_t -p tcp 8081`  
+Also important:  
+`sudo firewall-cmd --zone=public --add-port=81/tcp --permanent`  
+`sudo firewall-cmd --reload`  
+Make sure to make root directory accessible in SELinux:  
+`chcon -Rt httpd_sys_content_t /data/hdqmTest/CentralHDQM/frontend/`  
+
+## How to add new plots
 
