@@ -288,11 +288,13 @@ def false_crossdb():
 
 
 # Transforms an INSERT or UPDATE to return an ID of inserted or updated row(s)
+# For SQLite doesn't change the query at all because we can't execute 
+# multiple queries in one statement: SELECT last_insert_rowid();
 def returning_id_crossdb(query):
   if is_postgres:
     return query.rstrip(';') + ' RETURNING id;'
   else:
-    return query + ' last_insert_rowid();'
+    return query
 
 
 if __name__ == '__main__':

@@ -81,7 +81,7 @@ def fetch_runs(min_run, max_run):
     ]
   }
   ''' % (min_run, max_run)
-    
+  
   try:
     cookies = get_sso_cookie(url)
     result_json = json.loads(requests.post(url, json={ 'json_logic': request }, cookies=cookies, verify=CACERT).text)
