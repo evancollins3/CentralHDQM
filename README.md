@@ -8,7 +8,7 @@ The code is running on a `vocms0231` machine.
 
 ## How to run locally
 
-The following instruction are completely copy-pastable. This will start a complete HDQM stack on your local (lxplus) environment:
+The following instruction are completely copy-pastable. This will start a complete HDQM stack on your local (lxplus) environment. This is perfect for testing new plots before adding them.
 
 ``` bash
 # You have to change the username. From this point, all instruction can be copy pasted without modifications.
@@ -66,6 +66,8 @@ That's it! Now visit http://localhost:8000/ on your browser.
 In order to add new plots to HDQM, you have to provide two layers of configuration:  
 1. backend configuration
 2. frontend configuration
+
+Configuration is all in code and in order to add new plots you have to make a pull request against this repo: https://github.com/cms-DQM/CentralHDQM
 
 ### Backend configuration
 
