@@ -1,22 +1,14 @@
 # Central Historic DQM application for CMS detector
 
-The web application is available here: https://historicdqm.web.cern.ch
+A tool to display trends of CMS DQM quantities over long periods of time.  
+The web application is available here: https://cms-hdqm-test.web.cern.ch  
+The code is running on a `vocms0231` machine.
 
-## How to update?
-
-The code is running on a `vocms0231` machine. Bellow are the update instructions:
-
-* Navigate to `/data/hdqm/`
-* Run `update.sh`
-* Code from the master branch of this repository will be fetched and started to be served.
-
-## Where does the data come from?
-
-Data is not present in this repository but code expects to find it under `/data/hdqm/data/` directory. `update.sh` will make sure that previous data is used for the updated version. In order to update the data, it has to be regenerated an placed in the directory mentioned above. 
+# Usage instructions
 
 ## How to run locally
 
-The folllowing instruction are completely copy-pastable. This will start a complete HDQM stack on your local (lxplus) environment:
+The following instruction are completely copy-pastable. This will start a complete HDQM stack on your local (lxplus) environment:
 
 ``` bash
 # You have to change the username. From this point, all instruction can be copy pasted without modifications.
@@ -69,18 +61,6 @@ python3 -m http.server 8000 &>/dev/null &
 
 That's it! Now visit http://localhost:8000/ on your browser.
 
-## How to install locally
-
-If nginx complains that it can't bind to port, make sure to request the ports to be opened in puppet:  
-https://gitlab.cern.ch/ai/it-puppet-hostgroup-vocms/merge_requests/72  
-
-And open them using SELinux: `sudo semanage port -m -t http_port_t -p tcp 8081`  
-Also important:  
-`sudo firewall-cmd --zone=public --add-port=81/tcp --permanent`  
-`sudo firewall-cmd --reload`  
-Make sure to make root directory accessible in SELinux:  
-`chcon -Rt httpd_sys_content_t /data/hdqmTest/CentralHDQM/frontend/`  
-
 ## How to add new plots
 
 In order to add new plots to HDQM, you have to provide two layers of configuration:  
@@ -95,11 +75,11 @@ These files are placed here, in a corresponding subsystem directory: `backend/ex
 Let's take a look at an example:
 
 ``` ini
-1  [plot:Ntracks_Pixel]
-2  metric = basic.BinCount(2)
-3  relativePath = PixelPhase1/Tracks/ntracks
-4  plotTitle = Pixel number of tracks
-5  yTitle = Number of Tracks in Pixel
+[plot:Ntracks_Pixel]
+metric = basic.BinCount(2)
+relativePath = PixelPhase1/Tracks/ntracks
+plotTitle = Pixel number of tracks
+yTitle = Number of Tracks in Pixel
 ```
 
 That's all it takes to tell HDQM how to plot a DQM quantity over time. Let's break this down line by line.
@@ -113,9 +93,9 @@ That's all it takes to tell HDQM how to plot a DQM quantity over time. Let's bre
 Those were the main properties, however there are other less common ones:
 
 ``` ini
-1  histo1Path = PixelPhase1/Phase1_MechanicalView/PXBarrel/num_clusters_PXLayer_2
-2  histo2Path = PixelPhase1/Phase1_MechanicalView/PXBarrel/size_PXLayer_2
-3  threshold = 50
+histo1Path = PixelPhase1/Phase1_MechanicalView/PXBarrel/num_clusters_PXLayer_2
+histo2Path = PixelPhase1/Phase1_MechanicalView/PXBarrel/size_PXLayer_2
+threshold = 50
 ```
 
 * Sometimes, a value of a point in a trend depends on more than one DQM histogram. In such cases **histo1Path** and **histo2Path** could be used to define the paths of the other histograms. *These fields are not required*.
@@ -124,18 +104,67 @@ Those were the main properties, however there are other less common ones:
 ### Frontend configuration
 
 In a frontend configuration you can define what is called **display groups**. Display groups define a list of related plots that will be displayed together in a web application, as an overlay.  
-The configuration is located here: `frontend/js/displayConfig.js`
+The configuration is located here: `frontend/js/displayConfig.js`. All fields here are required!
 
 Let's take a look at an example:
 
 ``` js
 {
-	name: "an_id_of_a_display_group",
-	plot_title: "Nice title of a group",
-	y_title: "Units of all plots in a group",
+    name: "an_id_of_a_display_group",
+	plot_title: "Nice, readable title of a group",
+	y_title: "Units of all series in a group",
 	subsystem: "<Subsystem>",
 	correlation: false,
 	series: ["plot1_ID", "plot2_ID"],
 }
 ```
 
+Let's break this down line by line.
+
+* **name** is an ID of a display group. It has to be unique within all display groups and regular plots within a subsystem.
+* **plot_title** is a title of a grouped plot that will be displayed in a web application. 
+* **y_title** is a title of y axis of a grouped plot. It is usually used to display the units used in a plot.
+* **subsystem** is the name of the subsystem. It has to match exactly the name of the folder where backend configuration files came from (`backend/extractor/cfg/<subsystem>`).
+* **correlation** is a boolean value defining if the plot should be displayed in a correlation mode. This can be `true` only when there are exactly 2 series in a display group.
+* **series** is an array if plot ID from backend configuration that will appear in a display group.
+
+## Web application usage 
+
+In a web application, user has to select the data first by selecting a **subsystem**, **primary dataset** and a **processing string** at a very top of the page and all plots present in selected data will be displayed.
+
+Runs can be filtered in one of the following ways:
+
+* Latest N runs
+* Run range
+* Comma separated list of runs
+* Golden JSON file
+
+By clicking **Options** button, a display mode of the plots can be chosen. Available display modes are:
+
+* Scatter plot
+* Bin width proportional to run duration
+* Bin width proportional to integrated luminosity
+* Datetime plot based on start and end times of runs
+* Correlation plot
+
+By clicking *Show / Change ranges* button a *full screen mode* of a plot will be entered. In a *full screen mode* you can do one of the following things:
+
+* Change the X and Y ranges of a plot
+* Click on runs (data points) and reveal more information about them in the right hand side panel
+* See the DQM histogram(s) that was used to extract the value of a trend in the right hand side panel
+* Look at a selected run in DQM GUI, OMS and Run Registry
+* Add or remove series from the plot dynamically by clicking *Add series to this plot*
+
+# Administration instructions
+
+## How to install locally
+
+If nginx complains that it can't bind to port, make sure to request the ports to be opened in puppet:  
+https://gitlab.cern.ch/ai/it-puppet-hostgroup-vocms/merge_requests/72  
+
+And open them using SELinux: `sudo semanage port -m -t http_port_t -p tcp 8081`  
+Also important:  
+`sudo firewall-cmd --zone=public --add-port=81/tcp --permanent`  
+`sudo firewall-cmd --reload`  
+Make sure to make root directory accessible in SELinux:  
+`chcon -Rt httpd_sys_content_t /data/hdqmTest/CentralHDQM/frontend/`  
