@@ -183,13 +183,13 @@ const seriesListComponent = (function() {
 
         documentReady: function() {
             $('#fs-series-collapse').on('show.bs.collapse', function () {
-                $("#fs-collapse-show-icon").hide()
-                $("#fs-collapse-hide-icon").show()
+                $("#fs-series-collapse-show-icon").hide()
+                $("#fs-series-collapse-hide-icon").show()
             })
 
             $('#fs-series-collapse').on('hide.bs.collapse', function () {
-                $("#fs-collapse-show-icon").show()
-                $("#fs-collapse-hide-icon").hide()
+                $("#fs-series-collapse-show-icon").show()
+                $("#fs-series-collapse-hide-icon").hide()
             })
 
             $('#fs-correlation-checkbox').change(async function() {

@@ -231,7 +231,15 @@ const fullScreenController = (function(){
         },
 
         documentReady: function() {
-            
+            $('#fs-oms-collapse').on('show.bs.collapse', function () {
+                $("#fs-oms-collapse-show-icon").hide()
+                $("#fs-oms-collapse-hide-icon").show()
+            })
+
+            $('#fs-oms-collapse').on('hide.bs.collapse', function () {
+                $("#fs-oms-collapse-show-icon").show()
+                $("#fs-oms-collapse-hide-icon").hide()
+            })
         }
     }
 }())

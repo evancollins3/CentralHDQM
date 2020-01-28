@@ -170,3 +170,7 @@ Also important:
 `sudo firewall-cmd --reload`  
 Make sure to make root directory accessible in SELinux:  
 `chcon -Rt httpd_sys_content_t /data/hdqmTest/CentralHDQM/frontend/`  
+
+# API documentation
+
+To be filled.

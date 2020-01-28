@@ -283,14 +283,46 @@
 
 			<div class="col-12 col-lg-4 overflow-non-lg-scroll" style="height: 100%">
 				<div class="h-non-lg-100">
+					
+					<div class="pb-2">
+						<span>Main plot used for a trend (run <span class="fs-run"></span>):</span>
+						<a href="#gui-main-plot-modal" data-toggle="modal" data-target="#gui-main-plot-modal">
+							<img class="border rounded-sm" id="fs-gui-main-plot-image" style="max-width: 100%; max-height: 100%;" src=""/>
+						</a>
+						</br>
+
+						<div id="opt1-plot-container"> 
+							<span>Optional plot 1 used for a trend (run <span class="fs-run"></span>):</span>
+							<a href="#gui-opt1-plot-modal" data-toggle="modal" data-target="#gui-opt1-plot-modal">
+								<img class="border rounded-sm" id="fs-gui-opt1-plot-image" style="max-width: 100%; max-height: 100%;" src="" onload="document.getElementById('opt1-plot-container').style.display='block'" onerror="document.getElementById('opt1-plot-container').style.display='none'"/>
+							</a>
+							</br>	
+						</div>
+						
+						<div id="opt2-plot-container">
+							<span>Optional plot 2 used for a trend (run <span class="fs-run"></span>):</span>
+							<a href="#gui-opt2-plot-modal" data-toggle="modal" data-target="#gui-opt2-plot-modal">
+								<img class="border rounded-sm" id="fs-gui-opt2-plot-image" style="max-width: 100%; max-height: 100%;" src="" onload="document.getElementById('opt2-plot-container').style.display='block'" onerror="document.getElementById('opt2-plot-container').style.display='none'"/>
+							</a>
+						</div>
+
+						<div id="reference-plot-container">
+							<span>Reference used for a trend (run <span class="fs-run"></span>):</span>
+							<a href="#gui-reference-plot-modal" data-toggle="modal" data-target="#gui-reference-plot-modal">
+								<img class="border rounded-sm" id="fs-gui-reference-plot-image" style="max-width: 100%; max-height: 100%;" src="" onload="document.getElementById('reference-plot-container').style.display='block'" onerror="document.getElementById('reference-plot-container').style.display='none'"/>
+							</a>
+						</div>
+					</div>
+					
+
 					<div class="card mb-2">
 						<div class="card-header">
 							<a data-toggle="collapse" href="#fs-series-collapse" role="button" aria-expanded="false" aria-controls="fs-series-collapse">
 								<span class="pr-1">Add series to this plot</span>
-								<svg height="9" width="16" id="fs-collapse-show-icon">
+								<svg height="9" width="16" id="fs-series-collapse-show-icon">
 									<polyline points="0,0 8,7 16,0" stroke="#007bff" fill="none" stroke-width="3" />
 								</svg>
-								<svg height="9" width="16" id="fs-collapse-hide-icon" style="display: none;">
+								<svg height="9" width="16" id="fs-series-collapse-hide-icon" style="display: none;">
 									<polyline points="0,9 8,2 16,9" stroke="#007bff" fill="none" stroke-width="3" />
 								</svg>
 							</a>
@@ -339,93 +371,108 @@
 						</ul>
 					</div>
 
-					<table class="table table-striped table-sm">
-						<thead>
-							<tr>
-								<th scope="col">OMS property</th>
-								<th scope="col">Value</th>
-							</tr>
-						</thead>
-						
-						<tbody>
-							<tr>
-								<td>Series</td>
-								<td id="fs-value-series"></td>
-							</tr>
-							<tr>
-								<td>Value</td>
-								<td id="fs-value-value"></td>
-							</tr>
-							<tr>
-								<td>Error</td>
-								<td id="fs-value-error"></td>
-							</tr>
-							<tr>
-								<td>Run No</td>
-								<td id="fs-value-run"></td>
-							</tr>
-							<tr>
-								<td>Fill No</td>
-								<td id="fs-value-fill"></td>
-							</tr>
-							<tr>
-								<td>Duration</td>
-								<td id="fs-value-duration"></td>
-							</tr>
-							<tr>
-								<td>Delivered luminosity</td>
-								<td id="fs-value-delivered-lumi"></td>
-							</tr>
-							<tr>
-								<td>B field</td>
-								<td id="fs-value-b-field"></td>
-							</tr>
-							<tr>
-								<td>End luminosity</td>
-								<td id="fs-value-end-lumi"></td>
-							</tr>
-							<tr>
-								<td>Start time</td>
-								<td id="fs-value-start-time"></td>
-							</tr>
-							<tr>
-								<td>End time</td>
-								<td id="fs-value-end-time"></td>
-							</tr>
-							<tr>
-								<td>Energy</td>
-								<td id="fs-value-energy"></td>
-							</tr>
-							<tr>
-								<td>Era</td>
-								<td id="fs-value-era"></td>
-							</tr>
-							<tr>
-								<td>Injection scheme</td>
-								<td id="fs-value-injection-scheme"></td>
-							</tr>
-							<tr>
-								<td>HLT key</td>
-								<td id="fs-value-hlt-key"></td>
-							</tr>
-							<tr>
-								<td>HLT physics rate</td>
-								<td id="fs-value-hlt-physics-rate"></td>
-							</tr>
-							<tr>
-								<td>L1T key</td>
-								<td id="fs-value-l1t-key"></td>
-							</tr>
-							<tr>
-								<td>L1T rate</td>
-								<td id="fs-value-l1t-rate"></td>
-							</tr>
-							<tr>
-								<td>Recorded lumi</td>
-								<td id="fs-value-recorded-lumi"></td>
-							</tr>
-						</tbody>
-					</table>
+					<div class="card mb-2">
+						<div class="card-header">
+							<a data-toggle="collapse" href="#fs-oms-collapse" role="button" aria-expanded="false" aria-controls="fs-oms-collapse">
+								<span class="pr-1">Show OMS info</span>
+								<svg height="9" width="16" id="fs-oms-collapse-show-icon">
+									<polyline points="0,0 8,7 16,0" stroke="#007bff" fill="none" stroke-width="3" />
+								</svg>
+								<svg height="9" width="16" id="fs-oms-collapse-hide-icon" style="display: none;">
+									<polyline points="0,9 8,2 16,9" stroke="#007bff" fill="none" stroke-width="3" />
+								</svg>
+							</a>
+						</div>
+						<div class="list-group list-group-flush collapse multi-collapse" id="fs-oms-collapse">
+							<table class="table table-striped table-sm mb-0">
+								<thead>
+									<tr>
+										<th scope="col">OMS property</th>
+										<th scope="col">Value</th>
+									</tr>
+								</thead>
+								
+								<tbody>
+									<tr>
+										<td>Series</td>
+										<td id="fs-value-series"></td>
+									</tr>
+									<tr>
+										<td>Value</td>
+										<td id="fs-value-value"></td>
+									</tr>
+									<tr>
+										<td>Error</td>
+										<td id="fs-value-error"></td>
+									</tr>
+									<tr>
+										<td>Run No</td>
+										<td id="fs-value-run"></td>
+									</tr>
+									<tr>
+										<td>Fill No</td>
+										<td id="fs-value-fill"></td>
+									</tr>
+									<tr>
+										<td>Duration</td>
+										<td id="fs-value-duration"></td>
+									</tr>
+									<tr>
+										<td>Delivered luminosity</td>
+										<td id="fs-value-delivered-lumi"></td>
+									</tr>
+									<tr>
+										<td>B field</td>
+										<td id="fs-value-b-field"></td>
+									</tr>
+									<tr>
+										<td>End luminosity</td>
+										<td id="fs-value-end-lumi"></td>
+									</tr>
+									<tr>
+										<td>Start time</td>
+										<td id="fs-value-start-time"></td>
+									</tr>
+									<tr>
+										<td>End time</td>
+										<td id="fs-value-end-time"></td>
+									</tr>
+									<tr>
+										<td>Energy</td>
+										<td id="fs-value-energy"></td>
+									</tr>
+									<tr>
+										<td>Era</td>
+										<td id="fs-value-era"></td>
+									</tr>
+									<tr>
+										<td>Injection scheme</td>
+										<td id="fs-value-injection-scheme"></td>
+									</tr>
+									<tr>
+										<td>HLT key</td>
+										<td id="fs-value-hlt-key"></td>
+									</tr>
+									<tr>
+										<td>HLT physics rate</td>
+										<td id="fs-value-hlt-physics-rate"></td>
+									</tr>
+									<tr>
+										<td>L1T key</td>
+										<td id="fs-value-l1t-key"></td>
+									</tr>
+									<tr>
+										<td>L1T rate</td>
+										<td id="fs-value-l1t-rate"></td>
+									</tr>
+									<tr>
+										<td>Recorded lumi</td>
+										<td id="fs-value-recorded-lumi"></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
 		
 					<span>External info about run <span class="fs-run"></span>:</span>
 		
@@ -441,33 +488,7 @@
 						</div>
 					</div>
 					
-					<span>Main plot used for a trend (run <span class="fs-run"></span>):</span>
-					<a href="#gui-main-plot-modal" data-toggle="modal" data-target="#gui-main-plot-modal">
-						<img class="border rounded-sm" id="fs-gui-main-plot-image" style="max-width: 100%; max-height: 100%;" src=""/>
-					</a>
-					</br>
-
-					<div id="opt1-plot-container"> 
-						<span>Optional plot 1 used for a trend (run <span class="fs-run"></span>):</span>
-						<a href="#gui-opt1-plot-modal" data-toggle="modal" data-target="#gui-opt1-plot-modal">
-							<img class="border rounded-sm" id="fs-gui-opt1-plot-image" style="max-width: 100%; max-height: 100%;" src="" onload="document.getElementById('opt1-plot-container').style.display='block'" onerror="document.getElementById('opt1-plot-container').style.display='none'"/>
-						</a>
-						</br>	
-					</div>
 					
-					<div id="opt2-plot-container">
-						<span>Optional plot 2 used for a trend (run <span class="fs-run"></span>):</span>
-						<a href="#gui-opt2-plot-modal" data-toggle="modal" data-target="#gui-opt2-plot-modal">
-							<img class="border rounded-sm" id="fs-gui-opt2-plot-image" style="max-width: 100%; max-height: 100%;" src="" onload="document.getElementById('opt2-plot-container').style.display='block'" onerror="document.getElementById('opt2-plot-container').style.display='none'"/>
-						</a>
-					</div>
-
-					<div id="reference-plot-container">
-						<span>Reference used for a trend (run <span class="fs-run"></span>):</span>
-						<a href="#gui-reference-plot-modal" data-toggle="modal" data-target="#gui-reference-plot-modal">
-							<img class="border rounded-sm" id="fs-gui-reference-plot-image" style="max-width: 100%; max-height: 100%;" src="" onload="document.getElementById('reference-plot-container').style.display='block'" onerror="document.getElementById('reference-plot-container').style.display='none'"/>
-						</a>
-					</div>
 				</div>
 			</div>
 			
