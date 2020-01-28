@@ -112,12 +112,12 @@ Let's take a look at an example:
 
 ``` js
 {
-	name: "an_id_of_a_display_group",
-	plot_title: "Nice, readable title of a group",
-	y_title: "Units of all series in a group",
-	subsystem: "<Subsystem>",
-	correlation: false,
-	series: ["plot1_ID", "plot2_ID"],
+  name: "an_id_of_a_display_group",
+  plot_title: "Nice, readable title of a group",
+  y_title: "Units of all series in a group",
+  subsystem: "<Subsystem>",
+  correlation: false,
+  series: ["plot1_ID", "plot2_ID"],
 }
 ```
 
@@ -222,20 +222,20 @@ Sample (shortened) response:
 
 ``` json
 {
-	"CSC":{
-		"Cosmics":[
-			"PromptReco"
-		],
-		"JetHT":[
-			"09Aug2019_UL2017"
-		]
-	},
-	"Muons":{
-		"ZeroBias":[
-			"09Aug2019_UL2017",
-			"PromptReco"
-		]
-	}
+  "CSC":{
+    "Cosmics":[
+      "PromptReco"
+    ],
+    "JetHT":[
+      "09Aug2019_UL2017"
+    ]
+  },
+  "Muons":{
+    "ZeroBias":[
+      "09Aug2019_UL2017",
+      "PromptReco"
+    ]
+  }
 }
 ```
 
@@ -247,16 +247,16 @@ Sample (shortened) response:
 
 ``` json
 {
-	"CSC":{
-		"Cosmics":{
-			"PromptReco":[
-				{
-					"id":4426,
-					"name":"AnodeCatodheTimeDiff"
-				}
-			]
-		}
-	}
+  "CSC":{
+    "Cosmics":{
+      "PromptReco":[
+        {
+          "id":4426,
+          "name":"AnodeCatodheTimeDiff"
+        }
+      ]
+    }
+  }
 }
 ```
 
