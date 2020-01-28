@@ -12,7 +12,7 @@ The following instruction are completely copy-pastable. This will start a comple
 
 ``` bash
 # You have to change the username. From this point, all instruction can be copy pasted without modifications.
-ssh -L 8000:localhost:8000 -L 8080:localhost:5000 akirilov@lxplus7.cern.ch
+ssh -L 8000:localhost:8000 -L 8080:localhost:5000 <YOUR_USER_NAME>@lxplus7.cern.ch
 mkdir -p /tmp/$USER/hdqm
 cd /tmp/$USER/hdqm/
 
@@ -112,7 +112,7 @@ Let's take a look at an example:
 
 ``` js
 {
-    name: "an_id_of_a_display_group",
+	name: "an_id_of_a_display_group",
 	plot_title: "Nice, readable title of a group",
 	y_title: "Units of all series in a group",
 	subsystem: "<Subsystem>",
@@ -173,4 +173,104 @@ Make sure to make root directory accessible in SELinux:
 
 # API documentation
 
-To be filled.
+This very API is powering the web application. No other, hidden API services are used. The web page is all static - no server rendering. 
+
+**All endpoints should be used by making an HTTP GET request and providing the arguments in the url.**
+
+## Endpoints
+
+* `/api/data` 
+* `/api/selection`
+* `/api/plot_selection`
+* `/api/runs`
+* `/api/expand_url`
+
+Let's talk about each of them one by one.
+
+### `/api/data` 
+
+This is the main endpoint used to retrieve historic DQM data.
+
+Possible arguments:
+
+| Param             | Data type  | Required/Optional                                                                          | Description                                                                                             |
+|-------------------|------------|--------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
+| subsystem         | string     | required                                                                                   | Name of the subsystem. Possible values come from `/api/selection` endpoint.                            |
+| pd                | string     | required                                                                                   | Name of the primary dataset. Possible values come from `/api/selection` endpoint.                      |
+| processing_string | string     | required                                                                                   | Name of the processing string. Possible values come from `/api/selection` endpoint.                    |
+| from_run          | int        | required together with `to_run`. Both can be substituted with either `runs` or `latest`.   | Runs filter: lower bound.                                                                               |
+| to_run            | int        | required together with `from_run`. Both can be substituted with either `runs` or `latest`. | Runs filter: upper bound.                                                                               |
+| runs              | array<int> | required but can be substituted with `from_run`, `to_run` or `latest`.                     | Runs filter: *comma separated* list of runs to return data for.                                           |
+| latest            | int        | required but can be substituted with `from_run`, `to_run` or `runs`.                       | Runs filter: return latest N runs.                                                                      |
+| series            | string     | optional                                                                                   | Specific name of the series to return. If not specified, all series will be returned based on selection. |
+| series_id         | int        | optional                                                                                   | Specific series ID. IDs come from `/api/plot_selection` endpoint.                                       |
+
+Keep in mind that runs can be filtered in 3 ways: 
+* Range (`from_run`, `to_run`)
+* List of specific runs (`runs`)
+* Last N runs (`latest`)
+
+**Exactly one way must be used to filter out required runs**.
+
+Sample query: `/api/data?subsystem=PixelPhase1&pd=SingleElectron&processing_string=09Aug2019_UL2017&latest=50`
+
+### `/api/selection` 
+
+This endpoint returns a nested object of possible `subsystem`, `primary dataset` and `processing string` combinations. This endpoint takes no arguments.
+
+Sample (shortened) response:
+
+``` json
+{
+	"CSC":{
+		"Cosmics":[
+			"PromptReco"
+		],
+		"JetHT":[
+			"09Aug2019_UL2017"
+		]
+	},
+	"Muons":{
+		"ZeroBias":[
+			"09Aug2019_UL2017",
+			"PromptReco"
+		]
+	}
+}
+```
+
+### `/api/plot_selection`
+
+This endpoint is very similar to `/api/selection`, but it is one level deeper. It also includes the names and IDs of all available series. Names and IDs can be used to retrieve only **required** plots using `series` or `series_id` parameters in `/api/data` endpoint. This endpoint takes no arguments.
+
+Sample (shortened) response:
+
+``` json
+{
+	"CSC":{
+		"Cosmics":{
+			"PromptReco":[
+				{
+					"id":4426,
+					"name":"AnodeCatodheTimeDiff"
+				}
+			]
+		}
+	}
+}
+```
+
+### `/api/runs`
+
+This endpoint returns a list of all run numbers present in the HDQM database. This endpoint takes no arguments.
+
+### `/api/expand_url`
+
+For performance reasons, DQM GUI URLs for each data point are not returned by the `/api/data` endpoint. However, the data point IDs are returned and using this endpoint they can be exchanged for an actual DQM GUI URL.
+
+Possible arguments:
+
+| Param         | Data type | Required/optional | Description                                                                                                                                                                                                                      |
+|---------------|-----------|-------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| data_point_id | int       | required          | An ID referring to a single data point returned by the `/api/data` endpoint.                                                                                                                                                     |
+| url_type      | string    | required          | Type of the DQM GUI URL required. All possible values are: `main_gui_url`, `main_image_url`, `optional1_gui_url`, `optional1_image_url`, `optional2_gui_url`, `optional2_image_url`, `reference_gui_url`, `reference_image_url`. |
