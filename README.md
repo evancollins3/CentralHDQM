@@ -157,20 +157,6 @@ By clicking *Show / Change ranges* button a *full screen mode* of a plot will be
 * Look at a selected run in DQM GUI, OMS and Run Registry
 * Add or remove series from the plot dynamically by clicking *Add series to this plot*
 
-# Administration instructions
-
-## How to install locally
-
-If nginx complains that it can't bind to port, make sure to request the ports to be opened in puppet:  
-https://gitlab.cern.ch/ai/it-puppet-hostgroup-vocms/merge_requests/72  
-
-And open them using SELinux: `sudo semanage port -m -t http_port_t -p tcp 8081`  
-Also important:  
-`sudo firewall-cmd --zone=public --add-port=81/tcp --permanent`  
-`sudo firewall-cmd --reload`  
-Make sure to make root directory accessible in SELinux:  
-`chcon -Rt httpd_sys_content_t /data/hdqmTest/CentralHDQM/frontend/`  
-
 # API documentation
 
 This very API is powering the web application. No other, hidden API services are used. The web page is all static - no server rendering. 
@@ -274,3 +260,17 @@ Possible arguments:
 |---------------|-----------|-------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | data_point_id | int       | required          | An ID referring to a single data point returned by the `/api/data` endpoint.                                                                                                                                                     |
 | url_type      | string    | required          | Type of the DQM GUI URL required. All possible values are: `main_gui_url`, `main_image_url`, `optional1_gui_url`, `optional1_image_url`, `optional2_gui_url`, `optional2_image_url`, `reference_gui_url`, `reference_image_url`. |
+
+# Administration instructions
+
+## How to install locally
+
+If nginx complains that it can't bind to port, make sure to request the ports to be opened in puppet:  
+https://gitlab.cern.ch/ai/it-puppet-hostgroup-vocms/merge_requests/72  
+
+And open them using SELinux: `sudo semanage port -m -t http_port_t -p tcp 8081`  
+Also important:  
+`sudo firewall-cmd --zone=public --add-port=81/tcp --permanent`  
+`sudo firewall-cmd --reload`  
+Make sure to make root directory accessible in SELinux:  
+`chcon -Rt httpd_sys_content_t /data/hdqmTest/CentralHDQM/frontend/`  
