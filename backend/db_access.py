@@ -142,7 +142,7 @@ class OMSDataCache(base):
   injection_scheme = Column(String)
   era = Column(String, nullable=False)
 
-  in_dcs_only = Column(Boolean, nullable=False, default=False)
+  significant = Column(Boolean, nullable=False, default=False)
 
   __table_args__ = (
     Index('_oms_data_cache_run_lumi_uindex', 'run', 'lumi', unique=True),

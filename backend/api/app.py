@@ -15,6 +15,8 @@ from functools import partial
 from multiprocessing import Pool
 from collections import defaultdict
 
+ALLOWED_PROCESSING_STRINGS = ['PromptReco', '09Aug2019_UL2017', 'Express', 'ExpressCosmics']
+
 app = Flask(__name__)
 
 @app.route('/api/data', methods=['GET'])
@@ -83,15 +85,6 @@ def data():
       latest = 50
     
     # Get latest runs for specific user selection
-    # sql = '''
-    # SELECT DISTINCT(run) FROM historic_data_points
-    # WHERE subsystem=:subsystem
-    # AND pd=:pd
-    # AND processing_string=:processing_string
-    # ORDER BY run DESC
-    # LIMIT %s
-    # ;
-    # ''' % latest
     sql = '''
     SELECT run FROM oms_data_cache
     WHERE run IN 
@@ -101,7 +94,7 @@ def data():
       AND pd=:pd
       AND processing_string=:processing_string
     )
-    AND oms_data_cache.in_dcs_only=%s
+    AND oms_data_cache.significant=%s
     ORDER BY run DESC
     LIMIT %s
     ;
@@ -218,7 +211,7 @@ def selection():
     rows = execute_with_retry(session, 'SELECT DISTINCT subsystem, pd, processing_string FROM selection_params ORDER BY subsystem, pd, processing_string;')
     rows = list(rows)
     for row in rows:
-      if(row['processing_string'] in ['PromptReco', '09Aug2019_UL2017', 'Express', 'ExpressCosmics']):
+      if(row['processing_string'] in ALLOWED_PROCESSING_STRINGS):
         obj[row['subsystem']][row['pd']].append(row['processing_string'])
 
     return jsonify(obj)
@@ -244,7 +237,8 @@ def plot_selection():
     rows = list(rows)
 
     for row in rows:
-      obj[row['subsystem']][row['pd']][row['processing_string']].append({'name': row['name'], 'id': row['id']})
+      if(row['processing_string'] in ALLOWED_PROCESSING_STRINGS):
+        obj[row['subsystem']][row['pd']][row['processing_string']].append({'name': row['name'], 'id': row['id']})
 
     return jsonify(obj)
   finally:

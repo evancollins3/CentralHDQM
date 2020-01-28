@@ -41,53 +41,32 @@ def fetch(update):
 
 
 def fetch_runs(min_run, max_run):
-  url = 'https://cmsrunregistry.web.cern.ch/api/json_creation/generate'
+  url = 'https://cmsrunregistry.web.cern.ch/api/runs_filtered_ordered'
 
   request = '''
-  {
-    "and": [
-      {
-        "or": [
-          {"==": [{"var": "dataset.name"}, "online"]}
-        ]
+  { 
+    "page": 0,
+    "page_size": 100000,
+    "sortings":[],
+    "filter": {
+      "run_number": {
+          "and": [
+            {">=": %s},
+            {"<=": %s}
+          ]
       },
-      {">=": [{"var":"run.run_number"}, %s]},
-      {"<=": [{"var":"run.run_number"}, %s]},
-      {"==": [{"in": ["WMass", {"var": "run.oms.hlt_key"}]}, false]},
-      {"==": [{"var": "lumisection.oms.cms_active"}, true]},
-      {"==": [{"var": "lumisection.oms.bpix_ready"}, true]},
-      {"==": [{"var": "lumisection.oms.fpix_ready"}, true]},
-      {"==": [{"var": "lumisection.oms.tibtid_ready"}, true]},
-      {"==": [{"var": "lumisection.oms.tecm_ready"}, true]},
-      {"==": [{"var": "lumisection.oms.tecp_ready"}, true]},
-      {"==": [{"var": "lumisection.oms.tob_ready"}, true]},
-      {"==": [{"var": "lumisection.oms.ebm_ready"}, true]},
-      {"==": [{"var": "lumisection.oms.ebp_ready"}, true]},
-      {"==": [{"var": "lumisection.oms.eem_ready"}, true]},
-      {"==": [{"var": "lumisection.oms.eep_ready"}, true]},
-      {"==": [{"var": "lumisection.oms.esm_ready"}, true]},
-      {"==": [{"var": "lumisection.oms.esp_ready"}, true]},
-      {"==": [{"var": "lumisection.oms.hbhea_ready"}, true]},
-      {"==": [{"var": "lumisection.oms.hbheb_ready"}, true]},
-      {"==": [{"var": "lumisection.oms.hbhec_ready"}, true]},
-      {"==": [{"var": "lumisection.oms.hf_ready"}, true]},
-      {"==": [{"var": "lumisection.oms.ho_ready"}, true]},
-      {"==": [{"var": "lumisection.oms.dtm_ready"}, true]},
-      {"==": [{"var": "lumisection.oms.dtp_ready"}, true]},
-      {"==": [{"var": "lumisection.oms.dt0_ready"}, true]},
-      {"==": [{"var": "lumisection.oms.cscm_ready"}, true]},
-      {"==": [{"var": "lumisection.oms.cscp_ready"}, true]},
-      {"==": [{"var": "lumisection.oms.rpc_ready"}, true]}
-    ]
+      "rr_attributes.significant": true
+    }
   }
   ''' % (min_run, max_run)
   
   try:
     cookies = get_sso_cookie(url)
-    result_json = json.loads(requests.post(url, json={ 'json_logic': request }, cookies=cookies, verify=CACERT).text)
-    runs = result_json['final_json']
+    text = requests.post(url, json=json.loads(request), cookies=cookies, verify=CACERT).text
+    result_json = json.loads(text)
+    runs = [x['run_number'] for x in result_json['runs']]
 
-    sql = db_access.returning_id_crossdb('UPDATE oms_data_cache SET in_dcs_only=%s WHERE run = :run_nr;' % db_access.true_crossdb())
+    sql = db_access.returning_id_crossdb('UPDATE oms_data_cache SET significant=%s WHERE run = :run_nr;' % db_access.true_crossdb())
     for run in runs:
       session = db_access.get_session()
       try:
