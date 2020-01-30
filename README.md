@@ -32,6 +32,7 @@ source cmsenv
 
 # Add python dependencies
 python3 -m pip install -r requirements.txt -t .python_packages
+python -m pip install psycopg2-binary -t .python_packages
 
 cd extractor/
 
