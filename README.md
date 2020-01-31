@@ -16,7 +16,7 @@ ssh -L 8000:localhost:8000 -L 8080:localhost:5000 <YOUR_USER_NAME>@lxplus7.cern.
 mkdir -p /tmp/$USER/hdqm
 cd /tmp/$USER/hdqm/
 
-git clone --branch backend-development https://github.com/andrius-k/CentralHDQM
+git clone https://github.com/andrius-k/CentralHDQM
 cd CentralHDQM/
 
 # Get an SSO to access OMS and RR APIs. This has to be done before cmsenv script
@@ -31,8 +31,10 @@ cd backend/
 source cmsenv
 
 # Add python dependencies
-python3 -m pip install -r requirements.txt -t .python_packages
-python -m pip install psycopg2-binary -t .python_packages
+python3 -m pip install -r requirements.txt -t .python_packages/python3
+python -m pip install -r requirements.txt -t .python_packages/python2
+
+export PYTHONPATH="${PYTHONPATH}:$(pwd)/.python_packages/python2"
 
 cd extractor/
 
@@ -264,7 +266,28 @@ Possible arguments:
 
 # Administration instructions
 
-## How to install locally
+**Before doing anything become the correct user:**  
+`sudo su hdqmpro`
+
+Code is located in `/data/hdqm/` directory.
+
+EOS and CVMFS file systems need to be accessible in order for the service to work. ROOT input files are coming EOS, and CMSSW release is comming from CVMFS.
+
+Nginx configuration for a reverse proxy can be found here: `/etc/nginx/conf.d/`
+
+Systemctl service for an API server can be found here: `/etc/systemd/system/hdqm.service`
+
+Starting reverse proxy (nginx):
+`sudo systemctl start nginx.service`
+
+Starting an API service:  
+`sudo systemctl start hdqm.service`
+
+Packages are installed locally in `backend/.python_packages/python2` and `backend/.python_packages/python3` directories, for different python versions. Extractor and calculator are using python 2 as they rely on ROOT but an API Flask service is running on python 3. Make sure an appropriate python path is set before using the tools by hand. For example (running from `backend` directory):
+
+```bash 
+export PYTHONPATH="${PYTHONPATH}:$(pwd)/.python_packages/python2"
+```
 
 If nginx complains that it can't bind to port, make sure to request the ports to be opened in puppet:  
 https://gitlab.cern.ch/ai/it-puppet-hostgroup-vocms/merge_requests/72  
@@ -275,3 +298,27 @@ Also important:
 `sudo firewall-cmd --reload`  
 Make sure to make root directory accessible in SELinux:  
 `chcon -Rt httpd_sys_content_t /data/hdqmTest/CentralHDQM/frontend/`  
+`sudo chcon -Rt httpd_sys_content_t /data/hdqm/`
+
+## How to update
+
+The following script will pull a latest version of the HDQM code from a `https://github.com/cms-DQM/CentralHDQM` repository. It will copy required secret files from `private` directory, and point `current` symlink to the newly created version. 
+
+```bash
+ssh vocms0231
+cd /data/hdqm
+sudo su hdqmpro
+./update.sh
+exit
+sudo systemctl restart hdqm.service
+```
+
+### How to rollback to the old version
+
+In order to rollback to the previous version set `current` symlink to point to the required version folder (in the same directory) and restart the service:
+
+```bash
+cd /data/hdqm
+ln -s -f -n <FOLDER_OF_THE_REQUIRED_VERSION> current
+sudo systemctl restart hdqm.service
+```

@@ -7,5 +7,5 @@ then
 fi
 
 source ../cmsenv
-CMD="PYTHONPATH=$(cd ../; pwd)/.python_packages python3 app.py $1"
+CMD="PYTHONPATH=$(cd ../; pwd)/.python_packages/python3 python3 app.py $1"
 eval $CMD;
