@@ -266,6 +266,9 @@ Possible arguments:
 
 # Administration instructions
 
+Production service is running on a public port 80 and test service on 81.
+Production API server is running on internal port 5000 and test API service on 5001.
+
 **Before doing anything become the correct user:**  
 `sudo su hdqmpro`
 
