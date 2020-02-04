@@ -1,0 +1,24 @@
+
+.instructions-list > li {
+	padding: 4px;
+}
+
+.modal-xxl {
+    max-width: 90%;
+}
+
+@media (min-width: 992px) { 
+    .h-non-lg-100 {
+        height: 100%;
+    }
+
+    .overflow-non-lg-scroll {
+        overflow: auto;
+    }
+}
+
+@-moz-document url-prefix() {
+  .h-100-ff {
+    height: 100%;
+  }
+}

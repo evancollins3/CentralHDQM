@@ -1,0 +1,669 @@
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<meta name="description" content="">
+	<title>Historic DQM</title>
+
+	<link href="css/bootstrap/bootstrap.min.css" rel="stylesheet">
+	<link href="css/style.css" rel="stylesheet">
+	<link href="https://code.highcharts.com/css/highcharts.css" rel="stylesheet">
+
+	<link rel="shortcut icon" type="image/png" href="static/favicon.ico"/>
+</head>
+
+<body class="bg-light">
+	<div class="bg-dark pt-0 pb-0 pl-1">
+		<div class="row mr-0">
+			<div class="col-12 col-md-auto" style="width: 180px;">
+				<div class="row">
+					<div class="col-auto col-md-8">
+						<a class="navbar-brand text-white" href="/">
+							<img src="static/logo.png" width="105" height="56" alt="CMS logo" class="mr-1">
+						</a>
+					</div>
+					<div class="col-auto col-md-4">
+						<ul class="form-group navbar-nav" style="margin-top: 12px;">
+							<li class="nav-item active">
+								<a class="nav-link text-white" href="" data-toggle="modal" data-target=".instructions-modal">Help</a>
+							</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+			<div class="col-12 col-md-auto" style="width: calc(100% - 180px);">
+				<div class="row mt-0 mt-md-3 mb-2" id="data-selection-container">
+					<div class="col-12 col-md mt-2 mt-md-0">
+						<select class="form-control form-control-sm" id="subsystem-select"></select>
+					</div>
+					<div class="col-12 col-md mt-2 mt-md-0">
+						<select class="form-control form-control-sm" id="pd-select"></select>
+					</div>
+					<div class="col-12 col-md mt-2 mt-md-0">
+						<select class="form-control form-control-sm" id="processing-string-select"></select>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<main role="main" class="container-fluid pb-2" id="main-content">
+
+		<form>
+			<label for="filter-select" class="small mt-2">Select runs and search for plots</label>
+
+			<div class="row">
+				<div class="col-12 col-md-auto" style="width: calc(100% - 320px);">
+					<div class="form-group row mb-2">
+						<div class="col-12 col-md-3">
+							<select class="form-control form-control-sm" id="filter-select" onchange="filterController.filterSelectionChanged()">
+								<option value="latest">Latest</option>
+								<option value="range">Range</option>
+								<option value="list">List</option>
+								<option value="json">Golden JSON file</option>
+								<option value="rr" disabled>Run Registry url</option>
+							</select>
+						</div>
+						<div class="col-12 col-md-6 mt-2 mt-md-0" id="filter-value-container"></div>
+						<div class="col-12 col-md-3 mt-2 mt-md-0">
+							<input type="text" class="form-control form-control-sm" id="search-query-input" placeholder="Search query">
+						</div>
+					</div>
+				</div>
+
+				<div class="col-12 col-md-auto" style="width: 320px;">
+					<div class="col-12 mt-md-0">
+						<div class="row">
+							<div class="col-4">
+								<button type="button" class="btn btn-outline-primary btn-sm col-12" type="button" data-toggle="collapse" data-target="#options-collapse">Options</button>
+							</div>
+							<div class="col-4">
+								<button type="button" class="btn btn-outline-primary btn-sm col-12" type="button" data-toggle="collapse" data-target="#plot-list-card" id="show-plot-list-button" disabled>Plot list</button>
+							</div>
+							<div class="col-4">
+								<button type="submit" class="btn btn-outline-success btn-sm col-12" id="submit-button" onclick="main.submitClicked(event)" style="min-height: 31px;" disabled>
+									<span id="submit-button-spinner" class="spinner-border spinner-border-sm" role="status"></span>
+									<span id="submit-button-title" style="display: none;">Submit</span>
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			
+			<div class="collapse" id="options-collapse">
+				<div class="form-group mb-0 mt-2 mt-md-0">
+					<p class="mb-0">
+						<label for="filter-checkbox" class="small">Options</label>
+					</p>
+
+					<div class="form-check form-check-inline">
+						<input class="form-check-input" type="checkbox" id="option-show-errors" value="option1" onchange="optionsController.optionToggled(this)">
+						<label class="form-check-label" for="option-show-errors">Show errors</label>
+					</div>
+					<div class="form-check form-check-inline">
+						<input class="form-check-input" type="checkbox" id="option-show-fills" value="option2" onchange="optionsController.optionToggled(this)" checked>
+						<label class="form-check-label" for="option-show-fills">Show fills</label>
+					</div>
+					<div class="form-check form-check-inline">
+						<input class="form-check-input" type="checkbox" id="option-show-run-duration" value="option3" onchange="optionsController.optionToggled(this)" checked>
+						<label class="form-check-label" for="option-show-run-duration">Show run duration</label>
+					</div>
+					<div class="form-check form-check-inline">
+						<input class="form-check-input" type="checkbox" id="option-show-regression-lines" value="option4" onchange="optionsController.optionToggled(this)" checked>
+						<label class="form-check-label" for="option-show-regression-lines">Show regression lines</label>
+					</div>
+					<div class="form-check form-check-inline">
+						<input class="form-check-input" type="checkbox" id="option-show-xrange" value="option5" onchange="optionsController.optionToggled(this)">
+						<label class="form-check-label" for="option-show-xrange">Bin width proportional to run duration</label>
+					</div>
+					<div class="form-check form-check-inline">
+						<input class="form-check-input" type="checkbox" id="option-show-int-lumi" value="option6" onchange="optionsController.optionToggled(this)">
+						<label class="form-check-label" for="option-show-int-lumi">Bin width proportional to integrated luminosity</label>
+					</div>
+					<div class="form-check form-check-inline">
+						<input class="form-check-input" type="checkbox" id="option-show-datetime" value="option7" onchange="optionsController.optionToggled(this)">
+						<label class="form-check-label" for="option-show-datetime">Show datetime plot</label>
+					</div>
+				</div>
+			</div>
+
+			<div class="collapse" id="plot-list-card">
+				<div class="card card-body mt-1 pt-1 pb-1 pr-0 pl-0">
+					<div class="overflow-auto text-nowrap" id="plot-list-container">
+					</div>
+				</div>
+			</div>
+		</form>
+
+		<div id="alert" class="alert alert-primary" role="alert" style="display: none;"></div>
+
+		<!-- Plots -->
+		<div id="plot-area">
+			<div class="row mt-3">
+				<div class="col-12 col-md-6 mb-3 mb-md-0">
+					<div class="card d-none" id="plot-card-0">
+						<div class="card-body">
+							<div id="plot-container-0" style="height: 468px"></div>
+
+							<div class="row">
+								<div class="col-0 col-md-4"></div>
+								<div class="col-12 col-md-4 text-center">
+									<button type="button" class="btn btn-sm btn-outline-primary" onclick="fullScreenController.changeRangesClicked(0)">Show / Change ranges</button>
+								</div>
+								<div class="col-12 col-md-4 mt-2 mt-md-1 text-center links-container">
+									<span class="links-info"></span>
+									<a class="oms-link" target="_blank"></a>
+									<a class="rr-link" target="_blank"></a>
+									<a class="gui-link" target="_blank"></a>
+									<a class="img-link" href="#gui-main-plot-modal" data-toggle="modal" data-target="#gui-main-plot-modal"></a>
+								</div>
+							</div>
+
+						</div>
+					</div>
+				</div>
+				<div class="col-12 col-md-6">
+					<div class="card d-none" id="plot-card-1">
+						<div class="card-body">
+							<div id="plot-container-1" style="height: 468px"></div>
+
+							<div class="row">
+								<div class="col-0 col-md-4"></div>
+								<div class="col-12 col-md-4 text-center">
+									<button type="button" class="btn btn-sm btn-outline-primary" onclick="fullScreenController.changeRangesClicked(1)">Show / Change ranges</button>
+								</div>
+								<div class="col-12 col-md-4 mt-2 mt-md-1 text-center links-container">
+									<span class="links-info"></span>
+									<a class="oms-link" target="_blank"></a>
+									<a class="rr-link" target="_blank"></a>
+									<a class="gui-link" target="_blank"></a>
+									<a class="img-link" href="#gui-main-plot-modal" data-toggle="modal" data-target="#gui-main-plot-modal"></a>
+								</div>
+							</div>
+							
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row mt-3">
+				<div class="col-12 col-md-6 mb-3 mb-md-0">
+					<div class="card d-none" id="plot-card-2">
+						<div class="card-body">
+							<div id="plot-container-2" style="height: 468px"></div>
+
+							<div class="row">
+								<div class="col-0 col-md-4"></div>
+								<div class="col-12 col-md-4 text-center">
+									<button type="button" class="btn btn-sm btn-outline-primary" onclick="fullScreenController.changeRangesClicked(2)">Show / Change ranges</button>
+								</div>
+								<div class="col-12 col-md-4 mt-2 mt-md-1 text-center links-container">
+									<span class="links-info"></span>
+									<a class="oms-link" target="_blank"></a>
+									<a class="rr-link" target="_blank"></a>
+									<a class="gui-link" target="_blank"></a>
+									<a class="img-link" href="#gui-main-plot-modal" data-toggle="modal" data-target="#gui-main-plot-modal"></a>
+								</div>
+							</div>
+
+						</div>
+					</div>
+				</div>
+				<div class="col-12 col-md-6">
+					<div class="card d-none" id="plot-card-3">
+						<div class="card-body">
+							<div id="plot-container-3" style="height: 468px"></div>
+
+							<div class="row">
+								<div class="col-0 col-md-4"></div>
+								<div class="col-12 col-md-4 text-center">
+									<button type="button" class="btn btn-sm btn-outline-primary" onclick="fullScreenController.changeRangesClicked(3)">Show / Change ranges</button>
+								</div>
+								<div class="col-12 col-md-4 mt-2 mt-md-1 text-center links-container">
+									<span class="links-info"></span>
+									<a class="oms-link" target="_blank"></a>
+									<a class="rr-link" target="_blank"></a>
+									<a class="gui-link" target="_blank"></a>
+									<a class="img-link" href="#gui-main-plot-modal" data-toggle="modal" data-target="#gui-main-plot-modal"></a>
+								</div>
+							</div>
+							
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<nav class="mt-4 d-none" id="pagination-container">
+			<ul class="pagination justify-content-center" id="pagination-ul">
+			</ul>
+		</nav>
+
+	</main>
+
+	<!-- Full screen content -->
+	<main role="main" class="container-fluid h-100-ff" id="full-screen-content" style="display: none;">
+		<div class="row pt-3 pb-1" style="height: calc(100% - 66px);">
+			<div class="col-12 col-lg-8 overflow-non-lg-scroll h-non-lg-100">
+				<div id="fs-plot-container" class="border rounded" style="height: calc(100% - 63px); max-height:860px; min-height: 400px;"></div>
+
+				<div class="row mt-2 mb-3 justify-content-center">
+					<div class="col-auto pt-2 flex-grow-1">
+						<button type="button" class="btn btn-sm btn-outline-info rl-auto" title="Previous run" id="fs-prev-btn" onclick="fullScreenController.previousRunClicked()">&laquo;</button>
+					</div>
+
+					<div class="col-auto pt-2 pr-1">
+						<span>Run range:</span>
+						<input class="form-control form-control-sm" style="display: inline-block; width: 100px;" id="start-x" placeholder="From"></input>
+						<input class="form-control form-control-sm" style="display: inline-block; width: 100px;" id="end-x" placeholder="To"></input>
+					</div>
+	
+					<div class="col-auto pt-2 pl-1 pr-1">
+						<span class="ml-3">Y range:</span>
+						<input class="form-control form-control-sm" style="display: inline-block; width: 100px;" id="start-y" placeholder="From"></input>
+						<input class="form-control form-control-sm" style="display: inline-block; width: 100px;" id="end-y" placeholder="To"></input>
+					</div>
+	
+					<div class="col-auto pt-2 pl-1">
+						<button type="button" class="btn btn-sm btn-outline-primary ml-3" onclick="fullScreenController.submitClicked()">
+							<span id="modal-submit-button-spinner" class="spinner-border spinner-border-sm" role="status" style="display: none;"></span>
+							<span id="modal-submit-button-title">Submit</span>
+						</button>
+						<button type="button" class="btn btn-sm btn-outline-danger ml-3" onclick="fullScreenController.exitFullScreen()">Close</button>
+					</div>
+
+					<div class="col-auto mt-2 flex-grow-1 text-right">
+						<button type="button" class="btn btn-sm btn-outline-info ml-auto" title="Next run" id="fs-next-btn" onclick="fullScreenController.nextRunClicked()">&raquo;</button>
+					</div>
+					
+				</div>
+			</div>
+
+			<div class="col-12 col-lg-4 overflow-non-lg-scroll" style="height: 100%">
+				<div class="h-non-lg-100">
+					
+					<div class="pb-2">
+						<span>Main plot used for a trend (run <span class="fs-run"></span>):</span>
+						<a href="#gui-main-plot-modal" data-toggle="modal" data-target="#gui-main-plot-modal">
+							<img class="border rounded-sm" id="fs-gui-main-plot-image" style="max-width: 100%; max-height: 100%;" src=""/>
+						</a>
+						</br>
+
+						<div id="opt1-plot-container"> 
+							<span>Optional plot 1 used for a trend (run <span class="fs-run"></span>):</span>
+							<a href="#gui-opt1-plot-modal" data-toggle="modal" data-target="#gui-opt1-plot-modal">
+								<img class="border rounded-sm" id="fs-gui-opt1-plot-image" style="max-width: 100%; max-height: 100%;" src="" onload="document.getElementById('opt1-plot-container').style.display='block'" onerror="document.getElementById('opt1-plot-container').style.display='none'"/>
+							</a>
+							</br>	
+						</div>
+						
+						<div id="opt2-plot-container">
+							<span>Optional plot 2 used for a trend (run <span class="fs-run"></span>):</span>
+							<a href="#gui-opt2-plot-modal" data-toggle="modal" data-target="#gui-opt2-plot-modal">
+								<img class="border rounded-sm" id="fs-gui-opt2-plot-image" style="max-width: 100%; max-height: 100%;" src="" onload="document.getElementById('opt2-plot-container').style.display='block'" onerror="document.getElementById('opt2-plot-container').style.display='none'"/>
+							</a>
+						</div>
+
+						<div id="reference-plot-container">
+							<span>Reference used for a trend (run <span class="fs-run"></span>):</span>
+							<a href="#gui-reference-plot-modal" data-toggle="modal" data-target="#gui-reference-plot-modal">
+								<img class="border rounded-sm" id="fs-gui-reference-plot-image" style="max-width: 100%; max-height: 100%;" src="" onload="document.getElementById('reference-plot-container').style.display='block'" onerror="document.getElementById('reference-plot-container').style.display='none'"/>
+							</a>
+						</div>
+					</div>
+					
+
+					<div class="card mb-2">
+						<div class="card-header">
+							<a data-toggle="collapse" href="#fs-series-collapse" role="button" aria-expanded="false" aria-controls="fs-series-collapse">
+								<span class="pr-1">Add series to this plot</span>
+								<svg height="9" width="16" id="fs-series-collapse-show-icon">
+									<polyline points="0,0 8,7 16,0" stroke="#007bff" fill="none" stroke-width="3" />
+								</svg>
+								<svg height="9" width="16" id="fs-series-collapse-hide-icon" style="display: none;">
+									<polyline points="0,9 8,2 16,9" stroke="#007bff" fill="none" stroke-width="3" />
+								</svg>
+							</a>
+						</div>
+						<ul class="list-group list-group-flush collapse multi-collapse" id="fs-series-collapse">
+							<div id="fs-series-list-container">
+							</div>
+
+							<li class="list-group-item">
+								<div class="row">
+									<div class="col pl-1 pr-1">
+										<select class="form-control form-control-sm" id="fs-subsystem-select"></select>
+									</div>
+
+									<div class="col pl-1 pr-1">
+										<select class="form-control form-control-sm" id="fs-pd-select"></select>
+									</div>
+
+									<div class="col pl-1 pr-1">
+										<select class="form-control form-control-sm" id="fs-processing-string-select"></select>
+									</div>
+
+									<div class="col pl-1 pr-1">
+										<select class="form-control form-control-sm" id="fs-plot-select"></select>
+									</div>
+
+									<div class="col-auto pl-1 pr-1">
+										<button class="btn btn-sm btn-outline-success" onclick="seriesListComponent.addClicked()" style="min-height: 31px; min-width: 43px;">
+											<div class="spinner-border spinner-border-sm" id="fs-add-series-button-spinner" role="status" style="display: none;">
+												<span class="sr-only"></span>
+											</div>
+											<span id="fs-add-series-button-text">Add</span>
+										</button>
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-auto ml-2 mt-2">
+										<input type="checkbox" class="form-check-input" id="fs-correlation-checkbox">
+										<label class="form-check-label" for="fs-correlation-checkbox">Correlation plot</label>
+										<div class="invalid-feedback" id="fs-add-series-error">
+											Please provide a valid city.
+										</div>
+									</div>
+								</div>
+							</li>
+						</ul>
+					</div>
+
+					<div class="card mb-2">
+						<div class="card-header">
+							<a data-toggle="collapse" href="#fs-oms-collapse" role="button" aria-expanded="false" aria-controls="fs-oms-collapse">
+								<span class="pr-1">Show OMS info</span>
+								<svg height="9" width="16" id="fs-oms-collapse-show-icon">
+									<polyline points="0,0 8,7 16,0" stroke="#007bff" fill="none" stroke-width="3" />
+								</svg>
+								<svg height="9" width="16" id="fs-oms-collapse-hide-icon" style="display: none;">
+									<polyline points="0,9 8,2 16,9" stroke="#007bff" fill="none" stroke-width="3" />
+								</svg>
+							</a>
+						</div>
+						<div class="list-group list-group-flush collapse multi-collapse" id="fs-oms-collapse">
+							<table class="table table-striped table-sm mb-0">
+								<thead>
+									<tr>
+										<th scope="col">OMS property</th>
+										<th scope="col">Value</th>
+									</tr>
+								</thead>
+								
+								<tbody>
+									<tr>
+										<td>Series</td>
+										<td id="fs-value-series"></td>
+									</tr>
+									<tr>
+										<td>Value</td>
+										<td id="fs-value-value"></td>
+									</tr>
+									<tr>
+										<td>Error</td>
+										<td id="fs-value-error"></td>
+									</tr>
+									<tr>
+										<td>Run No</td>
+										<td id="fs-value-run"></td>
+									</tr>
+									<tr>
+										<td>Fill No</td>
+										<td id="fs-value-fill"></td>
+									</tr>
+									<tr>
+										<td>Duration</td>
+										<td id="fs-value-duration"></td>
+									</tr>
+									<tr>
+										<td>Delivered luminosity</td>
+										<td id="fs-value-delivered-lumi"></td>
+									</tr>
+									<tr>
+										<td>B field</td>
+										<td id="fs-value-b-field"></td>
+									</tr>
+									<tr>
+										<td>End luminosity</td>
+										<td id="fs-value-end-lumi"></td>
+									</tr>
+									<tr>
+										<td>Start time</td>
+										<td id="fs-value-start-time"></td>
+									</tr>
+									<tr>
+										<td>End time</td>
+										<td id="fs-value-end-time"></td>
+									</tr>
+									<tr>
+										<td>Energy</td>
+										<td id="fs-value-energy"></td>
+									</tr>
+									<tr>
+										<td>Era</td>
+										<td id="fs-value-era"></td>
+									</tr>
+									<tr>
+										<td>Injection scheme</td>
+										<td id="fs-value-injection-scheme"></td>
+									</tr>
+									<tr>
+										<td>HLT key</td>
+										<td id="fs-value-hlt-key"></td>
+									</tr>
+									<tr>
+										<td>HLT physics rate</td>
+										<td id="fs-value-hlt-physics-rate"></td>
+									</tr>
+									<tr>
+										<td>L1T key</td>
+										<td id="fs-value-l1t-key"></td>
+									</tr>
+									<tr>
+										<td>L1T rate</td>
+										<td id="fs-value-l1t-rate"></td>
+									</tr>
+									<tr>
+										<td>Recorded lumi</td>
+										<td id="fs-value-recorded-lumi"></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+		
+					<span>External info about run <span class="fs-run"></span>:</span>
+		
+					<div class="row pb-3">
+						<div class="col-auto">
+							<a id="fs-value-gui-url" target="_blank"><b>DQM GUI</b></a>
+						</div>
+						<div class="col-auto">
+							<a id="fs-value-oms-url" target="_blank"><b>OMS</b></a>
+						</div>
+						<div class="col-auto">
+							<a id="fs-value-rr-url" target="_blank"><b>Run Registry</b></a>
+						</div>
+					</div>
+					
+					
+				</div>
+			</div>
+			
+		</div>
+	</main>
+
+	<!-- Instructions modal -->
+	<div class="modal fade instructions-modal" tabindex="-1" role="dialog">
+		<div class="modal-dialog modal-xxl">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">How to use the Historic DQM</h5>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<ul class="instructions-list">
+							<li> Select the year, data type (Prompt, Express, etc ...), Primary Dataset (ZeroBias, DoubleMuon, etc..) and Subdetector, and click on the Submit button to view the plots </li>
+					
+							<li> Different ways to select the runs to show are available:
+								<ul>
+									<li><b>Latest N runs:</b> set N in the relevant box</li>
+									<li><b>Run Range:</b> set the first and the last run in the range</li>
+									<li><b>List:</b> accept a list of comma separated run numbers</li>
+									<li><b>Golden JSON:</b> accept a JSON file as input</li>
+									<li><b>Run Registry url:</b> accept a link to a range of plots in RR (disabled for now)</li>
+								</ul>
+							</li>
+							<li>Use the <b>Search query</b> to enter the name (or part of it) of your favorite plot, then click on submit to show only the plots with the name matching the inserted string.</li>
+							
+							<li><b>Note:</b> It is not granted that all the plots available for recent years are also available for the past. This depends on the actual content of the DQM files in the given period.</li>
+							
+							<li>Click on <b>Options</b> to chose among different plot types, the default is the simple scatter plot, available options are:
+								<ul>
+									<li><b>Show errors: </b> to show the error bars on the trends, typically errors are very small so it is disabled by default</li>
+									<li><b>Show fills: </b> will visualize fill boundaries as alternating white and grey background colors</li>
+									<li><b>Show run duration: </b> the run duration in seconds will be visualized as an histogram, each bin corresponding to one run</li>
+									<li><b>Show regression lines: </b> In case of correlation plot can show or hide a linear regression line</li>
+									<li><b>Show run duration proportional plot: </b> the bin width of the trends will be proportional to the run duration</li>
+									<li><b>Show proportional to integrated luminosity: </b> the bin width of the trends will be proportional to the integrated luminosity of the run</li>
+									<li><b>Show datetime plot: </b> on the x-axis it will show the date and time, each run represented with a bin going from the start time to the end time (note: this trend may contain white spaces in periods where no run is available)</li>
+								</ul>
+								hit Submit button again to apply the changes.
+							</li>
+							
+							<li>Clicking on <b> Plot List </b> the full list of selected plots will be visible, with links to each individual page</li>
+							<li>Hovering the mouse over the data point will show a tooltip with some info about the specific run (number, fill, int. lumi, ... etc)</l>
+							<li>By clicking on the data point a link to OMS and RR for that specific run will pop up in the plot area</li>
+							<li>In multiple plots, by clicking in a legend, you can show or hide the selected plot</li>
+							<li>With the left mouse button, you can do dynamic zooming </li>
+							<li>The <b>Reset zoom</b> button on the plot area resets the initial view of the plot</li>
+							<li>There is a square button in the upper right place of each plot where you can left click and locally save an image of the plot</li>
+							<li>By clicking <b>Change Ranges</b> you can change both x and y axis ranges of the plot, and see the updated plot immediately</li>
+							<li><b>NOTE 1: All plots are "linkable"</b>, copy the url to share a specific trend by mail (as an example)</li>
+							<li><b>NOTE 2:</b> plots are not available for all the Primary Datasets, as an example Muon trend are only produced for SingleMuon and DoubleMuon PDs, while Tracker plots are only produced for StreamExpress and ZeroBias</li>	
+					</ul>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Main GUI plot modal -->
+	<div class="modal fade" id="gui-main-plot-modal" tabindex="-1" role="dialog">
+		<div class="modal-dialog modal-xl">
+			<div class="modal-content bg-light">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col text-center">
+							<img class="border rounded-sm" id="gui-main-plot-modal-image" style="max-width: 100%; max-height: 100%;" src=""/>
+						</div>
+					</div>
+
+					<div class="row pt-3">
+						<div class="col text-center">
+							<span>Run: <i class="fs-run"></i></span>
+							<a class="pl-2" id="main-plot-gui-url" target="_blank"><b>DQM GUI</b></a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Optional 1 GUI plot modal -->
+	<div class="modal fade" id="gui-opt1-plot-modal" tabindex="-1" role="dialog">
+		<div class="modal-dialog modal-xl">
+			<div class="modal-content bg-light">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col text-center">
+							<img class="border rounded-sm" id="gui-opt1-plot-modal-image" style="max-width: 100%; max-height: 100%;" src=""/>
+						</div>
+					</div>
+
+					<div class="row pt-3">
+						<div class="col text-center">
+							<span>Run: <i class="fs-run"></i></span>
+							<a class="pl-2" id="opt1-plot-gui-url" target="_blank"><b>DQM GUI</b></a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Optional 2 GUI plot modal -->
+	<div class="modal fade" id="gui-opt2-plot-modal" tabindex="-1" role="dialog">
+		<div class="modal-dialog modal-xl">
+			<div class="modal-content bg-light">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col text-center">
+							<img class="border rounded-sm" id="gui-opt2-plot-modal-image" style="max-width: 100%; max-height: 100%;" src=""/>
+						</div>
+					</div>
+
+					<div class="row pt-3">
+						<div class="col text-center">
+							<span>Run: <i class="fs-run"></i></span>
+							<a class="pl-2" id="opt2-plot-gui-url" target="_blank"><b>DQM GUI</b></a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Reference GUI plot modal -->
+	<div class="modal fade" id="gui-reference-plot-modal" tabindex="-1" role="dialog">
+		<div class="modal-dialog modal-xl">
+			<div class="modal-content bg-light">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col text-center">
+							<img class="border rounded-sm" id="gui-reference-plot-modal-image" style="max-width: 100%; max-height: 100%;" src=""/>
+						</div>
+					</div>
+
+					<div class="row pt-3">
+						<div class="col text-center">
+							<span>Run: <i class="fs-run"></i></span>
+							<a class="pl-2" id="reference-plot-gui-url" target="_blank"><b>DQM GUI</b></a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script src="js/bootstrap/jquery-3.3.1.min.js"></script>
+	<!-- <script>window.jQuery || document.write('<script src="/docs/4.3/assets/js/vendor/jquery-slim.min.js"><\/script>')</script> -->
+	<script src="js/bootstrap/bootstrap.bundle.min.js"></script>
+
+	<script src="js/highcharts/highcharts.js"></script>
+	<script src="js/highcharts/map.js"></script>
+	<script src="js/highcharts/highcharts-more.js"></script>
+	<script src="js/highcharts/exporting.js"></script>
+	<script src="js/highcharts/xrange.js"></script>
+	<script src="js/highcharts/no-data-to-display.js"></script>
+
+	<script src="js/config.js"></script>
+	<script src="js/main.js"></script>
+	<script src="js/urlController.js"></script>
+	<script src="js/dataSelectionController.js"></script>
+	<script src="js/filterSelectionController.js"></script>
+	<script src="js/optionsController.js"></script>
+	<script src="js/fullScreenController.js"></script>
+	<script src="js/seriesListComponent.js"></script>
+	<script src="js/helpers.js"></script>
+	<script src="js/draw.js"></script>
+	<script src="js/asyncFileReader.js"></script>
+	<script src="js/displayConfig.js"></script>
+	<script src="js/selectComponent.js"></script>
+
+</body>
+
+</html>
