@@ -303,6 +303,19 @@ Make sure to make root directory accessible in SELinux:
 `chcon -Rt httpd_sys_content_t /data/hdqmTest/CentralHDQM/frontend/`  
 `sudo chcon -Rt httpd_sys_content_t /data/hdqm/`
 
+## Daily extraction
+
+HDQM automatically extracts data from EOS on a daily basis. This is done using systemctl timer.  
+A timer `hdqm-extract.timer` launches `hdqm-extract.service` service every day. In order to stop the timer run:  
+```bash
+sudo systemctl stop hdqm-extract.timer
+```
+To get info about a timer run one of these two commands:
+```bash
+sudo systemctl list-timers
+sudo systemctl status hdqm-extract.timer
+```
+
 ## How to update
 
 The following script will pull a latest version of the HDQM code from a `https://github.com/cms-DQM/CentralHDQM` repository. It will copy required secret files from `private` directory, and point `current` symlink to the newly created version. 
