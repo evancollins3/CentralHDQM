@@ -16,7 +16,7 @@ ssh -L 8000:localhost:8000 -L 8080:localhost:5000 <YOUR_USER_NAME>@lxplus7.cern.
 mkdir -p /tmp/$USER/hdqm
 cd /tmp/$USER/hdqm/
 
-git clone https://github.com/andrius-k/CentralHDQM
+git clone https://github.com/cms-dqm/CentralHDQM
 cd CentralHDQM/
 
 # Get an SSO to access OMS and RR APIs. This has to be done before cmsenv script
