@@ -1,3 +1,24 @@
+# Table of contents
+
+- [Central Historic DQM application for CMS detector](#central-historic-dqm-application-for-cms-detector)
+- [Usage instructions](#usage-instructions)
+  * [How to run locally](#how-to-run-locally)
+  * [How to add new plots](#how-to-add-new-plots)
+    + [Backend configuration](#backend-configuration)
+    + [Frontend configuration](#frontend-configuration)
+  * [Web application usage](#web-application-usage)
+- [API documentation](#api-documentation)
+  * [Endpoints](#endpoints)
+    + [`/api/data`](#--api-data-)
+    + [`/api/selection`](#--api-selection-)
+    + [`/api/plot_selection`](#--api-plot-selection-)
+    + [`/api/runs`](#--api-runs-)
+    + [`/api/expand_url`](#--api-expand-url-)
+- [Administration instructions](#administration-instructions)
+  * [Daily extraction](#daily-extraction)
+  * [How to update](#how-to-update)
+    + [How to rollback to the old version](#how-to-rollback-to-the-old-version)
+
 # Central Historic DQM application for CMS detector
 
 A tool to display trends of CMS DQM quantities over long periods of time.  
@@ -8,11 +29,12 @@ The code is running on a `vocms0231` machine.
 
 ## How to run locally
 
-The following instruction are completely copy-pastable. This will start a complete HDQM stack on your local (lxplus) environment. This is perfect for testing new plots before adding them.
+The following instruction are completely copy-pastable. This will start a complete HDQM stack on your local (lxplus) environment. This is perfect for testing new plots before adding them. Instructions are are made for bash shell.
 
 ``` bash
 # You have to change the username. From this point, all instruction can be copy pasted without modifications.
 ssh -L 8000:localhost:8000 -L 8080:localhost:5000 <YOUR_USER_NAME>@lxplus7.cern.ch
+/bin/bash
 mkdir -p /tmp/$USER/hdqm
 cd /tmp/$USER/hdqm/
 
