@@ -16,4 +16,7 @@ export PYTHONPATH="$(cd ../; pwd)/.python_packages/python3"
 ./oms_extractor.py
 ./rr_extractor.py
 
+# Prewarm the datbase for normal usage
+./db_prewarm.py
+
 echo "Extraction finished."
