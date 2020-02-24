@@ -25,8 +25,6 @@ from helpers import batch_iterable, exec_transaction, get_all_me_names
 
 CFGFILES = 'cfg/*/*.ini'
 ROOTFILES = '/eos/cms/store/group/comm_dqm/DQMGUI_data/*/*/*/DQM*.root'
-# CFGFILES = 'cfg/PixelPhase1/trendPlotsPixelPhase1_BPIX_Residuals.ini'
-# ROOTFILES = '/eos/cms/store/group/comm_dqm/DQMGUI_data/Run2018/StreamExpress/R0003152xx/DQM_V0001_R000315252__StreamExpress__Run2018A-*'
 
 PDPATTERN = re.compile('DQM_V\d+_R\d+__(.+__.+__.+)[.]root') # PD inside the file name
 VERSIONPATTERN = re.compile('(DQM_V)(\d+)(.+[.]root)')
@@ -124,6 +122,9 @@ def extract_all_mes(cfg_files, runs, nprocs):
 
   print('Listing files on EOS, this can take a while...')
   all_files = glob(ROOTFILES)
+  if len(all_files) == 0:
+    print('GLOB returned 0 files, probably EOS is down. Aborting.')
+    return
   print('Done.')
 
   # Filter on the runs that were passed by the user
@@ -262,7 +263,6 @@ def extract_all_mes(cfg_files, runs, nprocs):
     except Exception as e:
       print(e)
       session.close()
-      break
 
   print('Done.')
 
