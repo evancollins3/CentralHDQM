@@ -19,6 +19,7 @@ import argparse
 import metrics
 from metrics import fits
 from metrics import basic
+from metrics import L1T_metrics
 
 import os, sys
 # Insert parent dir to sys.path to import db_access
@@ -286,7 +287,18 @@ def calculate_trends(rows):
     
     if not configs:
       print('ME not used is any config')
-      move_to_second_queue(row['me_id'], row['id'])
+
+      # Remove ME from queue_to_calculate 
+      session = db_access.get_session()
+      try:
+        session.execute('DELETE FROM queue_to_calculate WHERE id = :id;', {'id': row['id']})
+        session.commit()
+      except Exception as e:
+        session.rollback()
+        print(e)
+      finally:
+        session.close()
+
       continue
 
     for config in configs:
@@ -294,7 +306,7 @@ def calculate_trends(rows):
 
       try:
         try:
-          metric = eval(config['metric'], {'fits': fits, 'basic': basic})
+          metric = eval(config['metric'], {'fits': fits, 'basic': basic, 'L1T_metrics': L1T_metrics})
         except Exception as e:
           print('Unable to load the metric: %s. %s' % (config['metric'], e))
           move_to_second_queue(row['me_id'], row['id'])
@@ -476,32 +488,6 @@ def calculate_trends(rows):
         for tdirectory in tdirectories:
           if tdirectory:
             tdirectory.Close()
-
-
-
-import signal
-import traceback
-
-def receiveSignal(signalNumber, frame):
-  print('Received:', signalNumber)
-  traceback.print_stack(frame)
-  return
-
-signal.signal(signal.SIGHUP, receiveSignal)
-signal.signal(signal.SIGINT, receiveSignal)
-signal.signal(signal.SIGQUIT, receiveSignal)
-signal.signal(signal.SIGILL, receiveSignal)
-signal.signal(signal.SIGTRAP, receiveSignal)
-signal.signal(signal.SIGABRT, receiveSignal)
-signal.signal(signal.SIGBUS, receiveSignal)
-signal.signal(signal.SIGFPE, receiveSignal)
-# signal.signal(signal.SIGKILL, receiveSignal)
-signal.signal(signal.SIGUSR1, receiveSignal)
-signal.signal(signal.SIGSEGV, receiveSignal)
-signal.signal(signal.SIGUSR2, receiveSignal)
-signal.signal(signal.SIGPIPE, receiveSignal)
-signal.signal(signal.SIGALRM, receiveSignal)
-signal.signal(signal.SIGTERM, receiveSignal)
 
 
 if __name__ == '__main__':
