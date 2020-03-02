@@ -142,7 +142,9 @@ class OMSDataCache(base):
   injection_scheme = Column(String)
   era = Column(String, nullable=False)
 
+  run_class = Column(String)
   significant = Column(Boolean, nullable=False, default=False)
+  is_dcs = Column(Boolean, nullable=False, default=False)
 
   __table_args__ = (
     Index('_oms_data_cache_run_lumi_uindex', 'run', 'lumi', unique=True),
@@ -285,6 +287,14 @@ def false_crossdb():
     return 'FALSE'
   else:
     return '0'
+
+
+def ilike_crossdb():
+  if is_postgres:
+    return 'ILIKE'
+  else:
+    # In SQLite LIKE is case insensitive by default
+    return 'LIKE'
 
 
 # Transforms an INSERT or UPDATE to return an ID of inserted or updated row(s)

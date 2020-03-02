@@ -20,6 +20,9 @@ KEY='../api/private/userkey.pem'
 CACERT='../api/etc/cern_cacert.pem'
 PREMADE_COOKIE='../api/etc/rr_sso_cookie.txt'
 
+MIN_LUMI_FOR_COLLISIONS = 100
+MIN_DURATION_FOR_COSMICS = 3600
+
 def fetch(update):
   db_access.setup_db()
 
@@ -64,17 +67,35 @@ def fetch_runs(min_run, max_run):
     cookies = get_sso_cookie(url)
     text = requests.post(url, json=json.loads(request), cookies=cookies, verify=CACERT).text
     result_json = json.loads(text)
-    runs = [x['run_number'] for x in result_json['runs']]
+    
+    for run in result_json['runs']:
+      # Logic to determine if run is significant for HDQM:
+      # 1. For collision runs integrated luminosity has to be greater than 100
+      # 2. For cosmic runs duration has to be longer that 1 hour
+      significant = db_access.false_crossdb()
 
-    sql = db_access.returning_id_crossdb('UPDATE oms_data_cache SET significant=%s WHERE run = :run_nr;' % db_access.true_crossdb())
-    for run in runs:
+      # For collision runs:
+      if 'collisions' in run['rr_attributes']['class'].lower():
+        if run['oms_attributes']['delivered_lumi'] >= MIN_LUMI_FOR_COLLISIONS:
+          significant = db_access.true_crossdb()
+      
+      # For cosmic runs:
+      elif 'cosmics' in run['rr_attributes']['class'].lower():
+        if run['oms_attributes']['duration'] >= MIN_DURATION_FOR_COSMICS:
+          significant = db_access.true_crossdb()
+
+      else:
+        # Not significant if neither cosmics nor collisions
+        pass
+
+      sql = db_access.returning_id_crossdb('UPDATE oms_data_cache SET significant=%s, run_class=:run_class WHERE run = :run_nr;' % significant)
       session = db_access.get_session()
       try:
-        result = session.execute(sql, {'run_nr': run})
+        result = session.execute(sql, {'run_nr': run['run_number'], 'run_class': run['rr_attributes']['class']})
         if result.returns_rows:
           result = list(result)
           if len(result) == 0:
-            print('Run not present in OMS cache: %s' % run)
+            print('Run not present in OMS cache: %s. RR class: %s' % (run['run_number'], run['rr_attributes']['class']))
         session.commit()
       except Exception as e:
         print(e)
