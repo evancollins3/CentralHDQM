@@ -63,6 +63,11 @@ def fetch_run(run):
     fills_url = 'https://cmsoms.cern.ch/agg/api/v1/fills?filter[fill_number][eq]=%s&fields=injection_scheme,era' % oms_runs_json['data'][0]['attributes']['fill_number']
     oms_fills_json = json.loads(requests.get(fills_url, cookies=cookies, verify=CACERT).text)
 
+    dcs_lumisections_url = 'https://cmsoms.cern.ch/agg/api/v1/lumisections?filter[run_number][eq]=%s&filter[cms_active][eq]=true&filter[bpix_ready][eq]=true&filter[fpix_ready][eq]=true&filter[tibtid_ready][eq]=true&filter[tecm_ready][eq]=true&filter[tecp_ready][eq]=true&filter[castor_ready][eq]=true&filter[tob_ready][eq]=true&filter[ebm_ready][eq]=true&filter[ebp_ready][eq]=true&filter[eem_ready][eq]=true&filter[eep_ready][eq]=true&filter[esm_ready][eq]=true&filter[esp_ready][eq]=true&filter[hbhea_ready][eq]=true&filter[hbheb_ready][eq]=true&filter[hbhec_ready][eq]=true&filter[hf_ready][eq]=true&filter[ho_ready][eq]=true&filter[dtm_ready][eq]=true&filter[dtp_ready][eq]=true&filter[dt0_ready][eq]=true&filter[cscm_ready][eq]=true&filter[cscp_ready][eq]=true&filter[rpc_ready][eq]=true&fields=run_number&page[limit]=1' % run
+    if 'cosmic' in oms_runs_json['data'][0]['attributes']['hlt_key']:
+      dcs_lumisections_url = 'https://cmsoms.cern.ch/agg/api/v1/lumisections?filter[run_number][eq]=%s&filter[tibtid_ready][eq]=true&filter[tecm_ready][eq]=true&filter[tecp_ready][eq]=true&filter[tob_ready][eq]=true&filter[dtm_ready][eq]=true&filter[dtp_ready][eq]=true&filter[dt0_ready][eq]=true&fields=run_number&page[limit]=1' % run
+    dcs_lumisections_json = json.loads(requests.get(dcs_lumisections_url, cookies=cookies, verify=CACERT).text)
+
     # Add to cache
     session = db_access.get_session()
     try:
@@ -82,6 +87,7 @@ def fetch_run(run):
         hlt_physics_rate = oms_runs_json['data'][0]['attributes']['hlt_physics_rate'],
         duration = oms_runs_json['data'][0]['attributes']['duration'],
         fill_number = oms_runs_json['data'][0]['attributes']['fill_number'],
+        is_dcs = True if len(dcs_lumisections_json['data']) > 0 else False
       )
 
       try:
@@ -149,7 +155,7 @@ def get_sso_cookie(url):
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='HDQM data extraction from the OMS API.')
-  parser.add_argument('-u', dest='update', type=bool, default=False, help='If True, all runs will be updated. Otherwise only missing runs will be fetched.')
+  parser.add_argument('-u', dest='update', action='store_true', help='If True, all runs will be updated. Otherwise only missing runs will be fetched. Default is False.')
   parser.add_argument('-j', dest='nproc', type=int, default=30, help='Number of processes to use in parallel.')
   args = parser.parse_args()
 
