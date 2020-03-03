@@ -20,7 +20,7 @@ KEY='../api/private/userkey.pem'
 CACERT='../api/etc/cern_cacert.pem'
 PREMADE_COOKIE='../api/etc/rr_sso_cookie.txt'
 
-MIN_LUMI_FOR_COLLISIONS = 100
+MIN_LUMI_FOR_COLLISIONS = 0.1
 MIN_DURATION_FOR_COSMICS = 3600
 
 def fetch(update):
@@ -70,17 +70,17 @@ def fetch_runs(min_run, max_run):
     
     for run in result_json['runs']:
       # Logic to determine if run is significant for HDQM:
-      # 1. For collision runs integrated luminosity has to be greater than 100
+      # 1. For collision runs integrated luminosity has to be greater than 0.1 1/pb
       # 2. For cosmic runs duration has to be longer that 1 hour
       significant = db_access.false_crossdb()
 
       # For collision runs:
-      if 'collisions' in run['rr_attributes']['class'].lower():
-        if run['oms_attributes']['delivered_lumi'] >= MIN_LUMI_FOR_COLLISIONS:
+      if 'collision' in run['rr_attributes']['class'].lower():
+        if run['oms_attributes']['recorded_lumi'] >= MIN_LUMI_FOR_COLLISIONS:
           significant = db_access.true_crossdb()
       
       # For cosmic runs:
-      elif 'cosmics' in run['rr_attributes']['class'].lower():
+      elif 'cosmic' in run['rr_attributes']['class'].lower():
         if run['oms_attributes']['duration'] >= MIN_DURATION_FOR_COSMICS:
           significant = db_access.true_crossdb()
 

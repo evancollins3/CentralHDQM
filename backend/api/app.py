@@ -100,10 +100,11 @@ def data():
     )
     AND oms_data_cache.run_class %s :run_class
     AND oms_data_cache.significant=%s
+    AND oms_data_cache.is_dcs=%s
     ORDER BY run DESC
     LIMIT :latest
     ;
-    ''' % (db_access.ilike_crossdb(), db_access.true_crossdb())
+    ''' % (db_access.ilike_crossdb(), db_access.true_crossdb(), db_access.true_crossdb())
 
     print('Getting the list of runs...')
     start = timeit.default_timer() 

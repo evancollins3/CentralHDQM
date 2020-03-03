@@ -49,6 +49,7 @@ def fetch(update, nproc):
   db_access.dispose_engine()
   pool = Pool(nproc)
   pool.map(fetch_run, diff)
+  print('Done.')
 
 
 def fetch_run(run):

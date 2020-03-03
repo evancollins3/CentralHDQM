@@ -138,9 +138,9 @@ class OMSDataCache(base):
   l1_rate = Column(Float)
   hlt_physics_rate = Column(Float)
   duration = Column(Integer, nullable=False)
-  fill_number = Column(Integer, nullable=False)
+  fill_number = Column(Integer, default=0)
   injection_scheme = Column(String)
-  era = Column(String, nullable=False)
+  era = Column(String)
 
   run_class = Column(String)
   significant = Column(Boolean, nullable=False, default=False)
