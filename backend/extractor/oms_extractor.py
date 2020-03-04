@@ -49,6 +49,7 @@ def fetch(update, nproc):
   db_access.dispose_engine()
   pool = Pool(nproc)
   pool.map(fetch_run, diff)
+  print('Done.')
 
 
 def fetch_run(run):
@@ -62,11 +63,65 @@ def fetch_run(run):
 
     fills_url = 'https://cmsoms.cern.ch/agg/api/v1/fills?filter[fill_number][eq]=%s&fields=injection_scheme,era' % oms_runs_json['data'][0]['attributes']['fill_number']
     oms_fills_json = json.loads(requests.get(fills_url, cookies=cookies, verify=CACERT).text)
+    
+    # TODO: Change to prod url, add cookies and certificate
+    dcs_collisions_lumis_url = '''https://vocms0183.cern.ch/agg/api/v1/lumisections?filter[run_number][eq]=%s
+&filter[cms_active][eq]=true
+&filter[bpix_ready][eq]=true
+&filter[fpix_ready][eq]=true
+&filter[tibtid_ready][eq]=true
+&filter[tecm_ready][eq]=true
+&filter[tecp_ready][eq]=true
+&filter[tob_ready][eq]=true
+&filter[ebm_ready][eq]=true
+&filter[ebp_ready][eq]=true
+&filter[eem_ready][eq]=true
+&filter[eep_ready][eq]=true
+&filter[esm_ready][eq]=true
+&filter[esp_ready][eq]=true
+&filter[hbhea_ready][eq]=true
+&filter[hbheb_ready][eq]=true
+&filter[hbhec_ready][eq]=true
+&filter[hf_ready][eq]=true
+&filter[ho_ready][eq]=true
+&filter[dtm_ready][eq]=true
+&filter[dtp_ready][eq]=true
+&filter[dt0_ready][eq]=true
+&filter[cscm_ready][eq]=true
+&filter[cscp_ready][eq]=true
+&fields=run_number
+&page[limit]=1''' % run
 
-    dcs_lumisections_url = 'https://cmsoms.cern.ch/agg/api/v1/lumisections?filter[run_number][eq]=%s&filter[cms_active][eq]=true&filter[bpix_ready][eq]=true&filter[fpix_ready][eq]=true&filter[tibtid_ready][eq]=true&filter[tecm_ready][eq]=true&filter[tecp_ready][eq]=true&filter[castor_ready][eq]=true&filter[tob_ready][eq]=true&filter[ebm_ready][eq]=true&filter[ebp_ready][eq]=true&filter[eem_ready][eq]=true&filter[eep_ready][eq]=true&filter[esm_ready][eq]=true&filter[esp_ready][eq]=true&filter[hbhea_ready][eq]=true&filter[hbheb_ready][eq]=true&filter[hbhec_ready][eq]=true&filter[hf_ready][eq]=true&filter[ho_ready][eq]=true&filter[dtm_ready][eq]=true&filter[dtp_ready][eq]=true&filter[dt0_ready][eq]=true&filter[cscm_ready][eq]=true&filter[cscp_ready][eq]=true&filter[rpc_ready][eq]=true&fields=run_number&page[limit]=1' % run
+    dcs_cosmics_lumis_url1 = '''https://vocms0183.cern.ch/agg/api/v1/lumisections
+?filter[run_number][eq]=%s
+&filter[dtm_ready][eq]=true
+&filter[dtp_ready][eq]=true
+&filter[dt0_ready][eq]=true
+&fields=run_number
+&page[limit]=1''' % run
+
+    dcs_cosmics_lumis_url2 = '''https://vocms0183.cern.ch/agg/api/v1/lumisections
+?filter[run_number][eq]=%s
+&filter[cscm_ready][eq]=true
+&filter[cscp_ready][eq]=true
+&fields=run_number
+&page[limit]=1''' % run
+
+    is_dcs = False
+
+    # For cosmics, we need to OR two terms. If first query if false, make a second one.
     if 'cosmic' in oms_runs_json['data'][0]['attributes']['hlt_key']:
-      dcs_lumisections_url = 'https://cmsoms.cern.ch/agg/api/v1/lumisections?filter[run_number][eq]=%s&filter[tibtid_ready][eq]=true&filter[tecm_ready][eq]=true&filter[tecp_ready][eq]=true&filter[tob_ready][eq]=true&filter[dtm_ready][eq]=true&filter[dtp_ready][eq]=true&filter[dt0_ready][eq]=true&fields=run_number&page[limit]=1' % run
-    dcs_lumisections_json = json.loads(requests.get(dcs_lumisections_url, cookies=cookies, verify=CACERT).text)
+      dcs_lumisections_json = json.loads(requests.get(dcs_cosmics_lumis_url1.replace('\n', ''), verify=False).text)
+      if len(dcs_lumisections_json['data']):
+        is_dcs = True
+      else:
+        dcs_lumisections_json = json.loads(requests.get(dcs_cosmics_lumis_url2.replace('\n', ''), verify=False).text)
+        if len(dcs_lumisections_json['data']):
+          is_dcs = True
+    else:
+      dcs_lumisections_json = json.loads(requests.get(dcs_collisions_lumis_url.replace('\n', ''), verify=False).text)
+      if len(dcs_lumisections_json['data']):
+        is_dcs = True
 
     # Add to cache
     session = db_access.get_session()
@@ -87,7 +142,7 @@ def fetch_run(run):
         hlt_physics_rate = oms_runs_json['data'][0]['attributes']['hlt_physics_rate'],
         duration = oms_runs_json['data'][0]['attributes']['duration'],
         fill_number = oms_runs_json['data'][0]['attributes']['fill_number'],
-        is_dcs = True if len(dcs_lumisections_json['data']) > 0 else False
+        is_dcs = is_dcs
       )
 
       try:
@@ -103,6 +158,7 @@ def fetch_run(run):
       print('IntegrityError inserting OMS item: %s' % e)
       session.rollback()
       print('Updating...')
+      
       try:
         oms_item_existing = session.query(db_access.OMSDataCache).filter(
           db_access.OMSDataCache.run == oms_item.run,
@@ -110,21 +166,30 @@ def fetch_run(run):
         ).one_or_none()
 
         if oms_item_existing:
-          oms_item_existing.start_time = datetime.datetime.strptime(oms_item.start_time, "%Y-%m-%dT%H:%M:%SZ"),
-          oms_item_existing.end_time = datetime.datetime.strptime(oms_item.end_time, "%Y-%m-%dT%H:%M:%SZ"),
-          oms_item_existing.b_field = oms_item.b_field,
-          oms_item_existing.energy = oms_item.energy,
-          oms_item_existing.delivered_lumi = oms_item.delivered_lumi,
-          oms_item_existing.end_lumi = oms_item.end_lumi,
-          oms_item_existing.recorded_lumi = oms_item.recorded_lumi,
-          oms_item_existing.l1_key = oms_item.l1_key,
-          oms_item_existing.l1_rate = oms_item.l1_rate,
-          oms_item_existing.hlt_key = oms_item.hlt_key,
-          oms_item_existing.hlt_physics_rate = oms_item.hlt_physics_rate,
-          oms_item_existing.duration = oms_item.duration,
-          oms_item_existing.fill_number = oms_item.fill_number,
-          oms_item_existing.injection_scheme = oms_item.injection_scheme,
-          oms_item_existing.era = oms_item.era,
+          if isinstance(oms_item.start_time, datetime.datetime):
+            oms_item_existing.start_time = oms_item.start_time
+          else:
+            oms_item_existing.start_time = datetime.datetime.strptime(oms_item.start_time, "%Y-%m-%dT%H:%M:%SZ")
+
+          if isinstance(oms_item.end_time, datetime.datetime):
+            oms_item_existing.end_time = oms_item.end_time
+          else:
+            oms_item_existing.end_time = datetime.datetime.strptime(oms_item.end_time, "%Y-%m-%dT%H:%M:%SZ")
+          
+          oms_item_existing.b_field = oms_item.b_field
+          oms_item_existing.energy = oms_item.energy
+          oms_item_existing.delivered_lumi = oms_item.delivered_lumi
+          oms_item_existing.end_lumi = oms_item.end_lumi
+          oms_item_existing.recorded_lumi = oms_item.recorded_lumi
+          oms_item_existing.l1_key = oms_item.l1_key
+          oms_item_existing.l1_rate = oms_item.l1_rate
+          oms_item_existing.hlt_key = oms_item.hlt_key
+          oms_item_existing.hlt_physics_rate = oms_item.hlt_physics_rate
+          oms_item_existing.duration = oms_item.duration
+          oms_item_existing.fill_number = oms_item.fill_number
+          oms_item_existing.injection_scheme = oms_item.injection_scheme
+          oms_item_existing.era = oms_item.era
+          oms_item_existing.is_dcs = oms_item.is_dcs
           session.commit()
           print('Updated.')
       except Exception as e:

@@ -7,27 +7,27 @@ const seriesListComponent = (function() {
 
         enterFullScreen: async function()
         {
-            if(this.dataIndexLoaded)
-                return
+            if(!this.dataIndexLoaded)
+            {
+                try {
+                    const base = config.getBaseAPIUrl()
+                    const response = await fetch(`${base}/plot_selection`, {
+                        credentials: "same-origin"
+                    })
+                    const plotDataIndex = await response.json()
+
+                    selectComponent.register(
+                        ['#fs-subsystem-select', '#fs-pd-select', '#fs-processing-string-select', '#fs-plot-select'], 
+                        plotDataIndex, 
+                        ['Select a subsystem', 'Select a primary dataset', 'Select a processing string', 'Select a plot'])
+                    
+                    this.dataIndexLoaded = true
+                }
+                catch(error) {
+                    console.error(error)
+                }
+            }
             
-            try {
-                const base = config.getBaseAPIUrl()
-                const response = await fetch(`${base}/plot_selection`, {
-                    credentials: "same-origin"
-                })
-                const plotDataIndex = await response.json()
-
-                selectComponent.register(
-                    ['#fs-subsystem-select', '#fs-pd-select', '#fs-processing-string-select', '#fs-plot-select'], 
-                    plotDataIndex, 
-                    ['Select a subsystem', 'Select a primary dataset', 'Select a processing string', 'Select a plot'])
-                
-                this.dataIndexLoaded = true
-            }
-            catch(error) {
-                console.error(error)
-            }
-
             $("#fs-subsystem-select").val(selectionController.selectedSubsystem()).trigger('change')
             $("#fs-pd-select").val(selectionController.selectedPD()).trigger('change')
             $("#fs-processing-string-select").val(selectionController.selectedProcessingString()).trigger('change')
@@ -118,6 +118,10 @@ const seriesListComponent = (function() {
         },
 
         removeSeries: async function(index) {
+            // We can't remove last trend
+            if(fullScreenController.plotData.series.length == 1)
+                return
+            
             // Remove from plot data that will be used to redraw the plot
             const toRemoveIndex = fullScreenController.plotData.series.findIndex(x => x.metadata.name === this.series[index].name)
             if (toRemoveIndex > -1)

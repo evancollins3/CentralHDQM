@@ -20,7 +20,7 @@ KEY='../api/private/userkey.pem'
 CACERT='../api/etc/cern_cacert.pem'
 PREMADE_COOKIE='../api/etc/rr_sso_cookie.txt'
 
-MIN_LUMI_FOR_COLLISIONS = 100
+MIN_LUMI_FOR_COLLISIONS = 0.1
 MIN_DURATION_FOR_COSMICS = 3600
 
 def fetch(update):
@@ -70,17 +70,21 @@ def fetch_runs(min_run, max_run):
     
     for run in result_json['runs']:
       # Logic to determine if run is significant for HDQM:
-      # 1. For collision runs integrated luminosity has to be greater than 100
-      # 2. For cosmic runs duration has to be longer that 1 hour
+      # 1. If HLT key contains string "special", run is not significant
+      # 2. For collision runs integrated luminosity has to be greater than 0.1 1/pb
+      # 3. For cosmic runs duration has to be longer that 1 hour
       significant = db_access.false_crossdb()
 
+      if 'special' in run['oms_attributes']['hlt_key'].lower():
+        significant = db_access.false_crossdb()
+        
       # For collision runs:
-      if 'collisions' in run['rr_attributes']['class'].lower():
-        if run['oms_attributes']['delivered_lumi'] >= MIN_LUMI_FOR_COLLISIONS:
+      elif 'collision' in run['rr_attributes']['class'].lower():
+        if run['oms_attributes']['recorded_lumi'] >= MIN_LUMI_FOR_COLLISIONS:
           significant = db_access.true_crossdb()
       
       # For cosmic runs:
-      elif 'cosmics' in run['rr_attributes']['class'].lower():
+      elif 'cosmic' in run['rr_attributes']['class'].lower():
         if run['oms_attributes']['duration'] >= MIN_DURATION_FOR_COSMICS:
           significant = db_access.true_crossdb()
 
@@ -122,7 +126,7 @@ def get_sso_cookie(url):
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='DCS data extraction from the RR API.')
-  parser.add_argument('-u', dest='update', type=bool, default=False, help='If True, all runs will be updated. Otherwise only missing runs will be fetched.')
+  parser.add_argument('-u', dest='update', action='store_true', help='If True, all runs will be updated. Otherwise only missing runs will be fetched. Default is False.')
   args = parser.parse_args()
 
   update = args.update
