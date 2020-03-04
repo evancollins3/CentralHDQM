@@ -58,7 +58,9 @@ const fullScreenController = (function(){
 
         changeRangesClicked: async function(plotIndex, animated=true)
         {
-            this.plotData = main.plotDatas[plotIndex]
+            // this.plotData = main.plotDatas[plotIndex]
+            // Apparently that's the way to perform a deep copy in JS:
+            this.plotData = JSON.parse(JSON.stringify(main.plotDatas[plotIndex]))
             await this.redrawPlot()
 
             const initialStartX = this.plotData.series[0].trends[0].run
@@ -82,7 +84,6 @@ const fullScreenController = (function(){
 
         submitClicked: async function()
         {
-            // const renderTo = 'fs-plot-container'
             const initialStartX = this.plotData.series[0].trends[0].run
             const initialEndX = this.plotData.series[0].trends[this.plotData.series[0].trends.length - 1].run
 
@@ -140,20 +141,20 @@ const fullScreenController = (function(){
             $("#fs-value-error").html(String(dataPoint.error))
 			$("#fs-value-run").html(String(dataPoint.run))
 			$("#fs-value-fill").html(String(dataPoint.oms_info.fill_number))
-            $("#fs-value-duration").html(String(dataPoint.oms_info.duration))
-			$("#fs-value-delivered-lumi").html(String(dataPoint.oms_info.delivered_lumi))
-			$("#fs-value-b-field").html(String(dataPoint.oms_info.b_field))
-			$("#fs-value-end-lumi").html(String(dataPoint.oms_info.end_lumi))
-			$("#fs-value-start-time").html(String(dataPoint.oms_info.start_time).replace("T", " ").replace("Z", ""))
-			$("#fs-value-end-time").html(String(dataPoint.oms_info.end_time).replace("T", " ").replace("Z", ""))
-			$("#fs-value-energy").html(String(dataPoint.oms_info.energy))
+            $("#fs-value-duration").html(String(helpers.secondsToHHMMSS(dataPoint.oms_info.duration)))
+			$("#fs-value-delivered-lumi").html(String(dataPoint.oms_info.delivered_lumi) + " <i>pb<sup>-1</sup></i>")
+            $("#fs-value-recorded-lumi").html(String(dataPoint.oms_info.recorded_lumi) + " <i>pb<sup>-1</sup></i>")
+			$("#fs-value-end-lumi").html(String(dataPoint.oms_info.end_lumi) + " <i>cm<sup>​−2</sup>​s​<sup>​−1</sup>​</i>")
+            $("#fs-value-b-field").html(String(dataPoint.oms_info.b_field) + " <i>T</i>")
+			$("#fs-value-start-time").html(String(dataPoint.oms_info.start_time))
+			$("#fs-value-end-time").html(String(dataPoint.oms_info.end_time))
+			$("#fs-value-energy").html(String(dataPoint.oms_info.energy) + " <i>GeV</i>")
 			$("#fs-value-era").html(String(dataPoint.oms_info.era))
 			$("#fs-value-injection-scheme").html(String(dataPoint.oms_info.injection_scheme))
 			$("#fs-value-hlt-key").html(String(dataPoint.oms_info.hlt_key))
-			$("#fs-value-hlt-physics-rate").html(String(dataPoint.oms_info.hlt_physics_rate))
+			$("#fs-value-hlt-physics-rate").html(String(dataPoint.oms_info.hlt_physics_rate) + " <i>Hz</i>")
 			$("#fs-value-l1t-key").html(String(dataPoint.oms_info.l1_key))
-			$("#fs-value-l1t-rate").html(String(dataPoint.oms_info.l1_rate))
-            $("#fs-value-recorded-lumi").html(String(dataPoint.oms_info.recorded_lumi))
+			$("#fs-value-l1t-rate").html(String(dataPoint.oms_info.l1_rate) + " <i>Hz</i>")
 
             $("#fs-value-oms-url").attr("href", `https://cmsoms.cern.ch/cms/runs/report?cms_run=${dataPoint.run}`)
             $("#fs-value-gui-url").attr("href", `${config.getBaseAPIUrl()}/expand_url?data_point_id=${String(dataPoint.id)}&url_type=main_gui_url`)

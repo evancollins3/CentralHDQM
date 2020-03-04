@@ -248,13 +248,21 @@ const plotter = (function() {
                     <b>Value:</b> {point.y}<br>
                     <b>Error:</b> {point.error}<br/>
                     <b>Run No:</b> {point.run}<br/>
+                    <b>Duration:</b> {point.duration_readable}<br/>
+                    <b>Recorded luminosity:</b> {point.rec_lumi}<br/>
+                    <b>Start time:</b> {point.start_time}<br/>
+                    <b>End time:</b> {point.end_time}<br/>
                     Click on the data point to reveal more info.`
 
                 const data = plotData.series[i].trends.map(trend => ({
-                    y:              trend.value,
-                    error:          trend.error,
-                    run:            trend.run,
-                    series_index:   i,
+                    y:                  trend.value,
+                    error:              trend.error,
+                    run:                trend.run,
+                    series_index:       i,
+                    duration_readable:  helpers.secondsToHHMMSS(trend.oms_info.duration),
+                    rec_lumi:           trend.oms_info.recorded_lumi?.toExponential(3),
+                    start_time:         trend.oms_info.start_time,
+                    end_time:           trend.oms_info.end_time
                 }))
 
                 options.series.push({
@@ -266,7 +274,6 @@ const plotter = (function() {
                         radius: 3
                     },
                     tooltip: {
-                        // headerFormat: "",
                         pointFormat: tooltip,
                     },
                     showInLegend: true,
@@ -459,19 +466,27 @@ const plotter = (function() {
 
             for(let i = 0; i < plotData.series.length; i++)
             {
-                const tooltip = `
+                 const tooltip = `
                     <b>Value:</b> {point.y}<br>
                     <b>Error:</b> {point.error}<br/>
                     <b>Run No:</b> {point.run}<br/>
+                    <b>Duration:</b> {point.duration_readable}<br/>
+                    <b>Recorded luminosity:</b> {point.rec_lumi}<br/>
+                    <b>Start time:</b> {point.start_time}<br/>
+                    <b>End time:</b> {point.end_time}<br/>
                     Click on the data point to reveal more info.`
 
                 const data = plotData.series[i].trends.map(trend => ({
-                    y:              trend.value,
-                    error:          trend.error,
-                    run:            trend.run,
-                    del_lumi:       trend.oms_info.delivered_lumi,
-                    duration:       trend.oms_info.duration,
-                    series_index:   i,
+                    y:                  trend.value,
+                    error:              trend.error,
+                    run:                trend.run,
+                    del_lumi:           trend.oms_info.delivered_lumi,
+                    duration:           trend.oms_info.duration,
+                    series_index:       i,
+                    duration_readable:  helpers.secondsToHHMMSS(trend.oms_info.duration),
+                    rec_lumi:           trend.oms_info.recorded_lumi?.toExponential(3),
+                    start_time:         trend.oms_info.start_time,
+                    end_time:           trend.oms_info.end_time
                 }))
 
                 const ticks = []
@@ -721,15 +736,23 @@ const plotter = (function() {
                     <b>Value:</b> {point.y}<br>
                     <b>Error:</b> {point.error}<br/>
                     <b>Run No:</b> {point.run}<br/>
+                    <b>Duration:</b> {point.duration_readable}<br/>
+                    <b>Recorded luminosity:</b> {point.rec_lumi}<br/>
+                    <b>Start time:</b> {point.start_time}<br/>
+                    <b>End time:</b> {point.end_time}<br/>
                     Click on the data point to reveal more info.`
 
                 const data = plotData.series[i].trends.map(trend => ({
-                    x:              new Date(trend.oms_info.start_time).getTime(), 
-                    x2:             new Date(trend.oms_info.end_time).getTime(), 
-                    y:              trend.value,
-                    error:          trend.error,
-                    run:            trend.run,
-                    series_index:   i,
+                    x:                  new Date(trend.oms_info.start_time).getTime(), 
+                    x2:                 new Date(trend.oms_info.end_time).getTime(), 
+                    y:                  trend.value,
+                    error:              trend.error,
+                    run:                trend.run,
+                    series_index:       i,
+                    duration_readable:  helpers.secondsToHHMMSS(trend.oms_info.duration),
+                    rec_lumi:           trend.oms_info.recorded_lumi?.toExponential(3),
+                    start_time:         trend.oms_info.start_time,
+                    end_time:           trend.oms_info.end_time
                 }))
 
                 options.series.push({

@@ -80,15 +80,21 @@ def data():
     processing_string = rows[0]['processing_string']
     series = rows[0]['name']
   
-  if (from_run == None or to_run == None) and runs == None:
-    if latest == None:
-      latest = 50
+  if runs == None:
+    # Will need filtering
+    runs_filter = ''
+    latest_filter = ''
+    if from_run != None and to_run != None:
+      runs_filter = 'AND run >= %s AND run <= %s' % (from_run, to_run)
+    else:
+      if latest == None:
+        latest = 50
+      latest_filter = 'LIMIT %s' % latest
 
     run_class_like = '%%collision%%'
     if 'cosmic' in pd.lower():
       run_class_like = '%%cosmic%%'
-    
-    # Get latest runs for specific user selection
+
     sql = '''
     SELECT run FROM oms_data_cache
     WHERE run IN 
@@ -101,15 +107,16 @@ def data():
     AND oms_data_cache.run_class %s :run_class
     AND oms_data_cache.significant=%s
     AND oms_data_cache.is_dcs=%s
+    %s
     ORDER BY run DESC
-    LIMIT :latest
+    %s
     ;
-    ''' % (db_access.ilike_crossdb(), db_access.true_crossdb(), db_access.true_crossdb())
+    ''' % (db_access.ilike_crossdb(), db_access.true_crossdb(), db_access.true_crossdb(), runs_filter, latest_filter)
 
     print('Getting the list of runs...')
     start = timeit.default_timer() 
 
-    rows = execute_with_retry(session, sql, { 'subsystem': subsystem, 'pd': pd, 'processing_string': processing_string, 'run_class': run_class_like, 'latest': latest })
+    rows = execute_with_retry(session, sql, { 'subsystem': subsystem, 'pd': pd, 'processing_string': processing_string, 'run_class': run_class_like })
     rows = list(rows)
 
     stop = timeit.default_timer()
@@ -294,9 +301,9 @@ def expand_url():
 
     rows = list(execute_with_retry(session, sql, {'id': data_point_id}))
     url = rows[0][url_type]
-    url = url.replace('+', '%2B')
 
     if url:
+      url = url.replace('+', '%2B')
       return redirect(url, code=302)
     else:
       return jsonify({'message': 'Requested URL type is not found.'}), 404
