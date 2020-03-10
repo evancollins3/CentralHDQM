@@ -251,7 +251,7 @@ const plotter = (function() {
                     <b>Error:</b> {point.error}<br/>
                     <b>Run No:</b> {point.run}<br/>
                     <b>Duration:</b> {point.duration_readable}<br/>
-                    <b>Recorded luminosity:</b> {point.rec_lumi}<br/>
+                    <b>Recorded luminosity:</b> {point.rec_lumi} <i>1/pb</i><br/>
                     <b>Start time:</b> {point.start_time}<br/>
                     <b>End time:</b> {point.end_time}<br/>
                     Click on the data point to reveal more info.`
@@ -262,7 +262,7 @@ const plotter = (function() {
                     run:                trend.run,
                     series_index:       i,
                     duration_readable:  helpers.secondsToHHMMSS(trend.oms_info.duration),
-                    rec_lumi:           trend.oms_info.recorded_lumi?.toExponential(3),
+                    rec_lumi:           helpers.toExponential(trend.oms_info.recorded_lumi, 3),
                     start_time:         trend.oms_info.start_time,
                     end_time:           trend.oms_info.end_time
                 }))
@@ -358,7 +358,7 @@ const plotter = (function() {
             const yErr = plotData.series.map(x => x.trends.map(y => y.error))
             const fills = plotData.series[0].trends.map(x => x.oms_info.fill_number)
             const durations = plotData.series[0].trends.map(x => x.oms_info.duration)
-            const intLumis = plotData.series[0].trends.map(x => x.oms_info.init_lumi)
+            const deliveredLumis = plotData.series[0].trends.map(x => x.oms_info.delivered_lumi)
             const seriesTitles = plotData.series.map(x => x.metadata.plot_title)
 
             const meanAndRms = helpers.calculateMeanAndRMS(yValues)
@@ -368,7 +368,7 @@ const plotter = (function() {
             const min_y = range[0]
             const max_y = range[1]
 
-            const bands = this.getXRangeFillBands(optionsController.options.showIntLumi ? intLumis : durations, fills)
+            const bands = this.getXRangeFillBands(optionsController.options.showIntLumi ? deliveredLumis : durations, fills)
             
             const options = {
                 credits: {
@@ -474,7 +474,7 @@ const plotter = (function() {
                     <b>Error:</b> {point.error}<br/>
                     <b>Run No:</b> {point.run}<br/>
                     <b>Duration:</b> {point.duration_readable}<br/>
-                    <b>Recorded luminosity:</b> {point.rec_lumi}<br/>
+                    <b>Recorded luminosity:</b> {point.rec_lumi} <i>1/pb</i><br/>
                     <b>Start time:</b> {point.start_time}<br/>
                     <b>End time:</b> {point.end_time}<br/>
                     Click on the data point to reveal more info.`
@@ -487,7 +487,7 @@ const plotter = (function() {
                     duration:           trend.oms_info.duration,
                     series_index:       i,
                     duration_readable:  helpers.secondsToHHMMSS(trend.oms_info.duration),
-                    rec_lumi:           trend.oms_info.recorded_lumi?.toExponential(3),
+                    rec_lumi:           helpers.toExponential(trend.oms_info.recorded_lumi, 3),
                     start_time:         trend.oms_info.start_time,
                     end_time:           trend.oms_info.end_time
                 }))
@@ -741,7 +741,7 @@ const plotter = (function() {
                     <b>Error:</b> {point.error}<br/>
                     <b>Run No:</b> {point.run}<br/>
                     <b>Duration:</b> {point.duration_readable}<br/>
-                    <b>Recorded luminosity:</b> {point.rec_lumi}<br/>
+                    <b>Recorded luminosity:</b> {point.rec_lumi} <i>1/pb</i><br/>
                     <b>Start time:</b> {point.start_time}<br/>
                     <b>End time:</b> {point.end_time}<br/>
                     Click on the data point to reveal more info.`
@@ -754,7 +754,7 @@ const plotter = (function() {
                     run:                trend.run,
                     series_index:       i,
                     duration_readable:  helpers.secondsToHHMMSS(trend.oms_info.duration),
-                    rec_lumi:           trend.oms_info.recorded_lumi?.toExponential(3),
+                    rec_lumi:           helpers.toExponential(trend.oms_info.recorded_lumi, 3),
                     start_time:         trend.oms_info.start_time,
                     end_time:           trend.oms_info.end_time
                 }))
