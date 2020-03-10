@@ -128,6 +128,19 @@ const helpers = (function(){
                 seconds = "0" + seconds
 
             return hours + ":" + minutes + ":" + seconds
+        },
+
+        toExponential: function(num, x) {
+            if(num === null || num === undefined) {
+                return undefined
+            }
+            
+            if(x === undefined) {
+                return num.toExponential()
+            }
+            else {
+                return num.toExponential(x)
+            }
         }
     }
 }())
