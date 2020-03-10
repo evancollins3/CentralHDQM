@@ -119,7 +119,9 @@ def get_sso_cookie(url):
       for line in file:
         fields = line.strip().split('\t')
         if len(fields) == 7:
-          cookies[fields[5]] = fields[6]
+          # Since RR has limited header size (8k) and this header is probably not used - don't add it
+          if fields[5] !=  'MSISSignOut':
+            cookies[fields[5]] = fields[6]
     return cookies
   return None
 
