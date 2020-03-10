@@ -81,7 +81,8 @@ const plotter = (function() {
                         marker: {
                             symbol: "circle",
                         },
-                        color: "#000000"
+                        color: "#000000",
+                        turboThreshold: 2000
                     }
                 ],
                 colorAxis: {
@@ -208,6 +209,7 @@ const plotter = (function() {
                             }
                         } : {},
                         allowPointSelect: true,
+                        turboThreshold: 2000,
                         point: {
                             events: {
                                 click: function () {
@@ -433,6 +435,7 @@ const plotter = (function() {
                             }
                         } : {},
                         allowPointSelect: true,
+                        turboThreshold: 2000,
                         point: {
                             events: {
                                 click: function () {
@@ -693,6 +696,7 @@ const plotter = (function() {
                             }
                         } : {},
                         allowPointSelect: true,
+                        turboThreshold: 2000,
                         point: {
                             events: {
                                 click: function () {
@@ -710,7 +714,7 @@ const plotter = (function() {
                                     return false
                                 }
                             }
-                        },
+                        }
                     }
                 },
                 series: optionsController.options.showFills ?

@@ -45,7 +45,7 @@ cd CentralHDQM/
 # First check if we are the owner of the folder where we'll be puting the cookie
 if [ $(ls -ld /tmp/$USER/hdqm/CentralHDQM/backend/api/etc | awk '{ print $3 }') == $USER ]; then 
     cern-get-sso-cookie -u https://cmsoms.cern.ch/agg/api/v1/runs -o backend/api/etc/oms_sso_cookie.txt
-    cern-get-sso-cookie -u https://cmsrunregistry.web.cern.ch/api/json_creation/generate -o backend/api/etc/rr_sso_cookie.txt
+    cern-get-sso-cookie -u https://cmsrunregistry.web.cern.ch/api/runs_filtered_ordered -o backend/api/etc/rr_sso_cookie.txt
 fi
 
 cd backend/
@@ -61,10 +61,10 @@ export PYTHONPATH="${PYTHONPATH}:$(pwd)/.python_packages/python2"
 cd extractor/
 
 # Extract few DQM histograms. Using only one process because we are on SQLite
-./hdqmextract.py -c cfg/PixelPhase1/trendPlotsPixelPhase1_tracks.ini -r 325117 325159 325168 325169 325170 325172 325175 325308 325309 325310 -j 1
+./hdqmextract.py -c cfg/PixelPhase1/trendPlotsPixelPhase1_tracks.ini -r 324997 324998 324999 325000 325001 325022 325057 325097 325098 325099 -j 1
 
 # Calculate HDQM values from DQM histograms stored in the DB
-./calculate.py -c cfg/PixelPhase1/trendPlotsPixelPhase1_tracks.ini -r 325117 325159 325168 325169 325170 325172 325175 325308 325309 325310 -j 1
+./calculate.py -c cfg/PixelPhase1/trendPlotsPixelPhase1_tracks.ini -r 324997 324998 324999 325000 325001 325022 325057 325097 325098 325099 -j 1
 
 # Get the OMS and RR data about the runs
 ./oms_extractor.py
@@ -324,6 +324,28 @@ Also important:
 Make sure to make root directory accessible in SELinux:  
 `chcon -Rt httpd_sys_content_t /data/hdqmTest/CentralHDQM/frontend/`  
 `sudo chcon -Rt httpd_sys_content_t /data/hdqm/`
+
+DB authentication information is placed in this file: `backend/connection_string.txt`, in the first line of said file, in this format: `postgres://<DB_NAME>:<PASSWORD>@<HOST>:<PORT>/<USER>`
+
+
+## API local setup instructions
+
+Before running the API server there should be a `backend/api/private/` folder containing these files:
+* `userkey.pem` - GRID certificate key file
+* `usercert.pem` - GRID certificate file
+
+### Instructions on how to retrieve these file:
+
+* Get GRID certificate: https://ca.cern.ch/ca/ You have to use your personal account. **Certificate has to be passwordless**.
+* Instructions on how to get certificate and key files: https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookStartingGrid#ObtainingCert
+* Copy paste-ble instructions:
+```
+# Leave Import Password blank
+# PEM passphrase is required to be set
+openssl pkcs12 -in myCertificate.p12 -clcerts -nokeys -out usercert.pem
+openssl pkcs12 -in myCertificate.p12 -nocerts -out userkey.tmp.pem
+openssl rsa -in userkey.tmp.pem -out userkey.pem
+```
 
 ## Daily extraction
 
