@@ -51,7 +51,8 @@ const plotter = (function() {
                     noData: "No data found"
                 },
                 title: {
-                    text: plotName
+                    text: plotName,
+                    useHTML: true
                 },
                 subtitle: {
                     text: `<i>${plotData.name}</i>`
@@ -67,6 +68,9 @@ const plotter = (function() {
                     title: {
                         text: seriesTitles[1],
                     },
+                },
+                legend: {
+                    useHTML: true 
                 },
                 tooltip: {
                     headerFormat: "",
@@ -152,13 +156,15 @@ const plotter = (function() {
                     noData: "No data found"
                 },
                 title: {
-                    text: plotName
+                    text: plotName,
+                    useHTML: true
                 },
                 subtitle: {
                     text: `<i>${plotData.name}</i><br>Mean: ${mean.toExponential(4)}, RMS: ${rms.toExponential(4)}`
                 },
                 tooltip: {
                     style : { opacity: 0.9 },
+                    useHTML: true
                 },
                 xAxis: {
                     title: {
@@ -171,6 +177,7 @@ const plotter = (function() {
                     {
                         title: {
                             text: yTitle,
+                            useHTML: true
                         },
                         min: min_y,
                         max: max_y,
@@ -186,6 +193,9 @@ const plotter = (function() {
                         tickPixelInterval: 60
                     }
                 ],
+                legend: {
+                    useHTML: true 
+                },
                 plotOptions: {
                     series: {
                         // Make sure legend click toggles the visibility of fill lines
@@ -251,7 +261,7 @@ const plotter = (function() {
                     <b>Error:</b> {point.error}<br/>
                     <b>Run No:</b> {point.run}<br/>
                     <b>Duration:</b> {point.duration_readable}<br/>
-                    <b>Recorded luminosity:</b> {point.rec_lumi} <i>1/pb</i><br/>
+                    <b>Recorded luminosity:</b> {point.rec_lumi} <i>pb<sup>-1</sup></i><br/>
                     <b>Start time:</b> {point.start_time}<br/>
                     <b>End time:</b> {point.end_time}<br/>
                     Click on the data point to reveal more info.`
@@ -383,13 +393,15 @@ const plotter = (function() {
                     noData: "No data found"
                 },
                 title: {
-                    text: plotName
+                    text: plotName,
+                    useHTML: true
                 },
                 subtitle: {
                     text: `<i>${plotData.name}</i><br>Mean: ${mean.toExponential(4)}, RMS: ${rms.toExponential(4)}`
                 },
                 tooltip: {
                     style : { opacity: 0.9 },
+                    useHTML: true
                 },
                 xAxis: {
                     title: {
@@ -404,11 +416,15 @@ const plotter = (function() {
                     {
                         title: {
                             text: yTitle,
+                            useHTML: true
                         },
                         min: min_y,
                         max: max_y,
                     },
                 ],
+                legend: {
+                    useHTML: true 
+                },
                 plotOptions: {
                     xrange: {
                         grouping: false,
@@ -474,7 +490,7 @@ const plotter = (function() {
                     <b>Error:</b> {point.error}<br/>
                     <b>Run No:</b> {point.run}<br/>
                     <b>Duration:</b> {point.duration_readable}<br/>
-                    <b>Recorded luminosity:</b> {point.rec_lumi} <i>1/pb</i><br/>
+                    <b>Recorded luminosity:</b> {point.rec_lumi} <i>pb<sup>-1</sup></i><br/>
                     <b>Start time:</b> {point.start_time}<br/>
                     <b>End time:</b> {point.end_time}<br/>
                     Click on the data point to reveal more info.`
@@ -644,13 +660,15 @@ const plotter = (function() {
                     noData: "No data found"
                 },
                 title: {
-                    text: plotName
+                    text: plotName,
+                    useHTML: true
                 },
                 subtitle: {
                     text: `<i>${plotData.name}</i><br>Mean: ${mean.toExponential(4)}, RMS: ${rms.toExponential(4)}`
                 },
                 tooltip: {
                     style : { opacity: 0.9 },
+                    useHTML: true
                 },
                 xAxis: {
                     title: {
@@ -665,11 +683,15 @@ const plotter = (function() {
                     {
                         title: {
                             text: yTitle,
+                            useHTML: true
                         },
                         min: min_y,
                         max: max_y,
                     },
                 ],
+                legend: {
+                    useHTML: true 
+                },
                 plotOptions: {
                     xrange: {
                         grouping: false,
@@ -741,7 +763,7 @@ const plotter = (function() {
                     <b>Error:</b> {point.error}<br/>
                     <b>Run No:</b> {point.run}<br/>
                     <b>Duration:</b> {point.duration_readable}<br/>
-                    <b>Recorded luminosity:</b> {point.rec_lumi} <i>1/pb</i><br/>
+                    <b>Recorded luminosity:</b> {point.rec_lumi} <i>pb<sup>-1</sup></i><br/>
                     <b>Start time:</b> {point.start_time}<br/>
                     <b>End time:</b> {point.end_time}<br/>
                     Click on the data point to reveal more info.`
