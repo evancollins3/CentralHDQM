@@ -12,7 +12,7 @@ const plotter = (function() {
                     return null
             }
 
-            if(optionsController.options.showXRange || optionsController.options.showIntLumi)
+            if(optionsController.options.showXRange || optionsController.options.showDeliveredLumi)
                 return this.drawXRangePlot(plotData, renderTo)
             else if(optionsController.options.showDatetime)
                 return this.drawXRangeDatetimePlot(plotData, renderTo)
@@ -51,7 +51,8 @@ const plotter = (function() {
                     noData: "No data found"
                 },
                 title: {
-                    text: plotName
+                    text: plotName,
+                    useHTML: true
                 },
                 subtitle: {
                     text: `<i>${plotData.name}</i>`
@@ -67,6 +68,9 @@ const plotter = (function() {
                     title: {
                         text: seriesTitles[1],
                     },
+                },
+                legend: {
+                    useHTML: true 
                 },
                 tooltip: {
                     headerFormat: "",
@@ -152,13 +156,15 @@ const plotter = (function() {
                     noData: "No data found"
                 },
                 title: {
-                    text: plotName
+                    text: plotName,
+                    useHTML: true
                 },
                 subtitle: {
                     text: `<i>${plotData.name}</i><br>Mean: ${mean.toExponential(4)}, RMS: ${rms.toExponential(4)}`
                 },
                 tooltip: {
                     style : { opacity: 0.9 },
+                    useHTML: true
                 },
                 xAxis: {
                     title: {
@@ -171,6 +177,7 @@ const plotter = (function() {
                     {
                         title: {
                             text: yTitle,
+                            useHTML: true
                         },
                         min: min_y,
                         max: max_y,
@@ -186,6 +193,9 @@ const plotter = (function() {
                         tickPixelInterval: 60
                     }
                 ],
+                legend: {
+                    useHTML: true 
+                },
                 plotOptions: {
                     series: {
                         // Make sure legend click toggles the visibility of fill lines
@@ -251,7 +261,7 @@ const plotter = (function() {
                     <b>Error:</b> {point.error}<br/>
                     <b>Run No:</b> {point.run}<br/>
                     <b>Duration:</b> {point.duration_readable}<br/>
-                    <b>Recorded luminosity:</b> {point.rec_lumi} <i>1/pb</i><br/>
+                    <b>Delivered luminosity:</b> {point.del_lumi} <i>pb<sup>-1</sup></i><br/>
                     <b>Start time:</b> {point.start_time}<br/>
                     <b>End time:</b> {point.end_time}<br/>
                     Click on the data point to reveal more info.`
@@ -262,7 +272,7 @@ const plotter = (function() {
                     run:                trend.run,
                     series_index:       i,
                     duration_readable:  helpers.secondsToHHMMSS(trend.oms_info.duration),
-                    rec_lumi:           helpers.toExponential(trend.oms_info.recorded_lumi, 3),
+                    del_lumi:           helpers.toExponential(trend.oms_info.delivered_lumi, 3),
                     start_time:         trend.oms_info.start_time,
                     end_time:           trend.oms_info.end_time
                 }))
@@ -368,7 +378,7 @@ const plotter = (function() {
             const min_y = range[0]
             const max_y = range[1]
 
-            const bands = this.getXRangeFillBands(optionsController.options.showIntLumi ? deliveredLumis : durations, fills)
+            const bands = this.getXRangeFillBands(optionsController.options.showDeliveredLumi ? deliveredLumis : durations, fills)
             
             const options = {
                 credits: {
@@ -383,13 +393,15 @@ const plotter = (function() {
                     noData: "No data found"
                 },
                 title: {
-                    text: plotName
+                    text: plotName,
+                    useHTML: true
                 },
                 subtitle: {
                     text: `<i>${plotData.name}</i><br>Mean: ${mean.toExponential(4)}, RMS: ${rms.toExponential(4)}`
                 },
                 tooltip: {
                     style : { opacity: 0.9 },
+                    useHTML: true
                 },
                 xAxis: {
                     title: {
@@ -404,11 +416,15 @@ const plotter = (function() {
                     {
                         title: {
                             text: yTitle,
+                            useHTML: true
                         },
                         min: min_y,
                         max: max_y,
                     },
                 ],
+                legend: {
+                    useHTML: true 
+                },
                 plotOptions: {
                     xrange: {
                         grouping: false,
@@ -474,7 +490,7 @@ const plotter = (function() {
                     <b>Error:</b> {point.error}<br/>
                     <b>Run No:</b> {point.run}<br/>
                     <b>Duration:</b> {point.duration_readable}<br/>
-                    <b>Recorded luminosity:</b> {point.rec_lumi} <i>1/pb</i><br/>
+                    <b>Delivered luminosity:</b> {point.del_lumi_readable} <i>pb<sup>-1</sup></i><br/>
                     <b>Start time:</b> {point.start_time}<br/>
                     <b>End time:</b> {point.end_time}<br/>
                     Click on the data point to reveal more info.`
@@ -487,7 +503,7 @@ const plotter = (function() {
                     duration:           trend.oms_info.duration,
                     series_index:       i,
                     duration_readable:  helpers.secondsToHHMMSS(trend.oms_info.duration),
-                    rec_lumi:           helpers.toExponential(trend.oms_info.recorded_lumi, 3),
+                    del_lumi_readable:  helpers.toExponential(trend.oms_info.delivered_lumi, 3),
                     start_time:         trend.oms_info.start_time,
                     end_time:           trend.oms_info.end_time
                 }))
@@ -497,7 +513,7 @@ const plotter = (function() {
                 for (let j = 0; j < data.length; j++) 
                 {
                     let valueForBinLength = data[j].duration
-                    if(optionsController.options.showIntLumi)
+                    if(optionsController.options.showDeliveredLumi)
                         valueForBinLength = data[j].del_lumi
 
                     // Make sure bin length is not 0
@@ -644,13 +660,15 @@ const plotter = (function() {
                     noData: "No data found"
                 },
                 title: {
-                    text: plotName
+                    text: plotName,
+                    useHTML: true
                 },
                 subtitle: {
                     text: `<i>${plotData.name}</i><br>Mean: ${mean.toExponential(4)}, RMS: ${rms.toExponential(4)}`
                 },
                 tooltip: {
                     style : { opacity: 0.9 },
+                    useHTML: true
                 },
                 xAxis: {
                     title: {
@@ -665,11 +683,15 @@ const plotter = (function() {
                     {
                         title: {
                             text: yTitle,
+                            useHTML: true
                         },
                         min: min_y,
                         max: max_y,
                     },
                 ],
+                legend: {
+                    useHTML: true 
+                },
                 plotOptions: {
                     xrange: {
                         grouping: false,
@@ -741,7 +763,7 @@ const plotter = (function() {
                     <b>Error:</b> {point.error}<br/>
                     <b>Run No:</b> {point.run}<br/>
                     <b>Duration:</b> {point.duration_readable}<br/>
-                    <b>Recorded luminosity:</b> {point.rec_lumi} <i>1/pb</i><br/>
+                    <b>Delivered luminosity:</b> {point.del_lumi} <i>pb<sup>-1</sup></i><br/>
                     <b>Start time:</b> {point.start_time}<br/>
                     <b>End time:</b> {point.end_time}<br/>
                     Click on the data point to reveal more info.`
@@ -754,7 +776,7 @@ const plotter = (function() {
                     run:                trend.run,
                     series_index:       i,
                     duration_readable:  helpers.secondsToHHMMSS(trend.oms_info.duration),
-                    rec_lumi:           helpers.toExponential(trend.oms_info.recorded_lumi, 3),
+                    del_lumi:           helpers.toExponential(trend.oms_info.delivered_lumi, 3),
                     start_time:         trend.oms_info.start_time,
                     end_time:           trend.oms_info.end_time
                 }))

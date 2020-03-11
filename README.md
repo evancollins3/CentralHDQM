@@ -3,9 +3,11 @@
 - [Central Historic DQM application for CMS detector](#central-historic-dqm-application-for-cms-detector)
 - [Usage instructions](#usage-instructions)
   * [How to run locally](#how-to-run-locally)
+    + [New ssh connection](#new-ssh-connection)
   * [How to add new plots](#how-to-add-new-plots)
     + [Backend configuration](#backend-configuration)
     + [Frontend configuration](#frontend-configuration)
+    + [Adding new metrics](#adding-new-metrics)
   * [Web application usage](#web-application-usage)
 - [API documentation](#api-documentation)
   * [Endpoints](#endpoints)
@@ -15,9 +17,12 @@
     + [`/api/runs`](#--api-runs-)
     + [`/api/expand_url`](#--api-expand-url-)
 - [Administration instructions](#administration-instructions)
+  * [API local setup instructions](#api-local-setup-instructions)
+    + [Instructions on how to retrieve the certificate and the key:](#instructions-on-how-to-retrieve-the-certificate-and-the-key-)
   * [Daily extraction](#daily-extraction)
   * [How to update](#how-to-update)
     + [How to rollback to the old version](#how-to-rollback-to-the-old-version)
+
 
 # Central Historic DQM application for CMS detector
 
@@ -86,6 +91,31 @@ python3 -m http.server 8000 &>/dev/null &
 
 That's it! Now visit http://localhost:8000/ on your browser.
 
+### New ssh connection
+
+If you have already successfully executed the instructions above and you want to keep working on the same deployment with new `ssh` connection, please follow the instructions bellow:
+
+``` bash
+/bin/bash
+cd /tmp/$USER/hdqm/CentralHDQM/
+
+if [ $(ls -ld /tmp/$USER/hdqm/CentralHDQM/backend/api/etc | awk '{ print $3 }') == $USER ]; then 
+    cern-get-sso-cookie -u https://cmsoms.cern.ch/agg/api/v1/runs -o backend/api/etc/oms_sso_cookie.txt
+    cern-get-sso-cookie -u https://cmsrunregistry.web.cern.ch/api/runs_filtered_ordered -o backend/api/etc/rr_sso_cookie.txt
+fi
+
+cd backend/
+source cmsenv
+
+export PYTHONPATH="${PYTHONPATH}:$(pwd)/.python_packages/python2"
+
+cd api/
+./run.sh &>/dev/null &
+
+cd ../../frontend/
+python3 -m http.server 8000 &>/dev/null &
+```
+
 ## How to add new plots
 
 In order to add new plots to HDQM, you have to provide two layers of configuration:  
@@ -112,7 +142,7 @@ yTitle = Number of Tracks in Pixel
 That's all it takes to tell HDQM how to plot a DQM quantity over time. Let's break this down line by line.
 
 * The first line describes an ID of a plot that is unique per subsystem. This ID will be used to refer to this plot later on. *This field is required*.
-* **metric** property tells the tool what function needs to be called to reduce a DQM histogram to a single value that will be plotted. Think of this as of a constructor call of a Python class. Classes that can be used are defined here: `backend/extractor/metrics/`. If necessary, new python classes could be added. new classes have to provide a constructor with as many arguments as it's required to be referred to from the configuration and a `calculate(self, histo)` method that will be called by the backend. This function has to return a tuple of two values `(value, error)`. *This field is required*.
+* **metric** property tells the tool what function needs to be called to reduce a DQM histogram to a single value that will be plotted. Think of this as of a constructor call of a Python class. Classes that can be used are defined here: `backend/extractor/metrics/`. If necessary, new python classes could be added. New classes have to provide a constructor with as many arguments as it's required to be referred to from the configuration and a `calculate(self, histo)` method that will be called by the backend. This function has to return a tuple of two values `(value, error)`. For more details, refer to *Adding new metric* section bellow. *This field is required*.
 * **relativePath** is a path of a monitor element in a legacy DQM root file that a metric should be applied to. In case a path of a monitor element changed, you can provide multiple, space separated paths here. ME that is found the first will be used. *This field is required*.
 * **plotTitle** is a title of a plot that will be displayed in a web application. This value can contain spaces as it only has to be human readable. If this field is not provided, yTitle will be used instead. *This field is not required*.
 * **yTitle** is a title of y axis. It is usually used to display the units used in a plot. *This field is required*.
@@ -154,6 +184,70 @@ Let's break this down line by line.
 * **subsystem** is the name of the subsystem. It has to match exactly the name of the folder where backend configuration files came from (`backend/extractor/cfg/<subsystem>`).
 * **correlation** is a boolean value defining if the plot should be displayed in a correlation mode. This can be `true` only when there are exactly 2 series in a display group.
 * **series** is an array if plot ID from backend configuration that will appear in a display group.
+
+### Adding new metrics
+
+In section we will look at how to add new metrics to the HDQM.
+
+Create a new python file inside metrics directory:
+``` bash
+vim backend/extractor/metrics/sampleMetrics.py
+```
+
+Import `BasicMetric` and define your new class:
+``` py
+from basic import BaseMetric
+
+class Mean(BaseMetric):
+  def calculate(self, histo):
+    return (histo.GetMean(), histo.GetMeanError())
+```
+
+`histo` is a full ROOT histogram, which, luckily, already provides getting its mean, so our implementation is very simple. **Keep in mind that you always have to return a tuple of 2 numbers: value and error!**
+
+Also, **all metrics have to inherit `BasicMetric` and implement `calculate(self, histo)` method**
+
+Now, add the new metric to the calculation script:
+
+``` bash
+vim backend/extractor/calculate.py
+```
+
+Import it:
+
+``` python
+from metrics import sampleMetrics
+```
+
+And add the new metric to the (already defined) `METRICS_MAP`:
+
+``` python
+METRICS_MAP = {'fits': fits, 'basic': basic, 'L1T_metrics': L1T_metrics, 'muon_metrics': muon_metrics, 'sampleMetrics': sampleMetrics}
+```
+
+Now, your newly added metric can be used in the `.ini` file like this:
+
+``` ini
+metric = sampleMetrics.Mean()
+```
+
+In this definition we are essentially calling a constructor of `sampleMetrics.Mean`. If you need to pass parameters to the metric, you can define a constructor and pass parameters from the configuration files. For example:
+
+``` py
+from basic import BaseMetric
+
+class BinCount(BaseMetric):
+  def __init__(self,  binNr):
+    self.__binNr = binNr
+  def calculate(self, histo):    
+    return (histo.GetBinContent(self.__binNr), 0)
+```
+
+This will be a trend of counts of first bin:
+
+``` ini
+metric = sampleMetrics.BinCount(1)
+```
 
 ## Web application usage 
 
@@ -334,7 +428,7 @@ Before running the API server there should be a `backend/api/private/` folder co
 * `userkey.pem` - GRID certificate key file
 * `usercert.pem` - GRID certificate file
 
-### Instructions on how to retrieve these file:
+### Instructions on how to retrieve the certificate and the key:
 
 * Get GRID certificate: https://ca.cern.ch/ca/ You have to use your personal account. **Certificate has to be passwordless**.
 * Instructions on how to get certificate and key files: https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookStartingGrid#ObtainingCert
