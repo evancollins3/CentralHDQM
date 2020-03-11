@@ -8,7 +8,7 @@ const optionsController = (function(){
             showDurations: true,
             showRegression: true,
             showXRange: false,
-            showIntLumi: false,
+            showDeliveredLumi: false,
             showDatetime: false,
             searchQuery: "",
         },
@@ -20,7 +20,7 @@ const optionsController = (function(){
             this.options.showDurations = $("#option-show-run-duration").prop("checked")
             this.options.showRegression = $("#option-show-regression-lines").prop("checked")
             this.options.showXRange = $("#option-show-xrange").prop("checked")
-            this.options.showIntLumi = $("#option-show-int-lumi").prop("checked")
+            this.options.showDeliveredLumi = $("#option-show-delivered-lumi").prop("checked")
             this.options.showDatetime = $("#option-show-datetime").prop("checked")
             this.options.searchQuery = $("#search-query-input").val()
         },
@@ -30,7 +30,7 @@ const optionsController = (function(){
             // Relative selects
             if(element.value === "option5" && element.checked)
             {
-                $("#option-show-int-lumi").prop("checked", false)
+                $("#option-show-delivered-lumi").prop("checked", false)
                 $("#option-show-datetime").prop("checked", false)
             }
             else if(element.value === "option6" && element.checked)
@@ -40,12 +40,12 @@ const optionsController = (function(){
             }
             else if(element.value === "option7" && element.checked)
             {
-                $("#option-show-int-lumi").prop("checked", false)
+                $("#option-show-delivered-lumi").prop("checked", false)
                 $("#option-show-xrange").prop("checked", false)
             }
 
-            // When run duration XRange is selected, run durations option doesn't make sense
-            if($("#option-show-xrange").prop("checked"))
+            // When run duration XRange or datetime is selected, run durations option doesn't make sense
+            if($("#option-show-xrange").prop("checked") || $("#option-show-datetime").prop("checked"))
             {
                 $("#option-show-run-duration").prop("checked", true)
                 $("#option-show-run-duration").prop("disabled", true)
@@ -63,11 +63,11 @@ const optionsController = (function(){
             $("#option-show-run-duration").prop("checked", this.options.showDurations)
             $("#option-show-regression-lines").prop("checked", this.options.showRegression)
             $("#option-show-xrange").prop("checked", this.options.showXRange)
-            $("#option-show-int-lumi").prop("checked", this.options.showIntLumi)
+            $("#option-show-delivered-lumi").prop("checked", this.options.showDeliveredLumi)
             $("#option-show-datetime").prop("checked", this.options.showDatetime)
 
-            // When run duration XRange is selected, run durations option doesn't make sense
-            if($("#option-show-xrange").prop("checked"))
+            // When run duration XRange or datetime is selected, run durations option doesn't make sense
+            if($("#option-show-xrange").prop("checked") || $("#option-show-datetime").prop("checked"))
             {
                 $("#option-show-run-duration").prop("checked", true)
                 $("#option-show-run-duration").prop("disabled", true)
@@ -85,10 +85,10 @@ const optionsController = (function(){
             const showDurations = this.options.showDurations = $("#option-show-run-duration").prop("checked") << 2
             const showRegression = this.options.showRegression = $("#option-show-regression-lines").prop("checked") << 3
             const showXRange = this.options.showXRange = $("#option-show-xrange").prop("checked") << 4
-            const showIntLumi = this.options.showIntLumi = $("#option-show-int-lumi").prop("checked") << 5
+            const showDeliveredLumi = this.options.showDeliveredLumi = $("#option-show-delivered-lumi").prop("checked") << 5
             const showDatetime = this.options.showDatetime = $("#option-show-datetime").prop("checked") << 6
 
-            return showErrors + showFills + showDurations + showRegression + showXRange + showIntLumi + showDatetime
+            return showErrors + showFills + showDurations + showRegression + showXRange + showDeliveredLumi + showDatetime
         },
 
         setFromBitwiseSum: function(sum)
@@ -98,7 +98,7 @@ const optionsController = (function(){
             this.options.showDurations = this.isBitSet(sum, 2)
             this.options.showRegression = this.isBitSet(sum, 3)
             this.options.showXRange = this.isBitSet(sum, 4)
-            this.options.showIntLumi = this.isBitSet(sum, 5)
+            this.options.showDeliveredLumi = this.isBitSet(sum, 5)
             this.options.showDatetime = this.isBitSet(sum, 6)
         },
 

@@ -155,6 +155,9 @@ def extract_all_mes(cfg_files, runs, nprocs):
   existing_eos_paths = set(x.eos_path for x in session.query(db_access.TrackedEOSPathForMEExtraction).all())
   session.close()
 
+  # Single session (transaction) for queue manipulations
+  session = db_access.get_session()
+
   # -------------------- Update the ME paths in the extraction queue -------------------- #
   new_mes = mes_set.difference(existing_me_paths)
   deleted_mes = existing_me_paths.difference(mes_set)
@@ -164,19 +167,19 @@ def extract_all_mes(cfg_files, runs, nprocs):
   # Remove deleted MEs from the extraction queue
   if len(deleted_mes) > 0:
     sql = 'DELETE FROM queue_to_extract WHERE me_path = :me_path;'
-    exec_transaction(sql, [{'me_path': x} for x in deleted_mes])
+    session.execute(sql, [{'me_path': x} for x in deleted_mes])
 
     sql = 'DELETE FROM tracked_me_paths_for_me_extraction WHERE me_path = :me_path;'
-    exec_transaction(sql, [{'me_path': x} for x in deleted_mes])
+    session.execute(sql, [{'me_path': x} for x in deleted_mes])
 
   # Refresh new MEs table
   sql = 'DELETE FROM new_me_paths_for_me_extraction;'
-  exec_transaction(sql)
+  session.execute(sql)
 
   # Insert new ME paths
   if len(new_mes) > 0:
     sql = 'INSERT INTO new_me_paths_for_me_extraction (me_path) VALUES (:me_path);'
-    exec_transaction(sql, [{'me_path': x} for x in new_mes])
+    session.execute(sql, [{'me_path': x} for x in new_mes])
 
   # Will have to extract new MEs for every existing file
   sql_update_queue = '''
@@ -192,7 +195,9 @@ def extract_all_mes(cfg_files, runs, nprocs):
   FROM new_me_paths_for_me_extraction
   ;
   '''
-  exec_transaction([sql_update_queue, sql_update_existing])
+
+  session.execute(sql_update_queue)
+  session.execute(sql_update_existing)
 
   # -------------------- Update the eos paths in the extraction queue -------------------- #
   files_set = set(all_files)
@@ -204,19 +209,19 @@ def extract_all_mes(cfg_files, runs, nprocs):
   # Remove deleted files from the extraction queue
   if len(deleted_files) > 0:
     sql = 'DELETE FROM queue_to_extract WHERE eos_path = :eos_path;'
-    exec_transaction(sql, [{'eos_path': x} for x in deleted_files])
+    session.execute(sql, [{'eos_path': x} for x in deleted_files])
 
     sql = 'DELETE FROM tracked_eos_paths_for_me_extraction WHERE eos_path = :eos_path;'
-    exec_transaction(sql, [{'eos_path': x} for x in deleted_files])
+    session.execute(sql, [{'eos_path': x} for x in deleted_files])
 
   # Refresh new files table
   sql = 'DELETE FROM new_eos_paths_for_me_extraction;'
-  exec_transaction(sql)
+  session.execute(sql)
 
   # Insert new eos paths
   if len(new_files) > 0:
     sql = 'INSERT INTO new_eos_paths_for_me_extraction (eos_path) VALUES (:eos_path);'
-    exec_transaction(sql, [{'eos_path': x} for x in new_files])
+    session.execute(sql, [{'eos_path': x} for x in new_files])
 
   # Will have to extract all existing MEs for newly added files
   sql_update_queue = '''
@@ -232,7 +237,12 @@ def extract_all_mes(cfg_files, runs, nprocs):
   FROM new_eos_paths_for_me_extraction
   ;
   '''
-  exec_transaction([sql_update_queue, sql_update_existing])
+
+  session.execute(sql_update_queue)
+  session.execute(sql_update_existing)
+
+  session.commit()
+  session.close()
 
   print('Done.')
   print('Extracting missing MEs...')
@@ -336,10 +346,22 @@ def extract_mes(rows):
       session.execute('INSERT INTO queue_to_calculate (me_id) VALUES (:me_id);', {'me_id': monitor_element.id})
       session.commit()
       print('Added ME %s to DB: %s:%s' % (monitor_element.id, eos_path, me_path))
+    except IntegrityError as e:
+      print('Insert ME IntegrityError: %s' % e)
+      # ME already exists. Remove it from the queue_to_extract and add to queue_to_calculate
+      # because it is possible that it wasn't calculated yet
+      session.rollback()
+      monitor_element_id = monitor_element.id
+      session.execute('DELETE FROM queue_to_extract WHERE id = :id;', {'id': id})
+      if monitor_element_id == None:
+        res = session.execute('SELECT id FROM monitor_elements WHERE eos_path=:eos_path AND me_path=:me_path;', 
+          {'eos_path': eos_path, 'me_path': me_path})
+        monitor_element_id = list(res)[0][0]
+      session.execute('INSERT INTO queue_to_calculate (me_id) VALUES (:me_id);', {'me_id': monitor_element_id})
+      session.commit()
     except Exception as e:
       print('Insert ME error: %s' % e)
       session.rollback()
-      raise
     finally:
       session.close()
 

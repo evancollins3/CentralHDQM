@@ -16,9 +16,9 @@ import errno
 import tempfile
 import argparse
 
-import metrics
 from metrics import fits
 from metrics import basic
+from metrics import muon_metrics
 from metrics import L1T_metrics
 
 import os, sys
@@ -27,6 +27,8 @@ sys.path.insert(1, os.path.realpath(os.path.pardir))
 import db_access
 from ForkPool import ForkPool
 from helpers import batch_iterable, exec_transaction, get_all_me_names
+
+METRICS_MAP = {'fits': fits, 'basic': basic, 'L1T_metrics': L1T_metrics, 'muon_metrics': muon_metrics}
 
 PLOTNAMEPATTERN = re.compile('^[a-zA-Z0-9_+-]*$')
 CFGFILES = 'cfg/*/*.ini'
@@ -180,7 +182,7 @@ def calculate_all_trends(cfg_files, runs, nprocs):
         not last['histo1_path'] == obj.histo1_path or\
         not last['histo2_path'] == obj.histo2_path or\
         not last['reference_path'] == obj.reference_path or\
-        not last['threshold'] == int(obj.threshold):
+        not last['threshold'] == int(obj.threshold) if obj.threshold else None:
         # Changed!
         new_configs.append(obj)
     else:
@@ -306,7 +308,7 @@ def calculate_trends(rows):
 
       try:
         try:
-          metric = eval(config['metric'], {'fits': fits, 'basic': basic, 'L1T_metrics': L1T_metrics})
+          metric = eval(config['metric'], METRICS_MAP)
         except Exception as e:
           print('Unable to load the metric: %s. %s' % (config['metric'], e))
           move_to_second_queue(row['me_id'], row['id'])
