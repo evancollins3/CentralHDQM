@@ -119,8 +119,8 @@ def get_sso_cookie(url):
       for line in file:
         fields = line.strip().split('\t')
         if len(fields) == 7:
-          # Since RR has limited header size (8k) and this header is probably not used - don't add it
-          if fields[5] !=  'MSISSignOut' and fields[5] != '.AspNet.Federation':
+          # Since RR has limited header size (8k), add only the required header
+          if fields[5] == 'connect.sid':
             cookies[fields[5]] = fields[6]
     return cookies
   return None
