@@ -52,7 +52,22 @@ yTitle = CM
 plotTitle = Mean value of the residuals phi LS
 ```
 
-All plot titles support HTML code. List of math symbols, if necessary, can be found here: https://www.w3schools.com/charsets/ref_utf_math.asp
+``` bash
+mkdir backend/extractor/cfg/Ecal/
+vim backend/extractor/cfg/Ecal/workshopTrends.ini
+```
+
+``` ini
+[plot:Mean_TrigPrimClient_EB_number_of_TTs_with_TTF4_set]
+metric = workshop.Mean()
+relativePath = Ecal/Trends/TrigPrimClient EB number of TTs with TTF4 set
+yTitle = Number of TTs with TTF4 set
+plotTitle = TrigPrimClient Number of TTs with TTF4 set
+```
+
+`plotTitle` and `yTitle` support HTML code! List of math symbols, if necessary, can be found here: https://www.w3schools.com/charsets/ref_utf_math.asp
+
+`plotTitle` is a new parameter! A lot of current configs are not using it, therefore I invite everyone to take advantage of it and make your plots more beautiful.
 
 `metric` value is essentially a constructor call to a metric python class. Next we will look at how to add new, custom metric.
 
@@ -95,9 +110,9 @@ METRICS_MAP = {'fits': fits, 'basic': basic, 'L1T_metrics': L1T_metrics, 'muon_m
 ``` bash
 cd backend/extractor/
 
-./hdqmextract.py -c cfg/Muons/workshopTrends.ini cfg/PixelPhase1/trendPlotsPixelPhase1_tracks.ini -r 324997 324998 324999 325000 325001 325022 325057 325097 325098 325099 -j 1
+./hdqmextract.py -c cfg/Muons/workshopTrends.ini cfg/Ecal/workshopTrends.ini cfg/PixelPhase1/trendPlotsPixelPhase1_tracks.ini -r 324997 324998 324999 325000 325001 325022 325057 325097 325098 325099 -j 1
 
-./calculate.py -c cfg/Muons/workshopTrends.ini cfg/PixelPhase1/trendPlotsPixelPhase1_tracks.ini -r 324997 324998 324999 325000 325001 325022 325057 325097 325098 325099 -j 1
+./calculate.py -c cfg/Muons/workshopTrends.ini cfg/Ecal/workshopTrends.ini cfg/PixelPhase1/trendPlotsPixelPhase1_tracks.ini -r 324997 324998 324999 325000 325001 325022 325057 325097 325098 325099 -j 1
 ```
 
 If runs are the same as before, you no longer need to run OMS and RR extraction. Otherwise:
@@ -137,3 +152,5 @@ vim ../../frontend/js/displayConfig.js
   * Keep in mind that cookies for OMS and RR extraction are valid only for only ~10h.
   * Once they expire and you want to extract new runs, you have to rerun the `cern-get-sso-cookie` commands
   * **Run this command before running `cmsenv`!!!**
+
+* If you want to keep working on the same deployment of the full HDQM stack after disconnecting, please follow these (shortened) instructions: https://github.com/cms-DQM/CentralHDQM#new-ssh-connection

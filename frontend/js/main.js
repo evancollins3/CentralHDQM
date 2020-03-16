@@ -162,11 +162,11 @@ const main = (function() {
             const divEnd = `</div></div>`
             let html = ""
             let column = ""
-            
+
             this.data.forEach((plotData, i) => 
             {
                 column += `<div class="row">${plotData.plot_title}</div>`
-                if((i + 1) % 4 == 0 || i == plotData.length - 1)
+                if((i + 1) % 4 == 0 || i == this.data.length - 1)
                 {
                     const pageNumber = Math.ceil((i + 1) / 4)
                     const pageTitle = `<a class="row small font-italic" href="#" onclick="main.pageSelected(event, ${pageNumber})">Page ${pageNumber}</a>`
