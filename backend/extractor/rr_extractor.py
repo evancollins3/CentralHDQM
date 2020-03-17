@@ -72,7 +72,7 @@ def fetch_runs(min_run, max_run):
       # Logic to determine if run is significant for HDQM:
       # 1. If HLT key contains string "special", run is not significant
       # 2. For collision runs integrated luminosity has to be greater than 0.1 1/pb
-      # 3. For cosmic runs duration has to be longer that 1 hour
+      # 3. For cosmic runs duration has to be longer than 1 hour
       significant = db_access.false_crossdb()
 
       if 'special' in run['oms_attributes']['hlt_key'].lower():
