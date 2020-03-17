@@ -1,10 +1,21 @@
 # HDQM tutorial for PPD workshop
 
+During this tutorial we will cover the following topics:
+
+1. Setting up a local deployment of the full HDQM stack on lxplus
+2. Adding adding new plot configurations
+3. Writing our own custom metrics for the new plots
+4. Configuring display groups to show multiple trends in one plot
+
+## Deploying HDQM locally
+
 First, please follow local setup instructions that are available here: https://github.com/cms-DQM/CentralHDQM#how-to-run-locally
 
 This will deploy a full stack of HDQM locally, in lxplus.
 
-## If OMS and/or RR doesn't work
+### If OMS and/or RR doesn't work
+
+Consult this section in case either OMS or RR APIs are not functioning at this moment.
 
 ``` bash
 cd backend/
@@ -28,9 +39,9 @@ INSERT INTO "oms_data_cache" VALUES(9,325099,0,'2018-10-22 21:49:49.000000','201
 INSERT INTO "oms_data_cache" VALUES(10,325022,0,'2018-10-21 20:52:50.000000','2018-10-22 07:16:34.000000',3.8,6499.0,452.509125,0.834237,437.270188,'l1_trg_collisions2018/v70','/cdaq/physics/Run2018/2e34/v3.6.1/HLT/V2',62756.434,1358.919,37424,7328,'25ns_2556b_2544_2215_2332_144bpi_20injV3','2018D','Collisions18',1,1);
 ```
 
-Now go to the root directory of the project: `cd /tmp/$USER/hdqm/CentralHDQM/`
-
 ## Add new plots
+
+Now go to the root directory of the project: `cd /tmp/$USER/hdqm/CentralHDQM/`
 
 ### Add configuration files
 
@@ -50,6 +61,18 @@ metric = workshop.Mean()
 relativePath = DT/02-Segments/00-MeanRes/MeanDistr_Phi
 yTitle = CM
 plotTitle = Mean value of the residuals phi LS
+```
+
+``` bash
+vim backend/extractor/cfg/RPC/workshopTrends.ini
+```
+
+``` ini
+[plot:Mean_ClusterSize_Barrel]
+metric = workshop.Mean()
+relativePath = RPC/Muon/SummaryHistograms/ClusterSize_Barrel
+yTitle = Number of Barrel strips
+plotTitle = Number of contiguous Barrel strips associated with the hit
 ```
 
 ``` bash
@@ -110,9 +133,9 @@ METRICS_MAP = {'fits': fits, 'basic': basic, 'L1T_metrics': L1T_metrics, 'muon_m
 ``` bash
 cd backend/extractor/
 
-./hdqmextract.py -c cfg/Muons/workshopTrends.ini cfg/Ecal/workshopTrends.ini cfg/PixelPhase1/trendPlotsPixelPhase1_tracks.ini -r 324997 324998 324999 325000 325001 325022 325057 325097 325098 325099 -j 1
+./hdqmextract.py -c cfg/Muons/workshopTrends.ini cfg/Ecal/workshopTrends.ini cfg/RPC/workshopTrends.ini cfg/PixelPhase1/trendPlotsPixelPhase1_tracks.ini -r 324997 324998 324999 325000 325001 325022 325057 325097 325098 325099 -j 1
 
-./calculate.py -c cfg/Muons/workshopTrends.ini cfg/Ecal/workshopTrends.ini cfg/PixelPhase1/trendPlotsPixelPhase1_tracks.ini -r 324997 324998 324999 325000 325001 325022 325057 325097 325098 325099 -j 1
+./calculate.py -c cfg/Muons/workshopTrends.ini cfg/Ecal/workshopTrends.ini cfg/RPC/workshopTrends.ini cfg/PixelPhase1/trendPlotsPixelPhase1_tracks.ini -r 324997 324998 324999 325000 325001 325022 325057 325097 325098 325099 -j 1
 ```
 
 If runs are the same as before, you no longer need to run OMS and RR extraction. Otherwise:
@@ -154,3 +177,6 @@ vim ../../frontend/js/displayConfig.js
   * **Run this command before running `cmsenv`!!!**
 
 * If you want to keep working on the same deployment of the full HDQM stack after disconnecting, please follow these (shortened) instructions: https://github.com/cms-DQM/CentralHDQM#new-ssh-connection
+
+* In case the local database gets contaminated in any way (you extracted too many things for a small test, for example), the easies way to start from scratch is by deleting the db file. Continue using the tool normally, the database will be recreated automatically.
+  * `rm backend/hdqm.db`
