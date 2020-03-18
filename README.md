@@ -37,6 +37,8 @@ The code is running on a `vocms0231` machine.
 The following instruction are completely copy-pastable. This will start a complete HDQM stack on your local (lxplus) environment. This is perfect for testing new plots before adding them. Instructions are are made for bash shell.
 
 ``` bash
+# Enter bash
+bash
 # You have to change the username. From this point, all instruction can be copy pasted without modifications.
 ssh -L 8000:localhost:8000 -L 8080:localhost:5000 <YOUR_USER_NAME>@lxplus7.cern.ch
 /bin/bash
