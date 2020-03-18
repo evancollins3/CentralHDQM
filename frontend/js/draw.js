@@ -104,10 +104,15 @@ const plotter = (function() {
 
             if(optionsController.options.showRegression)
             {
+                const regression = helpers.linearRegression(values)
+                const regressionData = regression[0]
+                const regressionForumla = regression[1]
+
                 options.series.push({
                     type: "line",
-                    name: "Regression Line",
-                    data: helpers.linearRegression(values),
+                    // name: "Regression Line",
+                    name: regressionForumla,
+                    data: regressionData,
                     marker: {
                         enabled: false
                     },
@@ -257,8 +262,8 @@ const plotter = (function() {
             for(let i = 0; i < plotData.series.length; i++)
             {
                 const tooltip = `
-                    <b>Value:</b> {point.y}<br>
-                    <b>Error:</b> {point.error}<br/>
+                    <b>Value:</b> {point.y_readable}<br>
+                    <b>Error:</b> {point.error_readable}<br/>
                     <b>Run No:</b> {point.run}<br/>
                     <b>Duration:</b> {point.duration_readable}<br/>
                     <b>Delivered luminosity:</b> {point.del_lumi} <i>pb<sup>-1</sup></i><br/>
@@ -269,6 +274,8 @@ const plotter = (function() {
                 const data = plotData.series[i].trends.map(trend => ({
                     y:                  trend.value,
                     error:              trend.error,
+                    y_readable:         helpers.toExponential(trend.value, 2),
+                    error_readable:     helpers.toExponential(trend.error, 2),
                     run:                trend.run,
                     series_index:       i,
                     duration_readable:  helpers.secondsToHHMMSS(trend.oms_info.duration),
@@ -277,13 +284,15 @@ const plotter = (function() {
                     end_time:           trend.oms_info.end_time
                 }))
 
+                const pointRadius = data.length > 80 ? 3 : 3.5
+
                 options.series.push({
                     name: seriesTitles[i],
                     type: "scatter",
                     data: data,
                     borderWidth: 20,
                     marker: {
-                        radius: 3
+                        radius: pointRadius
                     },
                     tooltip: {
                         pointFormat: tooltip,
@@ -328,7 +337,7 @@ const plotter = (function() {
                     type: "column",
                     name: "Run Duration",
                     yAxis: 1,
-                    color: "#a8a8a8",
+                    color: "#c7c7c7",
                     zIndex: -1,
                     groupPadding: 0,
                     pointPadding: 0,
@@ -486,8 +495,8 @@ const plotter = (function() {
             for(let i = 0; i < plotData.series.length; i++)
             {
                  const tooltip = `
-                    <b>Value:</b> {point.y}<br>
-                    <b>Error:</b> {point.error}<br/>
+                    <b>Value:</b> {point.y_readable}<br>
+                    <b>Error:</b> {point.error_readable}<br/>
                     <b>Run No:</b> {point.run}<br/>
                     <b>Duration:</b> {point.duration_readable}<br/>
                     <b>Delivered luminosity:</b> {point.del_lumi_readable} <i>pb<sup>-1</sup></i><br/>
@@ -498,6 +507,8 @@ const plotter = (function() {
                 const data = plotData.series[i].trends.map(trend => ({
                     y:                  trend.value,
                     error:              trend.error,
+                    y_readable:         helpers.toExponential(trend.value, 2),
+                    error_readable:     helpers.toExponential(trend.error, 2),
                     run:                trend.run,
                     del_lumi:           trend.oms_info.delivered_lumi,
                     duration:           trend.oms_info.duration,
@@ -759,8 +770,8 @@ const plotter = (function() {
             for(let i = 0; i < plotData.series.length; i++)
             {
                 const tooltip = `
-                    <b>Value:</b> {point.y}<br>
-                    <b>Error:</b> {point.error}<br/>
+                    <b>Value:</b> {point.y_readable}<br>
+                    <b>Error:</b> {point.error_readable}<br/>
                     <b>Run No:</b> {point.run}<br/>
                     <b>Duration:</b> {point.duration_readable}<br/>
                     <b>Delivered luminosity:</b> {point.del_lumi} <i>pb<sup>-1</sup></i><br/>
@@ -773,6 +784,8 @@ const plotter = (function() {
                     x2:                 new Date(trend.oms_info.end_time).getTime(), 
                     y:                  trend.value,
                     error:              trend.error,
+                    y_readable:         helpers.toExponential(trend.value, 2),
+                    error_readable:     helpers.toExponential(trend.error, 2),
                     run:                trend.run,
                     series_index:       i,
                     duration_readable:  helpers.secondsToHHMMSS(trend.oms_info.duration),

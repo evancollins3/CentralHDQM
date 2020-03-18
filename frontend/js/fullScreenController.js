@@ -38,7 +38,7 @@ const fullScreenController = (function(){
 
             this.isFullScreen = true
             seriesListComponent.enterFullScreen()
-            seriesListComponent.setup(this.plotData.series)
+            seriesListComponent.setup(this.plotData.series, this.plotData.correlation)
         },
 
         exitFullScreen: function() {
@@ -227,7 +227,6 @@ const fullScreenController = (function(){
                     console.error(error)
                 }
             }
-
             this.chartObject = await plotter.draw(this.plotData, renderTo)
         },
 

@@ -33,7 +33,7 @@ const seriesListComponent = (function() {
             $("#fs-processing-string-select").val(selectionController.selectedProcessingString()).trigger('change')
         },
 
-        setup: function(series) {
+        setup: function(series, correlation) {
             this.maxId = 0
             this.series = []
 
@@ -41,6 +41,10 @@ const seriesListComponent = (function() {
             series.forEach(element => {
                 this.addNewSeries(selectionController.selectedSubsystem(), selectionController.selectedPD(), selectionController.selectedProcessingString(), element.metadata.plot_title)
             })
+
+            if(correlation) {
+                $("#fs-correlation-checkbox").prop("checked", true)
+            }
         },
 
         addNewSeries: async function(subsystem, pd, ps, name, animated = false, series_id = undefined) {
@@ -140,6 +144,7 @@ const seriesListComponent = (function() {
         },
 
         toggleCorrelationCheckboxIfNeeded: function() {
+            const initialState = $("#fs-correlation-checkbox").prop("checked")
             if(this.series.filter(x => x.removed === false).length == 2)
             {
                 $("#fs-correlation-checkbox").prop("disabled", false)
@@ -148,7 +153,11 @@ const seriesListComponent = (function() {
             {
                 $("#fs-correlation-checkbox").prop("disabled", true)
                 $("#fs-correlation-checkbox").prop("checked", false)
-                $('#fs-correlation-checkbox').trigger('change')
+
+                // Transmit event only if value actually changed
+                if(initialState == true) {
+                    $('#fs-correlation-checkbox').trigger('change')
+                }
             }
         },
 
