@@ -84,8 +84,12 @@ const helpers = (function(){
             let a_x = cov_xy / var_x
             let b_x = avg_y - a_x * avg_x
             let res = [[start_x, a_x * start_x + b_x], [end_x, a_x * end_x + b_x]]
+
+            const m = (res[1][1] - res[0][1]) / (res[1][0] - res[0][0])
+            const b = res[0][1] - (m * res[0][0])
+            const formula = `y = ${m.toFixed(2)}x + ${b.toFixed(2)}`
             
-            return res;
+            return [res, formula];
         },
 
         // Returns a color based on val which must be between 0.0 and 1.0
