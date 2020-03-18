@@ -16,6 +16,8 @@ This will deploy a full stack of HDQM locally, on lxplus.
 The following instruction are completely copy-pastable. This is perfect for testing new plots before adding them. Instructions are are made for bash shell.
 
 ``` bash
+# Enter bash
+bash
 # You have to change the username. From this point, all instruction can be copy pasted without modifications.
 ssh -L 8000:localhost:8000 -L 8080:localhost:5000 <YOUR_USER_NAME>@lxplus7.cern.ch
 /bin/bash
