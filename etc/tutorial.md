@@ -102,6 +102,9 @@ Now go to the root directory of the project: `cd /tmp/$USER/hdqm/CentralHDQM/`
 
 ### Add configuration files
 
+The configuration file format is this: `backend/extractor/cfg/<SUBSYSTEM>/<ARBITRARY_NAME>.ini`.
+Subsystem will appear in the web application exactly as the folder is named. Files themselves can have an arbitrary name but they have to be directly inside the subsystem folder.
+
 ``` bash
 vim backend/extractor/cfg/Muons/workshopTrends.ini
 ```
@@ -153,6 +156,8 @@ plotTitle = TrigPrimClient Number of TTs with TTF4 set
 
 ### Add new metric
 
+Metrics python files can also be named arbitrarily but they have to reside directly inside `metrics` folder.
+
 ``` bash
 vim backend/extractor/metrics/workshop.py
 ```
@@ -168,6 +173,8 @@ class Mean(BaseMetric):
 More info about adding new metrics: https://github.com/cms-DQM/CentralHDQM#adding-new-metrics
 
 ### Add new metric to calculation script:
+
+Make sure the script can find our newly added metric.
 
 ``` bash
 vim backend/extractor/calculate.py

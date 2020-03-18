@@ -126,8 +126,8 @@ Configuration is all in code and in order to add new plots you have to make a pu
 
 ### Backend configuration
 
-Backend is configured with `.cfg` files that describe what monitor elements should be taken from the DQM `.root` files and how the value from the should be extracted for plotting.  
-These files are placed here, in a corresponding subsystem directory: `backend/extractor/cfg/<subsystem>`. This directory structure has to be preserved in order for the tool to work. 
+Backend is configured with `.ini` files that describe what monitor elements should be taken from the DQM `.root` files and how the value from the should be extracted for plotting.  
+These files are placed here, in a corresponding subsystem directory: `backend/extractor/cfg/<subsystem>`. This directory structure has to be preserved in order for the tool to work. If subsystem doesn't exist, a folder for it can be created.
 
 Let's take a look at an example:
 
