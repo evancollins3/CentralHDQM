@@ -1,9 +1,15 @@
 # Table of contents
 
+- [Table of contents](#table-of-contents)
 - [Central Historic DQM application for CMS detector](#central-historic-dqm-application-for-cms-detector)
 - [Usage instructions](#usage-instructions)
   * [How to run locally](#how-to-run-locally)
     + [New ssh connection](#new-ssh-connection)
+  * [Main HDQM commands explained](#main-hdqm-commands-explained)
+    + [`hdqmextract.py`](#-hdqmextractpy-)
+    + [`calculate.py`](#-calculatepy-)
+    + [Other tools](#other-tools)
+    + [Summary](#summary)
   * [How to add new plots](#how-to-add-new-plots)
     + [Backend configuration](#backend-configuration)
     + [Frontend configuration](#frontend-configuration)
@@ -22,7 +28,6 @@
   * [Daily extraction](#daily-extraction)
   * [How to update](#how-to-update)
     + [How to rollback to the old version](#how-to-rollback-to-the-old-version)
-
 
 # Central Historic DQM application for CMS detector
 
