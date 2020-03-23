@@ -118,6 +118,51 @@ cd ../../frontend/
 python3 -m http.server 8000 &>/dev/null &
 ```
 
+## Main HDQM commands explained
+
+Main HDQM commands are the following:
+
+1. `hdqmextract.py`
+2. `calculate.py`
+
+### `hdqmextract.py`
+
+This tool is responsible for extracting DQM monitor elements from ROOT files and storing them as binary data in the database. This is separated from HDQM value calculation to ensure that values can be recalculated quickly, without relying on a file system every time.
+
+| Argument | Long name | Default value                                             | Description                                                                                                                                                                                                                                                                                       |
+|----------|-----------|-----------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| -r       | runs      | None                                                      | A list of runs. Only MEs containing info of these runs will be extracted and saved. By default, MEs from all runs available in the given DQM files will be extracted.                                                                                                                             |
+| -c       | config    | cfg/\*/\*.ini                                               | A list of `.ini` configuration files to be used. A pattern of a config file location is this: `cfg/<SUBSYSTEM_NAME>/<ARBITRARY_NAME>.ini`. This pattern must be followed without any additional folders in between. If a subsystem folder is missing, it can be created.                          |
+| -f       | files     | /eos/cms/store/group/comm_dqm/DQMGUI_data/\*/\*/\*/DQM\*.root | A list of DQM files to be used. This is very useful if you want to do HDQM on your custom set of DQM files. Files still need to follow DQM file naming conventions (must contain a run and a dataset name). Also this can be used to run HDQM on a subset of all DQM ROOT files available in EOS. |
+| -j       | nprocs    | 50                                                        | Integer value indicating how many processes to use. **When running locally (on SQLite) this has to be 1** because SQLite doesn't support multiple connections writing to the DB.                                                                                                                  |
+
+### `calculate.py`
+
+This tool is responsible for reducing every DQM monitor element found in the database to a value that will be plotted, based on user defined metrics.
+
+| Argument | Long name | Default value | Description                                                                                                                                                                                                                                                              |
+|----------|-----------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| -r       | runs      | None          | A list of runs. HDQM values will be calculated only for MEs containing info of these runs. By default, HDQM will be calculated for all MEs that were extracted.                                                                                                          |
+| -c       | config    | cfg/\*/\*.ini   | A list of `.ini` configuration files to be used. A pattern of a config file location is this: `cfg/<SUBSYSTEM_NAME>/<ARBITRARY_NAME>.ini`. This pattern must be followed without any additional folders in between. If a subsystem folder is missing, it can be created. |
+| -j       | nprocs    | 50            | Integer value indicating how many processes to use. **When running locally (on SQLite) this has to be 1** because SQLite doesn't support multiple connections writing to the DB.                                                                                         |
+
+### Other tools
+
+When new runs appear in the database, OMS and RR APIs need to be queried to find out if new runs need to be filtered out or not. For this, the following tools need to be executed, in this specific order:
+
+``` bash
+./oms_extractor.py
+./rr_extractor.py
+```
+
+If a big chuck of new data was recently extracted, there is a tool to prewarm the database for initial queries be fast:
+
+`./db_prewarm.py`
+
+### Summary
+
+To summarize, by default HDQM will be done on all data available in EOS and all configuration files available in `cfg/`. The parameters to HDQM tools can be helpful to limit this scope and only extract the required subset of the data or your own data altogether.
+
 ## How to add new plots
 
 In order to add new plots to HDQM, you have to provide two layers of configuration:  

@@ -1,6 +1,7 @@
 
 const plotter = (function() {
     return {
+        plotBandColor: 'rgba(79, 190, 255, 0.1)',
 
         draw: async function(plotData, renderTo) 
         {
@@ -106,12 +107,12 @@ const plotter = (function() {
             {
                 const regression = helpers.linearRegression(values)
                 const regressionData = regression[0]
-                const regressionForumla = regression[1]
+                const regressionEquation = regression[1]
 
                 options.series.push({
                     type: "line",
                     // name: "Regression Line",
-                    name: regressionForumla,
+                    name: regressionEquation,
                     data: regressionData,
                     marker: {
                         enabled: false
@@ -251,7 +252,7 @@ const plotter = (function() {
                 series: optionsController.options.showFills ?
                     [{ // "Fills" legend item
                         name: "Fills",
-                        color: "#e6eaf2",
+                        color: this.plotBandColor,
                         type: "area",
                         legendIndex: 100
                     }]
@@ -290,9 +291,12 @@ const plotter = (function() {
                     name: seriesTitles[i],
                     type: "scatter",
                     data: data,
+                    color: helpers.seriesColors[i],
                     borderWidth: 20,
                     marker: {
-                        radius: pointRadius
+                        radius: pointRadius,
+                        lineWidth: 1,
+                        lineColor: helpers.seriesColors[i],
                     },
                     tooltip: {
                         pointFormat: tooltip,
@@ -337,7 +341,8 @@ const plotter = (function() {
                     type: "column",
                     name: "Run Duration",
                     yAxis: 1,
-                    color: "#c7c7c7",
+                    borderRadius: 2,
+                    color: "rgba(191, 191, 191, 0.9)",
                     zIndex: -1,
                     groupPadding: 0,
                     pointPadding: 0,
@@ -484,7 +489,7 @@ const plotter = (function() {
                 series: optionsController.options.showFills ?
                     [{
                         name: "Fills",
-                        color: "#e6eaf2",
+                        color: this.plotBandColor,
                         type: "area",
                         legendIndex: 100
                     }]
@@ -753,7 +758,7 @@ const plotter = (function() {
                 series: optionsController.options.showFills ?
                     [{
                         name: "Fills",
-                        color: "#e6eaf2",
+                        color: this.plotBandColor,
                         type: "area",
                         legendIndex: 100
                     }]
@@ -887,7 +892,7 @@ const plotter = (function() {
                 {
                     if (flag) {
                         bands.push({
-                            color: "#e6eaf2",
+                            color: this.plotBandColor,
                             from: start_i - 0.5,
                             to: i - 1 + 0.5,
                             id: "fills"
@@ -905,7 +910,7 @@ const plotter = (function() {
             if (flag) 
             {
                 bands.push({
-                    color: "#e6eaf2",
+                    color: this.plotBandColor,
                     from: start_i - 0.5,
                     to: xValues.length - 1 + 0.5,
                     id: "fills"
@@ -930,7 +935,7 @@ const plotter = (function() {
             {
                 if(fills[j] != lastFill)
                 {
-                    bands.push({color: "#e6eaf2", from: lastDurSum, to: durSum, id: "fills"})
+                    bands.push({color: this.plotBandColor, from: lastDurSum, to: durSum, id: "fills"})
                     lastDurSum = durSum
                     lastFill = fills[j]
                 }
@@ -939,7 +944,7 @@ const plotter = (function() {
             }
             
             // Add last fill
-            bands.push({color: "#e6eaf2", from: lastDurSum, to: durSum, id: "fills"})
+            bands.push({color: this.plotBandColor, from: lastDurSum, to: durSum, id: "fills"})
 
             // Remove every second
             bands = bands.filter(function(_, i) {
@@ -964,14 +969,14 @@ const plotter = (function() {
             {
                 if(fills[j] != lastFill)
                 {
-                    bands.push({color: "#e6eaf2", from: lastTime, to: times[j - 1][1], id: "fills"})
+                    bands.push({color: this.plotBandColor, from: lastTime, to: times[j - 1][1], id: "fills"})
                     lastFill = fills[j]
                     lastTime = times[j][0]
                 }
             }
             
             // Add last fill
-            bands.push({color: "#e6eaf2", from: lastTime, to: times[times.length - 1][1], id: "fills"})
+            bands.push({color: this.plotBandColor, from: lastTime, to: times[times.length - 1][1], id: "fills"})
 
             return bands
         }
