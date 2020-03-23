@@ -89,7 +89,7 @@ def get_all_available_runs():
   return list(runs)
 
 
-def extract_all_mes(cfg_files, runs, nprocs):
+def extract_all_mes(cfg_files, runs, nprocs, all_files):
   print('Processing %d configuration files...' % len(cfg_files))
   mes_set = set()
   good_files = 0
@@ -120,12 +120,15 @@ def extract_all_mes(cfg_files, runs, nprocs):
   print('Read %d configuration files.' % good_files)
   print('Read %d distinct ME paths.' % len(mes_set))
 
-  print('Listing files on EOS, this can take a while...')
-  all_files = glob(ROOTFILES)
-  if len(all_files) == 0:
-    print('GLOB returned 0 files, probably EOS is down. Aborting.')
-    return
-  print('Done.')
+  if not all_files:
+    print('Listing files on EOS, this can take a while...')
+    all_files = glob(ROOTFILES)
+    if len(all_files) == 0:
+      print('GLOB returned 0 files, probably EOS is down. Aborting.')
+      return
+    print('Done.')
+  else:
+    print('Using provided DQM files: %s' % len(all_files))
 
   # Filter on the runs that were passed by the user
   if runs:
@@ -374,11 +377,13 @@ if __name__ == '__main__':
   parser.add_argument('-r', dest='runs', type=int, nargs='+', help='Runs to process. If none were given, will process all available runs.')
   parser.add_argument('-c', dest='config', nargs='+', help='Configuration files to process. If none were given, will process all available configuration files. Files must come from here: cfg/*/*.ini')
   parser.add_argument('-j', dest='nprocs', type=int, default=50, help='Number of processes to use for extraction.')
+  parser.add_argument('-f', dest='files', type=str, nargs='+', help='DQM TDirectory ROOT files to take MEs from. If not provided, a dedicated EOS directory will be used.')
   args = parser.parse_args()
 
   runs = args.runs
   config = args.config
   nprocs = args.nprocs
+  all_files = args.files
 
   if nprocs < 0:
     print('Number of processes must be a positive integer')
@@ -394,4 +399,4 @@ if __name__ == '__main__':
       print('Configuration files must come from here: cfg/*/*.ini')
       exit()
 
-  extract_all_mes(config, runs, nprocs)
+  extract_all_mes(config, runs, nprocs, all_files)

@@ -1,7 +1,7 @@
 
 const helpers = (function(){
     return {
-        seriesColors: ["#7cb5ec", "#434348", "#90ed7d", "#f7a35c", "#8085e9", "#f15c80", "#e4d354", "#2b908f", "#f45b5b", "#91e8e1"],
+        seriesColors: ["#f45b5b", "#7cb5ec", "#f7a35c", "#2b908f", "#e4d354", "#91e8e1", "#8085e9", "#434348", "#90ed7d", "#f15c80"],
 
         calculateMeanAndRMS: function(yValues)
         {
@@ -85,11 +85,26 @@ const helpers = (function(){
             let b_x = avg_y - a_x * avg_x
             let res = [[start_x, a_x * start_x + b_x], [end_x, a_x * end_x + b_x]]
 
-            const m = (res[1][1] - res[0][1]) / (res[1][0] - res[0][0])
-            const b = res[0][1] - (m * res[0][0])
-            const formula = `y = ${m.toFixed(2)}x + ${b.toFixed(2)}`
+            // Derive an equation of a line when you know 2 point it passes through (y=mx+b):
+            let m = (res[1][1] - res[0][1]) / (res[1][0] - res[0][0])
+            let b = res[0][1] - (m * res[0][0])
+
+            m = parseFloat(m.toFixed(2))
+            b = parseFloat(b.toFixed(2))
+
+            const sign = b > 0 ? "+" : "-"
+            b = Math.abs(b)
+
+            let equation = `y = ${m}x ${sign} ${b}`
+
+            if(b === 0 && m === 0)
+                equation = `y = x`
+            else if(b === 0)
+                equation = `y = ${m}x`
+            else if(m === 0)
+                equation = `y = ${b}`
             
-            return [res, formula];
+            return [res, equation];
         },
 
         // Returns a color based on val which must be between 0.0 and 1.0
