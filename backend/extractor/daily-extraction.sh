@@ -4,6 +4,10 @@
 # This script extracts new data from EOS and populates the HDQM database
 # so no manual extraction has to be done.
 
+# Authenticate to EOS
+kinit -kt /data/hdqm/.keytab cmsdqm
+/usr/bin/eosfusebind -g
+
 source ../cmsenv
 
 # Extract

@@ -26,6 +26,7 @@
   * [API local setup instructions](#api-local-setup-instructions)
     + [Instructions on how to retrieve the certificate and the key:](#instructions-on-how-to-retrieve-the-certificate-and-the-key-)
   * [Daily extraction](#daily-extraction)
+    + [EOS access](#eos-access)
   * [How to update](#how-to-update)
     + [How to rollback to the old version](#how-to-rollback-to-the-old-version)
 
@@ -440,7 +441,7 @@ Production service is running on a public port 80 and test service on 81.
 Production API server is running on internal port 5000 and test API service on 5001.
 
 **Before doing anything become the correct user:**  
-`sudo su hdqmpro`
+`sudo su cmsdqm`
 
 Code is located in `/data/hdqm/` directory.
 
@@ -508,6 +509,41 @@ sudo systemctl list-timers
 sudo systemctl status hdqm-extract.timer
 ```
 
+Show the log of the service:
+
+``` bash
+sudo journalctl -u hdqm-extract
+```
+
+Service configuration files are located here: `/etc/systemd/system/`
+
+### EOS access
+
+**Extraction is performed on behalf of *cmsdqm* user because we need a user that would be in CERN.CH domain to access EOS file system**
+
+User credentials are stored in a keytab file. This file needs to be updated when the password changes. Bellow are the instructions on how to do that:
+
+``` bash
+sudo su cmsdqm
+ktutil
+# Keep in mind the capital letters - they are important!
+add_entry -password -p cmsdqm@CERN.CH -k 1 -e aes256-cts-hmac-sha1-96
+add_entry -password -p cmsdqm@CERN.CH -k 1 -e arcfour-hmac
+write_kt /data/hdqm/.keytab
+exit
+# Get the kerberos token. This will grant access to EOS
+kinit -kt /data/hdqm/.keytab cmsdqm
+# Make EOS aware of the new kerberos token
+/usr/bin/eosfusebind -g
+```
+
+``` bash
+# Verify
+klist -kte /data/hdqm/.keytab
+```
+
+More info about kerberos: https://twiki.cern.ch/twiki/bin/view/Main/Kerberos
+
 ## How to update
 
 The following script will pull a latest version of the HDQM code from a `https://github.com/cms-DQM/CentralHDQM` repository. It will copy required secret files from `private` directory, and point `current` symlink to the newly created version. 
@@ -515,7 +551,7 @@ The following script will pull a latest version of the HDQM code from a `https:/
 ```bash
 ssh vocms0231
 cd /data/hdqm
-sudo su hdqmpro
+sudo su cmsdqm
 ./update.sh
 exit
 sudo systemctl restart hdqm.service
