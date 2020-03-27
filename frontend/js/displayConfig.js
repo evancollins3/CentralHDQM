@@ -691,20 +691,20 @@ const displayConfig = (function() {
 			series: ["MeanT0_MB4_YB-2", "MeanT0_MB4_YB-1", "MeanT0_MB4_YB0", "MeanT0_MB4_YB1", "MeanT0_MB4_YB2"],
 		},
 		{
-			name: "Resolution",
-			plot_title: "Resolution",
-			y_title: "resolution ME-11a",
+			name: "Residual_Width",
+			plot_title: "Residual Width",
+			y_title: "Width of segment - hit residual",
 			subsystem: "CSC",
 			correlation: false,
-			series: ["Resolution_m11a", "Resolution_m11b", "Resolution_m12", "Resolution_m13", "Resolution_m21", "Resolution_m22", "Resolution_m31", "Resolution_m32", "Resolution_m41", "Resolution_m42", "Resolution_p11a", "Resolution_p11b", "Resolution_p12", "Resolution_p13", "Resolution_p21", "Resolution_p22", "Resolution_p31", "Resolution_p32", "Resolution_p41", "Resolution_p42"],
+			series: ["Residual_Width_me-11a", "Residual_Width_me-11b", "Residual_Width_me-12", "Residual_Width_me-13", "Residual_Width_me-21", "Residual_Width_me-22", "Residual_Width_me-31", "Residual_Width_me-32", "Residual_Width_me-41", "Residual_Width_me-42", "Residual_Width_me+11a", "Residual_Width_me+11b", "Residual_Width_me+12", "Residual_Width_me+13", "Residual_Width_me+21", "Residual_Width_me+22", "Residual_Width_me+31", "Residual_Width_me+32", "Residual_Width_me+41", "Residual_Width_me+42"],
 		},
 		{
-			name: "PedestalNoise",
-			plot_title: "PedestalNoise",
-			y_title: "pedestal width ME-11a",
+			name: "PedestalNoise_Width",
+			plot_title: "Pedestal Noise Width",
+			y_title: "Width of pedestal noise",
 			subsystem: "CSC",
 			correlation: false,
-			series: ["PedestalNoise_m11a", "PedestalNoise_m11b", "PedestalNoise_m12", "PedestalNoise_m13", "PedestalNoise_m21", "PedestalNoise_m22", "PedestalNoise_m31", "PedestalNoise_m32", "PedestalNoise_m41", "PedestalNoise_m42", "PedestalNoise_p11a", "PedestalNoise_p11b", "PedestalNoise_p12", "PedestalNoise_p13", "PedestalNoise_p21", "PedestalNoise_p22", "PedestalNoise_p31", "PedestalNoise_p32", "PedestalNoise_p41", "PedestalNoise_p42"],
+			series: ["PedestalNoise_Width_me-11a", "PedestalNoise_Width_me-11b", "PedestalNoise_Width_me-12", "PedestalNoise_Width_me-13", "PedestalNoise_Width_me-21", "PedestalNoise_Width_me-22", "PedestalNoise_Width_me-31", "PedestalNoise_Width_me-32", "PedestalNoise_Width_me-41", "PedestalNoise_Width_me-42", "PedestalNoise_Width_me+11a", "PedestalNoise_Width_me+11b", "PedestalNoise_Width_me+12", "PedestalNoise_Width_me+13", "PedestalNoise_Width_me+21", "PedestalNoise_Width_me+22", "PedestalNoise_Width_me+31", "PedestalNoise_Width_me+32", "PedestalNoise_Width_me+41", "PedestalNoise_Width_me+42"],
 		},
 
     ]
