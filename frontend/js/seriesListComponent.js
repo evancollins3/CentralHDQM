@@ -91,11 +91,12 @@ const seriesListComponent = (function() {
 
             // Add series to a list in this component
             const index = this.maxId++
-            this.series[index] = {}
-            this.series[index].id = id
-            this.series[index].subsystem = subsystem
-            this.series[index].name = name
-            this.series[index].removed = false
+            this.series[index] = {
+                id: id,
+                subsystem: subsystem,
+                name: name,
+                removed: false,
+            }
 
             $("#fs-series-list-container").append(`
             <li class="list-group-item" id="fs-series-list-item-${index}">
@@ -169,6 +170,89 @@ const seriesListComponent = (function() {
                     $("#fs-processing-string-select").val(), $("#fs-plot-select option:selected").text(), 
                     true, parseInt($("#fs-plot-select option:selected").val()))
             }
+        },
+
+        addOMSTrendClicked: async function () {
+            const selected_trend_id = $("#fs-oms-trend-select").val()
+            const plotTitle = $("#fs-oms-trend-select option:selected").text()
+
+            const id = `oms_trend_${selected_trend_id}`
+
+            // Check if this series does not exist yet
+            if(this.series.filter(x => x.id === id && x.removed === false).length > 0)
+                return
+
+            // Add series to the plot
+            const omsTrend = { 
+                metadata: {
+                    name: plotTitle,
+                    plot_title: plotTitle,
+                    subsystem: fullScreenController.plotData.series[0].metadata.subsystem,
+                    y_title: "Units of the OMS value",
+                },
+                trends: []
+            }
+
+            fullScreenController.plotData.series[0].trends.forEach(element => {
+                let value = 0
+                if(selected_trend_id == 0)
+                    value = element.oms_info.duration
+                else if(selected_trend_id == 1)
+                    value = element.oms_info.delivered_lumi
+                else if(selected_trend_id == 2)
+                    value = element.oms_info.recorded_lumi
+                else if(selected_trend_id == 3)
+                    value = element.oms_info.end_lumi
+                else if(selected_trend_id == 4)
+                    value = element.oms_info.b_field
+                else if(selected_trend_id == 5)
+                    value = element.oms_info.energy
+                else if(selected_trend_id == 6)
+                    value = element.oms_info.hlt_physics_rate
+                else if(selected_trend_id == 7)
+                    value = element.oms_info.l1_rate
+
+                omsTrend.trends.push({
+                    run: element.run,
+                    lumi: 0,
+                    value: value,
+                    error: 0,
+                    oms_info: element.oms_info,
+                    id: 0
+                })
+            })
+
+            fullScreenController.plotData.series.push(omsTrend)
+            await fullScreenController.redrawPlot()
+
+            // Add series to a list in this component
+            const index = this.maxId++
+            this.series[index] = {
+                id: id,
+                subsystem: fullScreenController.plotData.series[0].metadata.subsystem,
+                name: plotTitle,
+                removed: false,
+            }
+
+            $("#fs-series-list-container").append(`
+            <li class="list-group-item" id="fs-series-list-item-${index}">
+				<div class="row">
+					<div class="col mb-0">
+						<small>OMS value</small></br>
+						${plotTitle}
+					</div>
+					<div class="col-auto pr-1 mt-auto mb-auto">
+						<button class="btn btn-sm btn-outline-danger" onclick="seriesListComponent.removeClicked(${index})">Remove</button>
+					</div>
+				</div>
+			</li>
+            `)
+
+            $(`#fs-series-list-item-${index}`).hide(0)
+            $(`#fs-series-list-item-${index}`).slideDown("fast")
+
+            this.toggleCorrelationCheckboxIfNeeded()
+            this.hideError()
         },
 
         removeClicked: function (index) {

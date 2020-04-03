@@ -331,7 +331,11 @@
 							<div id="fs-series-list-container">
 							</div>
 
-							<li class="list-group-item">
+							<li class="list-group-item pt-2">
+								<div class="row">
+									<label class="form-check-label pl-1 pr-1">Add another trend</label>
+								</div>
+
 								<div class="row">
 									<div class="col pl-1 pr-1">
 										<select class="form-control form-control-sm" id="fs-subsystem-select"></select>
@@ -358,14 +362,44 @@
 										</button>
 									</div>
 								</div>
+
+								<div class="row">
+									<label class="form-check-label mt-2 pl-1 pr-1">Add an OMS trend</label>
+								</div>
+								
+								<div class="row">
+									<div class="col pl-1 pr-1">
+										<select class="form-control form-control-sm" id="fs-oms-trend-select">
+											<option value="0">Duration</option>
+											<option value="1">Delivered lumi</option>
+											<option value="2">Recorded lumi</option>
+											<option value="3">End lumi</option>
+											<option value="4">B field</option>
+											<option value="5">Energy</option>
+											<option value="6">HLT physics rate</option>
+											<option value="7">L1T rate</option>
+										</select>
+									</div>
+									<div class="col-auto pl-1 pr-1">
+										<button class="btn btn-sm btn-outline-success" onclick="seriesListComponent.addOMSTrendClicked()" style="min-height: 31px; min-width: 43px;">
+											<span id="fs-add-series-button-text">Add</span>
+										</button>
+									</div>
+								</div>
+
 								<div class="row">
 									<div class="col-auto ml-2 mt-2">
 										<input type="checkbox" class="form-check-input" id="fs-correlation-checkbox">
 										<label class="form-check-label" for="fs-correlation-checkbox">Correlation plot (only for 2 trends)</label>
-										<div class="invalid-feedback" id="fs-add-series-error">
-										</div>
 									</div>
 								</div>
+
+								<div class="row">
+									<div class="col pl-2">
+										<div class="invalid-feedback" id="fs-add-series-error"></div>
+									</div>
+								</div>
+
 							</li>
 						</ul>
 					</div>
