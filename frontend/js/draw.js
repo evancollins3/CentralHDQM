@@ -7,7 +7,7 @@ const plotter = (function() {
         {
             if(plotData.correlation) 
             {
-                if(plotData.series.length === 2)
+                if(plotData.series.length === 2 || plotData.series.length === 3)
                     return this.drawCorrelationPlot(plotData, renderTo)
                 else
                     return null
@@ -23,30 +23,47 @@ const plotter = (function() {
 
         drawCorrelationPlot: function(plotData, renderTo)
         {
+            const is3d = plotData.series.length === 3
             const plotName = plotData.plot_title
             const xValues = plotData.series[0].trends.map(x => x.run)
             const yValues = plotData.series.map(x => x.trends.map(y => y.value))
             const seriesTitles = plotData.series.map(x => x.metadata.plot_title)
 
             // First array contains x values and second array contains y values
-            const values = yValues[0].map((v, i) => ({
-                x: v,
-                y: yValues[1][i],
-                run: xValues[i],
-                marker: {
-                    fillColor: helpers.colorScale((xValues[i] - xValues[0]) / (xValues[xValues.length - 1] - xValues[0])),
-                    radius: 4,
+            const values = yValues[0].map((v, i) => {
+                const obj = {
+                    x: v,
+                    y: yValues[1][i],
+                    run: xValues[i],
+                    marker: {
+                        fillColor: helpers.colorScale((xValues[i] - xValues[0]) / (xValues[xValues.length - 1] - xValues[0])),
+                        radius: 4,
+                    }
                 }
-            }))
+
+                if (is3d)
+                    obj.z = yValues[2][i]
+
+                return obj
+            })
 
             const options = {
                 credits: {
                     enabled: false
                 },
                 chart: {
+                    type: is3d ? "scatter3d" : "scatter",
                     renderTo: renderTo,
-                    zoomType: "xy",
-                    animation: false
+                    zoomType: is3d ? "none" : "xy",
+                    animation: false,
+
+                    options3d: {
+                        enabled: is3d,
+                        alpha: 30,
+                        beta: 30,
+                        depth: 400,
+                        viewDistance: 20,
+                    }
                 },
                 lang: {
                     noData: "No data found"
@@ -70,16 +87,24 @@ const plotter = (function() {
                         text: seriesTitles[1],
                     },
                 },
+                zAxis: is3d ? {
+                    title: {
+                        text: seriesTitles[2],
+                    },
+                } : undefined,
                 legend: {
                     useHTML: true 
                 },
                 tooltip: {
                     headerFormat: "",
-                    pointFormat: "<b>Run No:</b> {point.run}<br><b>X</b>: {point.x}<br><b>Y</b>: {point.y}",
+                    pointFormat: 
+                        is3d ? 
+                        `<b>Run No:</b> {point.run}<br><b>${seriesTitles[0]}</b>: {point.x}<br><b>${seriesTitles[1]}</b>: {point.y}<br><b>${seriesTitles[2]}</b>: {point.z}` :
+                        `<b>Run No:</b> {point.run}<br><b>${seriesTitles[0]}</b>: {point.x}<br><b>${seriesTitles[1]}</b>: {point.y}`,
                     style : { opacity: 0.9 },
                 },
                 series: [{
-                        type: "scatter",
+                        type: is3d ? "scatter3d" : "scatter",
                         name: "Correlation",
                         data: values,
                         animation: false,
@@ -105,26 +130,78 @@ const plotter = (function() {
 
             if(optionsController.options.showRegression)
             {
-                const regression = helpers.linearRegression(values)
-                const regressionData = regression[0]
-                const regressionEquation = regression[1]
+                if(!is3d)
+                {
+                    const regression = helpers.linearRegression(values)
+                    const regressionData = regression[0]
+                    const regressionEquation = regression[1]
 
-                options.series.push({
-                    type: "line",
-                    // name: "Regression Line",
-                    name: regressionEquation,
-                    data: regressionData,
-                    marker: {
-                        enabled: false
-                    },
-                    enableMouseTracking: false,
-                    animation: false,
-                })
+                    options.series.push({
+                        type: "line",
+                        name: regressionEquation,
+                        data: regressionData,
+                        marker: {
+                            enabled: false
+                        },
+                        enableMouseTracking: false,
+                        animation: false,
+                    })
+                }
+                else
+                {
+                    // Polygon in 3D is not currently supported in Highcharts
+                }   
             }
 
             const chartObj = new Highcharts.Chart(options)
             chartObj.redraw()
             chartObj.reflow()
+
+            if(is3d) 
+            {
+                // 3D panning and rotating functionality
+                function dragStart(eStart) {
+                    eStart = chartObj.pointer.normalize(eStart)
+            
+                    const posX = eStart.chartX
+                    const posY = eStart.chartY
+                    const alpha = chartObj.options.chart.options3d.alpha
+                    const beta = chartObj.options.chart.options3d.beta
+                    const sensitivity = 3  // lower is more sensitive
+                    const handlers = []
+
+                    function drag(e) {
+                        // Get e.chartX and e.chartY
+                        e = chartObj.pointer.normalize(e)
+            
+                        chartObj.update({
+                            chart: {
+                                options3d: {
+                                    alpha: alpha + (e.chartY - posY) / sensitivity,
+                                    beta: beta + (posX - e.chartX) / sensitivity
+                                }
+                            }
+                        }, undefined, undefined, false)
+                    }
+
+                    function unbindAll() {
+                        handlers.forEach(function (unbind) {
+                            if (unbind) {
+                                unbind()
+                            }
+                        })
+                        handlers.length = 0
+                    }
+
+                    handlers.push(Highcharts.addEvent(document, 'mousemove', drag))
+                    handlers.push(Highcharts.addEvent(document, 'touchmove', drag))
+                    
+                    handlers.push(Highcharts.addEvent(document, 'mouseup', unbindAll))
+                    handlers.push(Highcharts.addEvent(document, 'touchend', unbindAll))
+                }
+                Highcharts.addEvent(chartObj.container, 'mousedown', dragStart)
+                Highcharts.addEvent(chartObj.container, 'touchstart', dragStart)
+            }
 
             return chartObj
         },

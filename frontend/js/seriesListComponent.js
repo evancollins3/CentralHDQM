@@ -146,7 +146,8 @@ const seriesListComponent = (function() {
 
         toggleCorrelationCheckboxIfNeeded: function() {
             const initialState = $("#fs-correlation-checkbox").prop("checked")
-            if(this.series.filter(x => x.removed === false).length == 2)
+            const seriesLength = this.series.filter(x => x.removed === false).length
+            if(seriesLength === 2 || seriesLength === 3)
             {
                 $("#fs-correlation-checkbox").prop("disabled", false)
             }
