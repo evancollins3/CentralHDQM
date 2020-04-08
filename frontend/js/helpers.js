@@ -104,7 +104,28 @@ const helpers = (function(){
             else if(m === 0)
                 equation = `y = ${b}`
             
-            return [res, equation];
+            return [res, equation]
+        },
+
+        multipleRegression3D: function(data) 
+        {
+            // Least squares method
+            const A = [
+                [data.reduce((a, n) => a + n.x * n.x, 0), data.reduce((a, n) => a + n.x * n.y, 0), data.reduce((a, n) => a + n.x, 0)],
+                [data.reduce((a, n) => a + n.x * n.y, 0), data.reduce((a, n) => a + n.y * n.y, 0), data.reduce((a, n) => a + n.y, 0)],
+                [data.reduce((a, n) => a + n.x, 0), data.reduce((a, n) => a + n.y, 0), data.length]
+            ]
+
+            const b = [data.reduce((a, n) => a + n.x * n.z, 0), data.reduce((a, n) => a + n.y * n.z, 0), data.reduce((a, n) => a + n.z, 0)]
+
+            // math.js has to be imported for this to work
+            const x = math.usolve(A, b)
+
+            // x now holds the coefficients of the 3d equation
+            console.log(x)
+
+            let equation = "a + b + c"
+            return [res, equation]
         },
 
         // Returns a color based on val which must be between 0.0 and 1.0

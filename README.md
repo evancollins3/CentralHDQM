@@ -142,7 +142,7 @@ This tool is responsible for extracting DQM monitor elements from ROOT files and
 | -f       | files     | EOS dir | A list of DQM files to be used. This is very useful if you want to do HDQM on your custom set of DQM files. Files still need to follow DQM file naming conventions (must contain a run and a dataset name). Also this can be used to run HDQM on a subset of all DQM ROOT files available in EOS. |
 | -j       | nprocs    | 50                                                        | Integer value indicating how many processes to use. **When running locally (on SQLite) this has to be 1** because SQLite doesn't support multiple connections writing to the DB.                                                                                                                  |
 
-Default EOS directory for `-f` argument is this: `/eos/cms/store/group/comm_dqm/DQMGUI_data/\*/\*/\*/DQM\*.root`
+Default EOS directory for `-f` argument is this: `/eos/cms/store/group/comm_dqm/DQMGUI_data/*/*/*/DQM*.root`
 
 ### `calculate.py`
 
