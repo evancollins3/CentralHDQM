@@ -94,6 +94,8 @@ const seriesListComponent = (function() {
             this.series[index] = {
                 id: id,
                 subsystem: subsystem,
+                pd: pd,
+                processing_string: ps,
                 name: name,
                 removed: false,
             }
@@ -128,7 +130,13 @@ const seriesListComponent = (function() {
                 return
             
             // Remove from plot data that will be used to redraw the plot
-            const toRemoveIndex = fullScreenController.plotData.series.findIndex(x => x.metadata.name === this.series[index].name)
+            const toRemoveIndex = fullScreenController.plotData.series.findIndex(x => {
+                return x.metadata.subsystem === this.series[index].subsystem && 
+                       x.metadata.pd === this.series[index].pd &&
+                       x.metadata.processing_string === this.series[index].processing_string &&
+                       x.metadata.name === this.series[index].name
+            })
+
             if (toRemoveIndex > -1)
                 fullScreenController.plotData.series.splice(toRemoveIndex, 1)
 
@@ -231,6 +239,8 @@ const seriesListComponent = (function() {
             this.series[index] = {
                 id: id,
                 subsystem: fullScreenController.plotData.series[0].metadata.subsystem,
+                pd: undefined,
+                processing_string: undefined,
                 name: plotTitle,
                 removed: false,
             }
