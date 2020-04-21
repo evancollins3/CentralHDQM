@@ -5,6 +5,29 @@ const plotter = (function() {
 
         draw: async function(plotData, renderTo) 
         {
+            // We will present only runs that are present in all series
+            if(plotData.series.length > 1) {
+                // Find a common subset of runs
+                const allRuns = {}
+                plotData.series.forEach(series => {
+                    series.trends.forEach(trend => {
+                        allRuns[trend.run] = (allRuns[trend.run] ? allRuns[trend.run] : 0) + 1
+                    })
+                })
+
+                const runsToRemove = []
+                for(let key in allRuns) {
+                    if(allRuns[key] < plotData.series.length) {
+                        runsToRemove.push(parseInt(key))
+                    }
+                }
+                
+                // Remove runs that are not present in every series
+                plotData.series.forEach(series => {
+                    series.trends = series.trends.filter(trend => !runsToRemove.includes(trend.run))
+                })
+            }
+
             if(plotData.correlation) 
             {
                 if(plotData.series.length === 2 || plotData.series.length === 3)

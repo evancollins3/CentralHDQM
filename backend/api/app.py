@@ -15,7 +15,7 @@ from functools import partial
 from multiprocessing import Pool
 from collections import defaultdict
 
-ALLOWED_PROCESSING_STRINGS = ['PromptReco', '09Aug2019_UL2017', 'Express', 'ExpressCosmics']
+ALLOWED_PROCESSING_STRINGS = ['PromptReco', 'Express', 'ExpressCosmics', '09Aug2019_UL2017', '12Nov2019_UL2018']
 
 app = Flask(__name__)
 
@@ -95,14 +95,25 @@ def data():
     if 'cosmic' in pd.lower():
       run_class_like = '%%cosmic%%'
 
+    # UL2018 processing produced two processing strings: 12Nov2019_UL2018 and 12Nov2019_UL2018_rsb.
+    # _rsb version is a resubmition because some runs were not processed (crashed?) in the initial processing.
+    # Some runs might exist under both processing strings, some under just one of them!
+    # A union of both of these processing strings contains all runs of UL2018.
+    # So in HDQM, when 12Nov2019_UL2018 is requested, we need include 12Nov2019_UL2018_rsb as well!!!
+    # This is a special case and is not used in any other occasion.
+
+    processing_string_sql = 'AND processing_string=:processing_string'
+    if processing_string == '12Nov2019_UL2018':
+      processing_string_sql = 'AND (processing_string=:processing_string OR processing_string=:processing_string_rsb)'
+
     sql = '''
-    SELECT run FROM oms_data_cache
+    SELECT DISTINCT run FROM oms_data_cache
     WHERE run IN 
     (
       SELECT run FROM historic_data_points
       WHERE subsystem=:subsystem
       AND pd=:pd
-      AND processing_string=:processing_string
+      %s
     )
     AND oms_data_cache.run_class %s :run_class
     AND oms_data_cache.significant=%s
@@ -111,12 +122,18 @@ def data():
     ORDER BY run DESC
     %s
     ;
-    ''' % (db_access.ilike_crossdb(), db_access.true_crossdb(), db_access.true_crossdb(), runs_filter, latest_filter)
+    ''' % (processing_string_sql, db_access.ilike_crossdb(), db_access.true_crossdb(), db_access.true_crossdb(), runs_filter, latest_filter)
 
     print('Getting the list of runs...')
     start = timeit.default_timer() 
 
-    rows = execute_with_retry(session, sql, { 'subsystem': subsystem, 'pd': pd, 'processing_string': processing_string, 'run_class': run_class_like })
+    rows = execute_with_retry(session, sql, { 
+      'subsystem': subsystem, 
+      'pd': pd, 
+      'processing_string': processing_string, 
+      'processing_string_rsb': processing_string + '_rsb', 
+      'run_class': run_class_like 
+    })
     rows = list(rows)
 
     stop = timeit.default_timer()
@@ -125,7 +142,7 @@ def data():
     runs = [x[0] for x in rows]
 
   # Construct SQL query
-  query_params  = { 'subsystem': subsystem, 'pd': pd, 'processing_string': processing_string }
+  query_params  = { 'subsystem': subsystem, 'pd': pd, 'processing_string': processing_string, 'processing_string_rsb': processing_string + '_rsb' }
 
   run_selection_sql = 'AND historic_data_points.run BETWEEN :from_run AND :to_run'
   if runs != None:
@@ -145,18 +162,17 @@ def data():
       query_params[key] = series[i]
     series_filter_sql = series_filter_sql.rstrip(',') + ')'
 
+  processing_string_sql = 'AND historic_data_points.processing_string=:processing_string'
+  if processing_string == '12Nov2019_UL2018':
+    processing_string_sql = 'AND (historic_data_points.processing_string=:processing_string OR historic_data_points.processing_string=:processing_string_rsb)'
+
   sql = '''
   SELECT 
   historic_data_points.id,
 	historic_data_points.run, 
-	historic_data_points.lumi, 
 	historic_data_points.value, 
 	historic_data_points.error,
 	historic_data_points.name, 
-	
-	historic_data_points.dataset, 
-	historic_data_points.pd, 
-	historic_data_points.subsystem,
 	
 	historic_data_points.plot_title, 
 	historic_data_points.y_title
@@ -164,14 +180,14 @@ def data():
 
   WHERE historic_data_points.subsystem=:subsystem
   AND historic_data_points.pd=:pd
-  AND historic_data_points.processing_string=:processing_string
+  %s
 
   %s
   %s
 
   ORDER BY historic_data_points.run ASC
   ;
-  ''' % (run_selection_sql, series_filter_sql)
+  ''' % (processing_string_sql, run_selection_sql, series_filter_sql)
 
   print('Getting the data...')
   start = timeit.default_timer() 
@@ -186,21 +202,22 @@ def data():
   result = {}
   for row in rows:
     # Names are unique within the subsystem
-    key = '%s_%s' % (row['name'], row['subsystem'])
+    key = '%s_%s' % (row['name'], subsystem)
     if key not in result:
       result[key] = {
         'metadata': { 
           'y_title': row['y_title'], 
           'plot_title': row['plot_title'], 
           'name': row['name'], 
-          'subsystem': row['subsystem'], 
+          'subsystem': subsystem, 
+          'pd': pd,
+          'processing_string': processing_string,
         },
         'trends': []
       }
 
     result[key]['trends'].append({
       'run': row['run'],
-      'lumi': row['lumi'],
       'value': row['value'],
       'error': row['error'],
       'id': row['id'],

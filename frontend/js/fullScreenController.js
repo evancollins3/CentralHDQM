@@ -98,6 +98,7 @@ const fullScreenController = (function(){
                 let allSeries = []
                 try {
                     $("#modal-submit-button-spinner").show()
+                    // TODO: series might be added by hand and they might come from different subsystem/PD/processing string
                     const series = this.plotData.series.map(x => x.metadata.name)
                     const base = config.getBaseAPIUrl()
                     const url = `${base}/data?subsystem=${selectionController.selectedSubsystem()}&pd=${selectionController.selectedPD()}&processing_string=${selectionController.selectedProcessingString()}&from_run=${newStartX}&to_run=${newEndX}&series=${series}`
