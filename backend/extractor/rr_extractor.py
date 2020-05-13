@@ -65,7 +65,7 @@ def fetch_runs(min_run, max_run):
   
   try:
     cookies = get_sso_cookie(url)
-    text = requests.post(url, json=json.loads(request), cookies=cookies, verify=CACERT).text
+    text = requests.post(url, json=json.loads(request), cookies=cookies, verify=True).text
     result_json = json.loads(text)
     
     for run in result_json['runs']:
@@ -111,8 +111,8 @@ def fetch_runs(min_run, max_run):
 
 
 def get_sso_cookie(url):
-  if os.path.isfile(CERT) and os.path.isfile(KEY) and os.path.isfile(CACERT):
-    return get_cookies(url, usercert=CERT, userkey=KEY, verify=CACERT)
+  if os.path.isfile(CERT) and os.path.isfile(KEY):
+    return get_cookies(url, usercert=CERT, userkey=KEY, verify=True)
   elif os.path.isfile(PREMADE_COOKIE):
     cookies = {}
     with open(PREMADE_COOKIE, 'r') as file:

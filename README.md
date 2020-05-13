@@ -496,6 +496,12 @@ openssl pkcs12 -in myCertificate.p12 -nocerts -out userkey.tmp.pem
 openssl rsa -in userkey.tmp.pem -out userkey.pem
 ```
 
+### How to get cern_cacert.pem 
+
+This CERN CA bundle is retreived from here: http://linuxsoft.cern.ch/cern/centos/7/cern/x86_64/repoview/CERN-CA-certs.html
+
+Now, this file is used only for OMS requests.
+
 ## Daily extraction
 
 HDQM automatically extracts data from EOS on a daily basis. This is done using systemctl timer.  
