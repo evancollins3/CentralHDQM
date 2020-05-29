@@ -1,5 +1,8 @@
 
 
+hcal_map_rbx_epd = {
+'':[]
+}
 hcal_map = {
 '':[]
 }
@@ -88,7 +91,7 @@ threshold = 7
 yTitle = Number of Dead Channel - {0} - depth{1}
 """
 
-#get the 2D map from files
+#get the 2D map from files 
 #http://cmsdoc.cern.ch/cms/HCALdocs/document/Mapping/Yuan/2020-feb-12/Lmap/
 file_name = ["Lmap_ngHB_N_20200212.txt","Lmap_ngHE_N_20200212.txt","Lmap_ngHF_N_20200212.txt","Lmap_ngHO_N_20200212.txt"]
 for nfile in file_name:
@@ -126,16 +129,44 @@ for nfile in file_name:
                 for item_line in orign_line:
                     if item_line != '':
                         replace_line.append(item_line)
-                if replace_line[rbx_idx] in hcal_map:                                       
-                    hcal_map[replace_line[rbx_idx]].append( (int(replace_line[eta_idx])*int(replace_line[side_idx]),int(replace_line[phi_idx]),int(replace_line[depth_idx])))
+                if replace_line[rbx_idx] in hcal_map_rbx_epd:                                       
+                    hcal_map_rbx_epd[replace_line[rbx_idx]].append( (int(replace_line[eta_idx])*int(replace_line[side_idx]),int(replace_line[phi_idx]),int(replace_line[depth_idx])))
                 else:
-                    hcal_map[replace_line[rbx_idx]] = [(int(replace_line[eta_idx])*int(replace_line[side_idx]),int(replace_line[phi_idx]),int(replace_line[depth_idx]))]
+                    hcal_map_rbx_epd[replace_line[rbx_idx]] = [(int(replace_line[eta_idx])*int(replace_line[side_idx]),int(replace_line[phi_idx]),int(replace_line[depth_idx]))]
                 #print(replace_line[rbx_idx])
-                #print(hcal_map.keys())
+                #print(hcal_map_rbx_epd.keys())
 
+#from 2D map to hist bin number
+for rbxname in sorted(set(hcal_map_rbx_epd.keys())):
+    if(rbxname!=''):
+        hcal_map[rbxname]=[]
+    else:
+        continue
+    eta_phi_dep = hcal_map_rbx_epd[rbxname]
+    for eta, phi, dep in eta_phi_dep:
+        if eta<42 and eta>-42 and phi>0 and phi<73 and (dep in (1,2,3,4,5,6,7)):
+            if rbxname[0:2] == 'HF':
+                if eta<0 and int(eta+42)!=0:
+                    hcal_map[rbxname].append(( int(eta+42), int(phi), int(dep) ))
+                elif eta>0 and int(eta+43)!=0:
+                    hcal_map[rbxname].append(( int(eta+43), int(phi), int(dep) ))
+                else:
+                    print("wierd! eta==0!")
+            else:
+                if eta<0 and int(eta+43)!=0:
+                    hcal_map[rbxname].append(( int(eta+43), int(phi), int(dep) ))
+                elif eta>0and int(eta+42)!=0:
+                    hcal_map[rbxname].append(( int(eta+42), int(phi), int(dep) ))
+                else:
+                    print("wierd! eta==0!")
+        else:
+            print("wierd! eta, phi and dep out of range{0} {1}".format(rbxname,(eta, phi, dep)))
+
+ 
+                
 #hcal rbx map
 with open('hcal_metrics.py', mode='w') as out_map:
-    out_map.write("from basic import BaseMetric\n#find the map at http://cmsdoc.cern.ch/cms/HCALdocs/document/Mapping/Yuan/2020-feb-12/Lmap \nhcal_map = {\n")
+    out_map.write("from basic import BaseMetric\n#find the map at http://cmsdoc.cern.ch/cms/HCALdocs/document/Mapping/Yuan/2020-feb-12/Lmap\n#HCAL map, rbx -> (eta, phi, depth) \nhcal_map = {\n")
     for rbxname in sorted(set(hcal_map.keys())):
         if rbxname != '':
             out_map.write("        '{0}': {1},\n".format(rbxname, hcal_map[rbxname]))
@@ -193,7 +224,7 @@ temp_js_DIGITiming_RBX="""\
             subsystem: "HCAL",
             correlation: false,
             series: {0},
-        }}\n"""
+        }},\n"""
 temp_js_DIGITiming_2Ddepth="""\
         {{
             name: "DIGITiming-MeanTime-{0}-depth{1}",
@@ -202,7 +233,7 @@ temp_js_DIGITiming_2Ddepth="""\
             subsystem: "HCAL",
             correlation: false,
             series: {2},
-        }}\n"""
+        }},\n"""
 temp_js_DIGITiming_2Ddepthchann="""\
         {{
             name: "DIGITiming-Active-Chan-{0}-depth{1}",
@@ -211,7 +242,7 @@ temp_js_DIGITiming_2Ddepthchann="""\
             subsystem: "HCAL",
             correlation: false,
             series: {2},
-        }}\n"""
+        }},\n"""
 temp_js_DIGITDCTime_RBX="""\
         {{
             name: "DIGITDCTime-MeanTime",
@@ -220,7 +251,7 @@ temp_js_DIGITDCTime_RBX="""\
             subsystem: "HCAL",
             correlation: false,
             series: {0},
-        }}\n"""
+        }},\n"""
 temp_js_DIGITDCTime_2Ddepth="""\
         {{
             name: "DIGITDCTime-MeanTime-{0}-depth{1}",
@@ -229,7 +260,7 @@ temp_js_DIGITDCTime_2Ddepth="""\
             subsystem: "HCAL",
             correlation: false,
             series: {2},
-        }}\n"""
+        }},\n"""
 temp_js_DIGITDCTime_2Ddepthchann="""\
         {{
             name: "DIGITDCTime-Active-Chan-{0}-depth{1}",
@@ -238,7 +269,7 @@ temp_js_DIGITDCTime_2Ddepthchann="""\
             subsystem: "HCAL",
             correlation: false,
             series: {2},
-        }}\n"""
+        }},\n"""
 temp_js_DigiInfor_DeadChan="""\
         {{
             name: "DIGIInfor-DeadChan-{0}-depth{1}",
@@ -247,7 +278,7 @@ temp_js_DigiInfor_DeadChan="""\
             subsystem: "HCAL",
             correlation: false,
             series: {2},
-        }}\n"""
+        }},\n"""
 
 plot_name_DIGITiming_RBX = '['
 plot_name_DIGITDCTime_RBX = '['
