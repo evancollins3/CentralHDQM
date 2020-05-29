@@ -135,7 +135,7 @@ hcal_map = {
 class RBXMean(BaseMetric):
     def __init__(self,  name, depth):
         self.__name = name
-        self.__map = h__map
+        self.__map = hcal_map
         self.__dep = depth
     def calculate(self, histo):
         result = (0,0)
@@ -164,7 +164,7 @@ class RBXMean(BaseMetric):
 class RBXCountNonZeroChan(BaseMetric):
     def __init__(self,  name, depth):
         self.__name = name
-        self.__map = h__map
+        self.__map = hcal_map
         self.__dep = depth
     def calculate(self, histo):
         hentry=0
