@@ -1,4 +1,5 @@
-
+#this file is used to produce the .ini files and the map used in hcal_metrics.py also the display.js
+#you can copy paste the content of these files to the correct place
 
 hcal_map_rbx_epd = {
 '':[]
