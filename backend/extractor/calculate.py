@@ -20,6 +20,7 @@ from metrics import fits
 from metrics import basic
 from metrics import muon_metrics
 from metrics import L1T_metrics
+from metrics import hcal_metrics
 
 import os, sys
 # Insert parent dir to sys.path to import db_access
@@ -28,7 +29,7 @@ import db_access
 from ForkPool import ForkPool
 from helpers import batch_iterable, exec_transaction, get_all_me_names
 
-METRICS_MAP = {'fits': fits, 'basic': basic, 'L1T_metrics': L1T_metrics, 'muon_metrics': muon_metrics}
+METRICS_MAP = {'fits': fits, 'basic': basic, 'L1T_metrics': L1T_metrics, 'muon_metrics': muon_metrics, 'hcal_metrics': hcal_metrics}
 
 PLOTNAMEPATTERN = re.compile('^[a-zA-Z0-9_+-]*$')
 CFGFILES = 'cfg/*/*.ini'
