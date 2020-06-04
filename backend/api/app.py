@@ -145,7 +145,7 @@ def data():
   query_params  = { 'subsystem': subsystem, 'pd': pd, 'processing_string': processing_string, 'processing_string_rsb': processing_string + '_rsb' }
 
   run_selection_sql = 'AND historic_data_points.run BETWEEN :from_run AND :to_run'
-  if runs != None:
+  if runs != None and len(runs) != 0:
     run_selection_sql = 'AND historic_data_points.run IN (%s)' % ', '.join(str(x) for x in runs)
     query_params['runs'] = runs
   else:
