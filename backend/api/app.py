@@ -216,13 +216,18 @@ def data():
         'trends': []
       }
 
-    result[key]['trends'].append({
-      'run': row['run'],
-      'value': row['value'],
-      'error': row['error'],
-      'id': row['id'],
-      'oms_info': {},
-    })
+    # Because of the 12Nov2019_UL2018_rsb hack, a run might exist in both 
+    # 12Nov2019_UL2018 and 12Nov2019_UL2018_rsb processing strings. This check
+    # adds the run to the result only if it doesn't exist yet to avoid duplications.
+    run_exists = next((x for x in result[key]['trends'] if x['run'] == row['run']), False)
+    if not run_exists:
+      result[key]['trends'].append({
+        'run': row['run'],
+        'value': row['value'],
+        'error': row['error'],
+        'id': row['id'],
+        'oms_info': {},
+      })
 
   # Transform result to array
   result = [result[key] for key in sorted(result.keys())]
