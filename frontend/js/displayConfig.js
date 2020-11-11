@@ -1,7 +1,55 @@
 
 const displayConfig = (function() {
     const displayGroups = [
-
+		// =========================================== JETMET ===========================================
+		{
+			name: "LowPt_JET_Fractions_for_Barrel",
+            		plot_title: "LowPt JET Fractions for Barrel",
+			y_title: "Fractions in LowPt Jets (mean)",
+			subsystem: "JetMET",
+			correlation: false,
+			series: ["CHFrac_lowPt_Barrel","NHFrac_lowPt_Barrel","PhFrac_lowPt_Barrel"],
+		},
+		{
+			name: "MediumPt_JET_Fractions_for_Barrel",
+            		plot_title: "MediumPt JET Fractions for Barrel",
+			y_title: "Fractions in MediumPt Jets (mean)",
+			subsystem: "JetMET",
+			correlation: false,
+			series: ["CHFrac_mediumPt_Barrel","NHFrac_mediumPt_Barrel","PhFrac_mediumPt_Barrel"],
+		},
+		{
+			name: "HighPt_JET_Fractions_for_Barrel",
+            		plot_title: "HighPt JET Fractions for Barrel",
+			y_title: "Fractions in HighPt Jets (mean)",
+			subsystem: "JetMET",
+			correlation: false,
+			series: ["CHFrac_highPt_Barrel","NHFrac_highPt_Barrel","PhFrac_highPt_Barrel"],
+		},
+		{
+			name: "LowPt_JET_Fractions_for_EndCap",
+            		plot_title: "LowPt JET Fractions for EndCap",
+			y_title: "Fractions in LowPt Jets (mean)",
+			subsystem: "JetMET",
+			correlation: false,
+			series: ["CHFrac_lowPt_EndCap","NHFrac_lowPt_EndCap","PhFrac_lowPt_EndCap"],
+		},
+		{
+			name: "MediumPt_JET_Fractions_for_EndCap",
+            		plot_title: "MediumPt JET Fractions for EndCap",
+			y_title: "Fractions in MediumPt Jets (mean)",
+			subsystem: "JetMET",
+			correlation: false,
+			series: ["CHFrac_mediumPt_EndCap","NHFrac_mediumPt_EndCap","PhFrac_mediumPt_EndCap"],
+		},
+		{
+			name: "HighPt_JET_Fractions_for_EndCap",
+            		plot_title: "HighPt JET Fractions for EndCap",
+			y_title: "Fractions in HighPt Jets (mean)",
+			subsystem: "JetMET",
+			correlation: false,
+			series: ["CHFrac_highPt_EndCap","NHFrac_highPt_EndCap","PhFrac_highPt_EndCap"],
+		},
 		// ======================================== PixelPhase1 ========================================
 		{
 			name: "HitEfficiency_BPix_perLayer_group",
