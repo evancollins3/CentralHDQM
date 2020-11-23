@@ -2012,7 +2012,7 @@ const displayConfig = (function() {
             y_title: "e",
             subsystem: "GEM",
             correlation: false,
-            series: ["eff_Muon_eta_ge+11_even", "eff_Muon_eta_ge+11_odd","eff_Muon_eta_ge-11_even","eff_Muon_eta_ge-11_odd"],
+            series: ["eff_muon_eta_ge+11_even", "eff_muon_eta_ge+11_odd","eff_muon_eta_ge-11_even","eff_muon_eta_ge-11_odd"],
         },
 
                 
