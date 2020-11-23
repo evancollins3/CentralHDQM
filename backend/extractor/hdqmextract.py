@@ -24,7 +24,8 @@ import db_access
 from helpers import batch_iterable, exec_transaction, get_all_me_names
 
 CFGFILES = 'cfg/*/*.ini'
-ROOTFILES = '/eos/cms/store/group/comm_dqm/DQMGUI_data/*/*/*/DQM*.root'
+#ROOTFILES = '/eos/cms/store/group/comm_dqm/DQMGUI_data/*/*/*/DQM*.root'
+ROOTFILES = '/afs/cern.ch/user/s/seungjun/public/koco/*/*/DQM*.root'
 
 PDPATTERN = re.compile('DQM_V\d+_R\d+__(.+__.+__.+)[.]root') # PD inside the file name
 VERSIONPATTERN = re.compile('(DQM_V)(\d+)(.+[.]root)')
