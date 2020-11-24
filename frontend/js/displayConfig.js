@@ -2007,7 +2007,7 @@ const displayConfig = (function() {
         },
 
         {
-            name: "Standalone Muon",
+            name: "eff_muon_eta_ge",
             plot_title: "Standalone Muon",
             y_title: "e",
             subsystem: "GEM",
@@ -2015,6 +2015,14 @@ const displayConfig = (function() {
             series: ["eff_muon_eta_ge+11_even", "eff_muon_eta_ge+11_odd","eff_muon_eta_ge-11_even","eff_muon_eta_ge-11_odd"],
         },
 
+        {
+			name: "Digi Occupancy : GE",
+            plot_title: "Digi Occupancy : GEM",
+            y_title: "VFAT(in)",
+            subsystem: "GEM",
+            correlation: false,
+            series: ["digi_get_ge+11", "digi_get_ge-11"],
+        },
                 
     ]
     
