@@ -2021,7 +2021,7 @@ const displayConfig = (function() {
             y_title: "VFAT(in)",
             subsystem: "GEM",
             correlation: false,
-            series: ["digi_get_ge+11", "digi_get_ge-11"],
+            series: ["digi_det_ge+11", "digi_det_ge-11"],
         },
                 
     ]
