@@ -67,7 +67,7 @@ def fetch_runs(min_run, max_run):
     cookies = get_sso_cookie(url)
     text = requests.post(url, json=json.loads(request), cookies=cookies, verify=True).text
     result_json = json.loads(text)
-    print(result_json)
+    
     for run in result_json['runs']:
       # Logic to determine if run is significant for HDQM:
       # 1. If HLT key contains string "special", run is not significant
