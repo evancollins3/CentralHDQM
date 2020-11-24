@@ -1972,15 +1972,6 @@ const displayConfig = (function() {
             correlation: false,
             series: ["hit_det_ge-11","hit_det_ge+11"],
         },
-
-        {   
-            name: "digi_Occupancy",
-            plot_title: "digOccupancy",
-            y_title: "iEta",
-            subsystem: "GEM",
-            correlation: false,
-            series: ["digi_det_ge+11","digi_det_ge-11"],
-        },  
         {   
             name: "Digi_Strips_Gemini",
             plot_title: "Digi Strip GEMINIm1",
@@ -2023,7 +2014,14 @@ const displayConfig = (function() {
             correlation: false,
             series: ["digi_det_ge+11", "digi_det_ge-11"],
         },
-                
+        {
+			name: "Hit Occupancy GE",
+            plot_title: "Hit Occupancy : GEM",
+            y_title: "in",
+            subsystem: "GEM",
+            correlation: false,
+            series: ["hit_det_ge+11", "hit_det_ge-11"],
+        },
     ]
     
     return {
