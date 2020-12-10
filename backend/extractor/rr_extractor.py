@@ -66,6 +66,7 @@ def fetch_runs(min_run, max_run):
   try:
     cookies = get_sso_cookie(url)
     text = requests.post(url, json=json.loads(request), cookies=cookies, verify=True).text
+    print(json.loads(request))
     result_json = json.loads(text)
     print(result_json) 
     for run in result_json['runs']:
