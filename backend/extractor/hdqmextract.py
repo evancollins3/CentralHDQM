@@ -53,12 +53,11 @@ def remove_old_versions(all_files):
       version = int(versionMatch[0][1])
       # Key is everything appart from version
       mapKey = versionMatch[0][0] + versionMatch[0][2]
-      print(mapKey)
+
     obj = {}
     obj['fullpath'] = fullpath
     obj['filename'] = filename
     obj['version'] = version
-    print(version)    
     groups[mapKey].append(obj)
 
   # Sort every group by version and select the latest one
