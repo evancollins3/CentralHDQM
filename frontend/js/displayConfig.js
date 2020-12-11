@@ -2014,14 +2014,6 @@ const displayConfig = (function() {
             correlation: false,
             series: ["digi_det_ge+11", "digi_det_ge-11"],
         },
-        {
-			name: "Hit Occupancy GE",
-            plot_title: "Hit Occupancy : GEM",
-            y_title: "in",
-            subsystem: "GEM",
-            correlation: false,
-            series: ["hit_det_ge+11", "hit_det_ge-11"],
-        },
     ]
     
     return {
