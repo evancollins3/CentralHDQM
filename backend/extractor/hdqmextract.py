@@ -24,8 +24,7 @@ import db_access
 from helpers import batch_iterable, exec_transaction, get_all_me_names
 
 CFGFILES = 'cfg/*/*.ini'
-#ROOTFILES = '/eos/cms/store/group/comm_dqm/DQMGUI_data/*/*/*/DQM*.root'
-ROOTFILES = '/afs/cern.ch/user/s/seungjun/public/koco/*/*/*/DQM*.root'
+ROOTFILES = '/eos/cms/store/group/comm_dqm/DQMGUI_data/*/*/*/DQM*.root'
 
 PDPATTERN = re.compile('DQM_V\d+_R\d+__(.+__.+__.+)[.]root') # PD inside the file name
 VERSIONPATTERN = re.compile('(DQM_V)(\d+)(.+[.]root)')
@@ -53,11 +52,12 @@ def remove_old_versions(all_files):
       version = int(versionMatch[0][1])
       # Key is everything appart from version
       mapKey = versionMatch[0][0] + versionMatch[0][2]
-
+  
     obj = {}
     obj['fullpath'] = fullpath
     obj['filename'] = filename
     obj['version'] = version
+    
     groups[mapKey].append(obj)
 
   # Sort every group by version and select the latest one
