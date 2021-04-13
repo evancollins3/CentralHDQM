@@ -14,12 +14,10 @@ import os, sys
 # Insert parent dir to sys.path to import db_access and cern_sso
 sys.path.insert(1, os.path.realpath(os.path.pardir))
 import db_access
-from cern_sso import get_cookies
+import sys
 
-CERT='../api/private/usercert.pem'
-KEY='../api/private/userkey.pem'
-CACERT='../api/etc/cern_cacert.pem'
-PREMADE_COOKIE='../api/etc/oms_sso_cookie.txt'
+sys.path.insert(1, "../auth")
+from get_token import get_token
 
 
 def fetch(update, nproc):
@@ -58,11 +56,12 @@ def fetch_run(run):
   runs_url = 'https://cmsoms.cern.ch/agg/api/v1/runs?filter[run_number][eq]=%s&fields=start_time,end_time,b_field,energy,delivered_lumi,end_lumi,recorded_lumi,l1_key,hlt_key,l1_rate,hlt_physics_rate,duration,fill_number' % run
 
   try:
-    cookies = get_sso_cookie(runs_url)
-    oms_runs_json = json.loads(requests.get(runs_url, cookies=cookies, verify=CACERT).text)
+    token = get_token()
+    headers["Authorization"] = "Bearer {token}"
+    oms_runs_json = json.loads(requests.get(runs_url, headers=headers).text)
 
     fills_url = 'https://cmsoms.cern.ch/agg/api/v1/fills?filter[fill_number][eq]=%s&fields=injection_scheme,era' % oms_runs_json['data'][0]['attributes']['fill_number']
-    oms_fills_json = json.loads(requests.get(fills_url, cookies=cookies, verify=CACERT).text)
+    oms_fills_json = json.loads(requests.get(fills_url, headers=headers).text)
     
     # TODO: Change to prod url, add cookies and certificate
     dcs_collisions_lumis_url = '''https://vocms0183.cern.ch/agg/api/v1/lumisections?filter[run_number][eq]=%s
@@ -202,21 +201,6 @@ def fetch_run(run):
       session.close()
   except Exception as e:
     print(e)
-
-
-def get_sso_cookie(url):
-  if os.path.isfile(CERT) and os.path.isfile(KEY) and os.path.isfile(CACERT):
-    return get_cookies(url, usercert=CERT, userkey=KEY, verify=CACERT)
-  elif os.path.isfile(PREMADE_COOKIE):
-    cookies = {}
-    with open(PREMADE_COOKIE, 'r') as file:
-      for line in file:
-        fields = line.strip().split('\t')
-        if len(fields) == 7:
-          cookies[fields[5]] = fields[6]
-    return cookies
-  return None
-
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='HDQM data extraction from the OMS API.')

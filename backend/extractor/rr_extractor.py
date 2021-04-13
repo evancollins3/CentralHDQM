@@ -13,12 +13,10 @@ import os, sys
 # Insert parent dir to sys.path to import db_access and cern_sso
 sys.path.insert(1, os.path.realpath(os.path.pardir))
 import db_access
-from cern_sso import get_cookies
+import sys
 
-CERT='../api/private/usercert.pem'
-KEY='../api/private/userkey.pem'
-CACERT='../api/etc/cern_cacert.pem'
-PREMADE_COOKIE='../api/etc/rr_sso_cookie.txt'
+sys.path.insert(1, "../auth")
+from get_token import get_token
 
 MIN_LUMI_FOR_COLLISIONS = 0.1
 MIN_DURATION_FOR_COSMICS = 3600
@@ -64,8 +62,9 @@ def fetch_runs(min_run, max_run):
   ''' % (min_run, max_run)
   
   try:
-    cookies = get_sso_cookie(url)
-    text = requests.post(url, json=json.loads(request), cookies=cookies, verify=True).text
+    token = get_token()
+    headers["Authorization"] = "Bearer {token}"    
+    text = requests.post(url, json=json.loads(request), headers=headers).text
     result_json = json.loads(text)
     
     for run in result_json['runs']:
@@ -109,21 +108,6 @@ def fetch_runs(min_run, max_run):
   except Exception as e:
     print(e)
 
-
-def get_sso_cookie(url):
-  if os.path.isfile(CERT) and os.path.isfile(KEY):
-    return get_cookies(url, usercert=CERT, userkey=KEY, verify=True)
-  elif os.path.isfile(PREMADE_COOKIE):
-    cookies = {}
-    with open(PREMADE_COOKIE, 'r') as file:
-      for line in file:
-        fields = line.strip().split('\t')
-        if len(fields) == 7:
-          # Since RR has limited header size (8k), add only the required header
-          if fields[5] == 'connect.sid':
-            cookies[fields[5]] = fields[6]
-    return cookies
-  return None
 
 
 if __name__ == '__main__':
