@@ -57,11 +57,12 @@ def fetch_run(run):
 
   try:
     token = get_token()
-    headers["Authorization"] = "Bearer {token}"
-    oms_runs_json = json.loads(requests.get(runs_url, headers=headers).text)
+    headers["Authorization"] = {"Bearer " +  token}
+    response = requests.get(runs_url, headers=headers, verify=False).text
+    oms_runs_json = json.loads(response)
 
     fills_url = 'https://cmsoms.cern.ch/agg/api/v1/fills?filter[fill_number][eq]=%s&fields=injection_scheme,era' % oms_runs_json['data'][0]['attributes']['fill_number']
-    oms_fills_json = json.loads(requests.get(fills_url, headers=headers).text)
+    oms_fills_json = json.loads(requests.get(fills_url, headers=headers, verify=False).text)
     
     # TODO: Change to prod url, add cookies and certificate
     dcs_collisions_lumis_url = '''https://vocms0183.cern.ch/agg/api/v1/lumisections?filter[run_number][eq]=%s
@@ -98,7 +99,6 @@ def fetch_run(run):
 &filter[dt0_ready][eq]=true
 &fields=run_number
 &page[limit]=1''' % run
-
     dcs_cosmics_lumis_url2 = '''https://vocms0183.cern.ch/agg/api/v1/lumisections
 ?filter[run_number][eq]=%s
 &filter[cscm_ready][eq]=true
