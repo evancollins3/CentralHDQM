@@ -89,6 +89,8 @@ def fetch_run(run):
 &filter[dt0_ready][eq]=true
 &filter[cscm_ready][eq]=true
 &filter[cscp_ready][eq]=true
+&filter[gemm_ready][eq]=true
+&filter[gemp_ready][eq]=true
 &fields=run_number
 &page[limit]=1''' % run
 
@@ -104,6 +106,8 @@ def fetch_run(run):
 ?filter[run_number][eq]=%s
 &filter[cscm_ready][eq]=true
 &filter[cscp_ready][eq]=true
+&filter[gemm_ready][eq]=true
+&filter[gemp_ready][eq]=true
 &fields=run_number
 &page[limit]=1''' % run
 
