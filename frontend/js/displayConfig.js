@@ -1964,7 +1964,56 @@ const displayConfig = (function() {
             correlation: false,
             series: ["DIGIInfor-DeadChan-HO2M02-depth56","DIGIInfor-DeadChan-HO2M04-depth56","DIGIInfor-DeadChan-HO2M06-depth56","DIGIInfor-DeadChan-HO2M08-depth56","DIGIInfor-DeadChan-HO2M10-depth56","DIGIInfor-DeadChan-HO2M12-depth56","DIGIInfor-DeadChan-HO2P02-depth56","DIGIInfor-DeadChan-HO2P04-depth56","DIGIInfor-DeadChan-HO2P06-depth56","DIGIInfor-DeadChan-HO2P08-depth56","DIGIInfor-DeadChan-HO2P10-depth56","DIGIInfor-DeadChan-HO2P12-depth56"],
         },
-                
+        {   
+            name: "RecHits",
+            plot_title: "hit_det_ge",
+            y_title: "iEta",
+            subsystem: "GEM",
+            correlation: false,
+            series: ["hit_det_ge-11","hit_det_ge+11"],
+        },
+        {   
+            name: "Digi_Strips_Gemini",
+            plot_title: "Digi Strip GEMINIm1",
+            y_title: "iEta",
+            subsystem: "GEM",
+            correlation: false,
+            series: ["Digi_Strips_Gemini_GE-1/2", "Digi_Strips_Gemini_GE-1/1","Digi_Strips_Gemini_GE+1/2","Digi_Strips_Gemini_GE-1/1"],
+        },  
+        {   
+            name: "Residual_Width",
+            plot_title: "Residual Width",
+            y_title: "Width of segment - hit residual",
+            subsystem: "GEM",
+            correlation: false,
+            series: ["Residual_Width_ge-11", "Residual_Width_ge-21","Residual_Width_ge+11","Residual_Width_ge+21"],
+        },
+        {
+            name: "PedestalNoise_Width",
+            plot_title: "Pedestal Noise Width",
+            y_title: "Width of pedestal noise",
+            subsystem: "GEM",
+            correlation: false,
+            series: ["PedestalNoise_Width_ge-11", "PedestalNoise_Width_ge-21", "PedestalNoise_Width_ge+11","PedestalNoise_Width_ge+21"],
+        },
+
+        {
+            name: "eff_muon_eta_ge",
+            plot_title: "Standalone Muon",
+            y_title: "e",
+            subsystem: "GEM",
+            correlation: false,
+            series: ["eff_muon_eta_ge+11_even", "eff_muon_eta_ge+11_odd","eff_muon_eta_ge-11_even","eff_muon_eta_ge-11_odd"],
+        },
+
+        {
+			name: "Digi Occupancy : GE",
+            plot_title: "Digi Occupancy : GEM",
+            y_title: "VFAT(in)",
+            subsystem: "GEM",
+            correlation: false,
+            series: ["digi_det_ge+11", "digi_det_ge-11"],
+        },
     ]
     
     return {

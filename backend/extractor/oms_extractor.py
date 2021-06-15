@@ -19,6 +19,7 @@ import sys
 sys.path.insert(1, "../auth")
 from get_token import get_token
 
+CACERT='../api/etc/cern_cacert.pem'
 
 def fetch(update, nproc):
   db_access.setup_db()
@@ -58,11 +59,11 @@ def fetch_run(run):
   try:
     token = get_token()
     headers["Authorization"] = {"Bearer " +  token}
-    response = requests.get(runs_url, headers=headers, verify=False).text
+    response = requests.get(runs_url, headers=headers, verify=CACERT).text
     oms_runs_json = json.loads(response)
 
     fills_url = 'https://cmsoms.cern.ch/agg/api/v1/fills?filter[fill_number][eq]=%s&fields=injection_scheme,era' % oms_runs_json['data'][0]['attributes']['fill_number']
-    oms_fills_json = json.loads(requests.get(fills_url, headers=headers, verify=False).text)
+    oms_fills_json = json.loads(requests.get(fills_url, headers=headers, verify=CACERT).text)
     
     # TODO: Change to prod url, add cookies and certificate
     dcs_collisions_lumis_url = '''https://vocms0183.cern.ch/agg/api/v1/lumisections?filter[run_number][eq]=%s
@@ -89,6 +90,8 @@ def fetch_run(run):
 &filter[dt0_ready][eq]=true
 &filter[cscm_ready][eq]=true
 &filter[cscp_ready][eq]=true
+&filter[gemm_ready][eq]=true
+&filter[gemp_ready][eq]=true
 &fields=run_number
 &page[limit]=1''' % run
 
@@ -103,6 +106,8 @@ def fetch_run(run):
 ?filter[run_number][eq]=%s
 &filter[cscm_ready][eq]=true
 &filter[cscp_ready][eq]=true
+&filter[gemm_ready][eq]=true
+&filter[gemp_ready][eq]=true
 &fields=run_number
 &page[limit]=1''' % run
 
