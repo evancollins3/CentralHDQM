@@ -6,4 +6,4 @@
 */__pycache__/*
 */private/*
 connection_string.txt
-./backend/auth/.env
+./backend/.env
