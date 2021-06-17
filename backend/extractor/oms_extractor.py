@@ -70,7 +70,7 @@ def fetch_run(run):
     )
 
     try:
-        token = get_token()
+        token = get_token.get_token()
         headers = {"Authorization": "Bearer %s" % (token)}
         response = requests.get(runs_url, headers=headers, verify=False).json()
         oms_runs_json = response
@@ -137,20 +137,27 @@ def fetch_run(run):
         # For cosmics, we need to OR two terms. If first query if false, make a second one.
         if "cosmic" in oms_runs_json["data"][0]["attributes"]["hlt_key"]:
             dcs_lumisections_json = requests.get(
-                dcs_cosmics_lumis_url1.replace("\n", ""), verify=False
+                dcs_cosmics_lumis_url1.replace("\n", ""), headers=headers, verify=False
             ).json()
 
             if len(dcs_lumisections_json["data"]):
                 is_dcs = True
             else:
                 dcs_lumisections_json = requests.get(
-                    dcs_cosmics_lumis_url2.replace("\n", ""), verify=False
+                    dcs_cosmics_lumis_url2.replace("\n", ""),
+                    headers=headers,
+                    verify=False,
                 ).json()
                 if len(dcs_lumisections_json["data"]):
                     is_dcs = True
         else:
-            # dcs_lumisections_json =  (requests.get(dcs_collisions_lumis_url.replace('\n', ''), verify=False).json()) PROBLEMATISKAS
-            dcs_lumisections_json = {"data": []}
+            dcs_lumisections = requests.get(
+                dcs_collisions_lumis_url.replace("\n", ""),
+                headers=headers,
+                verify=False,
+            )  # PROBLEMATISKAS
+            dcs_lumisections_json = json.loads(dcs_lumisections.text)
+            # dcs_lumisections_json = {"data": []}
             if len(dcs_lumisections_json["data"]):
                 is_dcs = True
 

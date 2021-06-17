@@ -16,7 +16,7 @@ def exchange_tokens(token):
     data = {
         "client_id": os.environ.get("CLIENT_ID"),
         "client_secret": os.environ.get("CLIENT_SECRET"),
-        "audience": "cmsoms-prod",
+        "audience": os.environ.get("AUDIENCE"),
         "grant_type": "urn:ietf:params:oauth:grant-type:token-exchange",
         "requested_token_type": "urn:ietf:params:oauth:token-type:access_token",
         "subject_token": token,
@@ -41,7 +41,7 @@ def get_token():
     data = {
         "client_id": os.environ.get("CLIENT_ID"),
         "client_secret": os.environ.get("CLIENT_SECRET"),
-        "audience": "cmsoms-prod",
+        "audience": os.environ.get("AUDIENCE"),
         "grant_type": "client_credentials",
     }
 

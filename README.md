@@ -56,13 +56,16 @@ cd CentralHDQM/
 
 # Get an SSO to access OMS and RR APIs. This has to be done before cmsenv script
 # First check if we are the owner of the folder where we'll be puting the cookie
+# Cookie for  Run Registry:
 if [ $(ls -ld /tmp/$USER/hdqm/CentralHDQM/backend/api/etc | awk '{ print $3 }') == $USER ]; then 
-    cern-get-sso-cookie -u https://cmsoms.cern.ch/agg/api/v1/runs -o backend/api/etc/oms_sso_cookie.txt
     cern-get-sso-cookie -u https://cmsrunregistry.web.cern.ch/api/runs_filtered_ordered -o backend/api/etc/rr_sso_cookie.txt
 fi
 
 cd backend/
-# This will give us a CMSSW environment
+# Need to add client secret backend/.env file - ask DQM conveners to provide it.
+nano .env
+
+# This will give us cern-get-sso-cookie -u https://cmsoms.cern.ch/agg/api/v1/runs -o backend/api/etc/oms_sso_cookie.txta CMSSW environment
 source cmsenv
 
 # Add python dependencies
