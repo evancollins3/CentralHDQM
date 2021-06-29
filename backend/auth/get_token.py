@@ -1,22 +1,21 @@
+#!/usr/bin/python3
+
 import requests
 import json
 import os
 import sys
 
 from cachetools import cached, TTLCache
-from dotenv import load_dotenv
-
-# loading environment variables
-load_dotenv(os.path.realpath(os.path.join(os.path.pardir, ".env")))
+from decouple import config
 
 headers = {"content-type": "application/x-www-form-urlencoded"}
 
-
 def exchange_tokens(token):
+    config("CLIENT_ID")
     data = {
-        "client_id": os.environ.get("CLIENT_ID"),
-        "client_secret": os.environ.get("CLIENT_SECRET"),
-        "audience": os.environ.get("AUDIENCE"),
+        "client_id": config("CLIENT_ID"),
+        "client_secret": config("CLIENT_SECRET"),
+        "audience": config("AUDIENCE"),
         "grant_type": "urn:ietf:params:oauth:grant-type:token-exchange",
         "requested_token_type": "urn:ietf:params:oauth:token-type:access_token",
         "subject_token": token,
@@ -39,9 +38,9 @@ def exchange_tokens(token):
 
 def get_token():
     data = {
-        "client_id": os.environ.get("CLIENT_ID"),
-        "client_secret": os.environ.get("CLIENT_SECRET"),
-        "audience": os.environ.get("AUDIENCE"),
+        "client_id": config("CLIENT_ID"),
+        "client_secret": config("CLIENT_SECRET"),
+        "audience": config("AUDIENCE"),
         "grant_type": "client_credentials",
     }
 
