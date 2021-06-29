@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from __future__ import print_function
+from decouple import config
 
 from sys import argv
 from multiprocessing import Pool
@@ -32,7 +32,6 @@ def fetch(update, nproc):
 
     all_runs = []
     extracted_runs = []
-
     session = db_access.get_session()
     try:
         print("Getting missing runs...")
@@ -107,8 +106,9 @@ def fetch_run(run):
 &filter[dt0_ready][eq]=true
 &filter[cscm_ready][eq]=true
 &filter[cscp_ready][eq]=true
-&filter[gemm_ready][eq]=true
-&filter[gemp_ready][eq]=true
+&filter[gem_ready][eq]=true
+#&filter[gemm_ready][eq]=true #	gemm_ready and gemp_ready is not supported yet in oms
+#&filter[gemp_ready][eq]=true
 &fields=run_number
 &page[limit]=1"""
             % run
@@ -120,8 +120,9 @@ def fetch_run(run):
 &filter[dtm_ready][eq]=true
 &filter[dtp_ready][eq]=true
 &filter[dt0_ready][eq]=true
-&filter[gemm_ready][eq]=true
-&filter[gemp_ready][eq]=true
+&filter[gem_ready][eq]=true
+#&filter[gemm_ready][eq]=true # gemm_ready and gemp_ready is not supported yet in oms
+#&filter[gemp_ready][eq]=true
 &fields=run_number
 &page[limit]=1"""
             % run
