@@ -33,7 +33,7 @@
 # Central Historic DQM application for CMS detector
 
 A tool to display trends of CMS DQM quantities over long periods of time.  
-The web application is available here: https://cms-hdqm-test.web.cern.ch  
+The web application is available here: https://cms-hdqm.web.cern.ch  
 The code is running on a `vocms0231` machine.
 
 # Usage instructions
